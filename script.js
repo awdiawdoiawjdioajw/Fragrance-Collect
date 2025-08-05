@@ -657,14 +657,23 @@ function checkMobileMenu() {
             hamburger.style.display = 'flex';
         }
         if (navMenu) {
-            // Don't override CSS positioning, just ensure it's not active
-            navMenu.classList.remove('active');
+            // Ensure mobile menu is properly positioned
+            navMenu.style.position = 'fixed';
+            navMenu.style.left = '-100%';
+            navMenu.style.top = '0';
+            navMenu.style.width = '280px';
+            navMenu.style.height = '100vh';
+            navMenu.style.zIndex = '1000';
         }
     } else {
         // Desktop: show nav menu normally, hide hamburger
         if (navMenu) {
-            navMenu.style.display = 'flex';
+            navMenu.style.position = 'static';
             navMenu.style.left = '0';
+            navMenu.style.top = 'auto';
+            navMenu.style.width = 'auto';
+            navMenu.style.height = 'auto';
+            navMenu.style.display = 'flex';
             navMenu.classList.remove('active');
         }
         if (hamburger) {
@@ -678,12 +687,20 @@ function checkMobileMenu() {
 function initHamburgerMenu() {
     const hamburger = document.querySelector('.hamburger');
     const navMenu = document.querySelector('.nav-menu');
+    const body = document.body;
     
     if (hamburger && navMenu) {
         hamburger.addEventListener('click', function(e) {
             e.stopPropagation();
             hamburger.classList.toggle('active');
             navMenu.classList.toggle('active');
+            
+            // Prevent body scroll when menu is open
+            if (navMenu.classList.contains('active')) {
+                body.style.overflow = 'hidden';
+            } else {
+                body.style.overflow = '';
+            }
         });
         
         // Close menu when clicking on a link
@@ -692,6 +709,7 @@ function initHamburgerMenu() {
             link.addEventListener('click', () => {
                 hamburger.classList.remove('active');
                 navMenu.classList.remove('active');
+                body.style.overflow = '';
             });
         });
         
@@ -700,6 +718,16 @@ function initHamburgerMenu() {
             if (!hamburger.contains(e.target) && !navMenu.contains(e.target)) {
                 hamburger.classList.remove('active');
                 navMenu.classList.remove('active');
+                body.style.overflow = '';
+            }
+        });
+        
+        // Close menu on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && navMenu.classList.contains('active')) {
+                hamburger.classList.remove('active');
+                navMenu.classList.remove('active');
+                body.style.overflow = '';
             }
         });
     }
