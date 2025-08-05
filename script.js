@@ -1,33 +1,42 @@
-// Sliding Panel Functionality
+// Sliding Panel Functionality - Hover-based
 function initSlidingPanel() {
-    const panelTrigger = document.querySelector('.panel-trigger-btn');
+    const panelTrigger = document.querySelector('.sliding-panel-trigger');
     const slidingPanel = document.getElementById('sliding-panel');
     const panelOverlay = document.getElementById('panel-overlay');
     const panelCloseBtn = document.querySelector('.panel-close-btn');
     const panelLinks = document.querySelectorAll('.panel-link');
 
-    // Only open panel when trigger button is clicked
+    // Hover events for the trigger
     if (panelTrigger) {
-        panelTrigger.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
+        panelTrigger.addEventListener('mouseenter', function() {
             slidingPanel.classList.add('active');
             panelOverlay.classList.add('active');
-            document.body.style.overflow = 'hidden';
+        });
+
+        panelTrigger.addEventListener('mouseleave', function(e) {
+            // Check if mouse is still over the panel or trigger
+            const relatedTarget = e.relatedTarget;
+            if (!slidingPanel.contains(relatedTarget) && !panelTrigger.contains(relatedTarget)) {
+                closePanel();
+            }
+        });
+    }
+
+    // Hover events for the panel itself
+    if (slidingPanel) {
+        slidingPanel.addEventListener('mouseenter', function() {
+            slidingPanel.classList.add('active');
+            panelOverlay.classList.add('active');
+        });
+
+        slidingPanel.addEventListener('mouseleave', function() {
+            closePanel();
         });
     }
 
     // Close panel with close button
     if (panelCloseBtn) {
         panelCloseBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            closePanel();
-        });
-    }
-
-    // Close panel with overlay
-    if (panelOverlay) {
-        panelOverlay.addEventListener('click', function(e) {
             e.preventDefault();
             closePanel();
         });
@@ -50,7 +59,6 @@ function initSlidingPanel() {
     function closePanel() {
         slidingPanel.classList.remove('active');
         panelOverlay.classList.remove('active');
-        document.body.style.overflow = '';
     }
 }
 
