@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fragrance Collect - Discover Your Signature Scent</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <h2>Fragrance Collect</h2>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="#home" class="nav-link">Home</a></li>
+                <li><a href="#brands" class="nav-link">Brands</a></li>
+                <li><a href="#collections" class="nav-link">Collections</a></li>
+                <li><a href="#top-rated" class="nav-link">Top Rated</a></li>
+                <li><a href="#shop" class="nav-link">Shop</a></li>
+                <li class="dropdown">
+                    <a href="#" class="nav-link dropdown-toggle">Quick Links <i class="fas fa-chevron-down"></i></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="#home">Home</a></li>
+                        <li><a href="#brands">Brands</a></li>
+                        <li><a href="#collections">Collections</a></li>
+                        <li><a href="#top-rated">Top Rated</a></li>
+                        <li><a href="#shop">Shop</a></li>
+                        <li><a href="customer-service.html">Customer Service</a></li>
+                        <li><a href="contact.html">Contact Us</a></li>
+                        <li><a href="size-guide.html">Size Guide</a></li>
+                        <li><a href="faq.html">FAQ</a></li>
+                        <li><a href="auth.html">Sign In/Up</a></li>
+                    </ul>
+                </li>
+            </ul>
+            <div class="nav-right">
+                <div class="search-container">
+                    <input type="text" placeholder="Search fragrances..." class="search-input" id="main-search">
+                    <button class="search-btn">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <button class="clear-search-btn" id="clear-search" style="display: none;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <a href="auth.html" class="login-btn">
+                    <i class="fas fa-user"></i>
+                </a>
+            </div>
+            <div class="hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <h1 class="hero-title">Discover Your Signature Scent</h1>
+            <p class="hero-subtitle">Explore the world's finest fragrances curated for the discerning connoisseur</p>
+            <button class="cta-button" id="browse-fragrances">Browse Fragrances</button>
+        </div>
+    </section>
+
+    <!-- Filter Section -->
+    <section class="filter-section" id="brands">
+        <div class="container">
+            <div class="filter-container">
+                <div class="filter-group">
+                    <label for="brand-filter" class="filter-label">Brand</label>
+                    <select id="brand-filter" class="filter-select">
+                        <option value="">All Brands</option>
+                        <option value="maison-de-luxe">Maison de Luxe</option>
+                        <option value="parfum-elegant">Parfum Élégant</option>
+                        <option value="aqua-fragrances">Aqua Fragrances</option>
+                        <option value="oriental-scents">Oriental Scents</option>
+                        <option value="provence-parfums">Provence Parfums</option>
+                        <option value="forest-essence">Forest Essence</option>
+                        <option value="royal-perfumes">Royal Perfumes</option>
+                        <option value="artisan-scents">Artisan Scents</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="price-filter" class="filter-label">Price Range</label>
+                    <select id="price-filter" class="filter-select">
+                        <option value="">All Prices</option>
+                        <option value="0-100">$0 - $100</option>
+                        <option value="100-200">$100 - $200</option>
+                        <option value="200-300">$200 - $300</option>
+                        <option value="300-400">$300 - $400</option>
+                        <option value="400+">$400+</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="rating-filter" class="filter-label">Rating</label>
+                    <select id="rating-filter" class="filter-select">
+                        <option value="">All Ratings</option>
+                        <option value="5">5 Stars</option>
+                        <option value="4">4+ Stars</option>
+                        <option value="3">3+ Stars</option>
+                    </select>
+                </div>
+                
+                <button class="filter-clear-btn" id="clear-filters">Clear Filters</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Products -->
+    <section class="products-section" id="shop">
+        <div class="container">
+            <h2 class="section-title">Featured Fragrances</h2>
+            <div class="search-results-info" id="search-results-info" style="display: none;">
+                <!-- Search results count will be displayed here -->
+            </div>
+            <div class="products-grid" id="products-grid">
+                <!-- Products will be dynamically loaded here -->
+            </div>
+            <div class="no-results" id="no-results" style="display: none;">
+                <p>No fragrances found matching your criteria.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Top Rated Section -->
+    <section class="top-rated-section" id="top-rated">
+        <div class="container">
+            <h2 class="section-title">Top Rated Fragrances</h2>
+            <div class="products-grid" id="top-rated-grid">
+                <!-- Top rated products will be dynamically loaded here -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Collections -->
+    <section class="collections-section" id="collections">
+        <div class="container">
+            <h2 class="section-title">Featured Collections</h2>
+            <div class="collections-scroll">
+                <div class="collection-card">
+                    <div class="collection-image">
+                        <img src="https://images.unsplash.com/photo-1587017539504-67cfbddac569?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80" alt="Evening Luxury">
+                    </div>
+                    <div class="collection-content">
+                        <h3>Evening Luxury</h3>
+                        <p>Sophisticated fragrances for special occasions</p>
+                        <button class="collection-btn">Explore</button>
+                    </div>
+                </div>
+
+                <div class="collection-card">
+                    <div class="collection-image">
+                        <img src="https://images.unsplash.com/photo-1592945403244-b3faa5b613b0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80" alt="Fresh & Floral">
+                    </div>
+                    <div class="collection-content">
+                        <h3>Fresh & Floral</h3>
+                        <p>Light and uplifting spring-inspired scents</p>
+                        <button class="collection-btn">Explore</button>
+                    </div>
+                </div>
+
+                <div class="collection-card">
+                    <div class="collection-image">
+                        <img src="https://images.unsplash.com/photo-1615639164213-aab04da93c7c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80" alt="Rare Finds">
+                    </div>
+                    <div class="collection-content">
+                        <h3>Rare Finds</h3>
+                        <p>Exclusive and limited edition fragrances</p>
+                        <button class="collection-btn">Explore</button>
+                    </div>
+                </div>
+
+                <div class="collection-card">
+                    <div class="collection-image">
+                        <img src="https://images.unsplash.com/photo-1588405748880-12d1d1a6d4a1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80" alt="Artisan Creations">
+                    </div>
+                    <div class="collection-content">
+                        <h3>Artisan Creations</h3>
+                        <p>Handcrafted fragrances by master perfumers</p>
+                        <button class="collection-btn">Explore</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3 class="footer-title">Fragrance Collect</h3>
+                    <p>Discover the world's finest fragrances curated for the discerning connoisseur.</p>
+                    <div class="social-links">
+                        <a href="https://www.tiktok.com/@the.cologne.archi" class="social-link" target="_blank" rel="noopener noreferrer"><i class="fab fa-tiktok"></i></a>
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul class="footer-links">
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="index.html#brands">Brands</a></li>
+                        <li><a href="index.html#collections">Collections</a></li>
+                        <li><a href="index.html#top-rated">Top Rated</a></li>
+                        <li><a href="index.html#shop">Shop</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Customer Service</h4>
+                    <ul class="footer-links">
+                        <li><a href="customer-service.html">Customer Service</a></li>
+                        <li><a href="contact.html">Contact Us</a></li>
+                        <li><a href="size-guide.html">Size Guide</a></li>
+                        <li><a href="faq.html">FAQ</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Contact Info</h4>
+                    <div class="contact-info">
+                        <p><i class="fas fa-envelope"></i> info@fragrancecollect.com</p>
+                        <p><i class="fas fa-envelope"></i> support@fragrancecollect.com</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2025 Fragrance Collect. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Perfume Details Modal -->
+    <div class="modal" id="perfume-modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div class="modal-body">
+                <div class="modal-image">
+                    <img id="modal-perfume-image" src="" alt="">
+                </div>
+                <div class="modal-info">
+                    <h2 id="modal-perfume-name"></h2>
+                    <p class="modal-brand" id="modal-perfume-brand"></p>
+                    <div class="modal-rating" id="modal-perfume-rating"></div>
+                    <p class="modal-description" id="modal-perfume-description"></p>
+                    <div class="modal-price" id="modal-perfume-price"></div>
+                    <button class="modal-btn">Add to Cart</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 

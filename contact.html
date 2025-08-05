@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us - Fragrance Collect</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="contact-styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <h2>Fragrance Collect</h2>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="index.html" class="nav-link">Home</a></li>
+                <li><a href="index.html#brands" class="nav-link">Brands</a></li>
+                <li><a href="index.html#collections" class="nav-link">Collections</a></li>
+                <li><a href="index.html#top-rated" class="nav-link">Top Rated</a></li>
+                <li><a href="index.html#shop" class="nav-link">Shop</a></li>
+                <li class="dropdown">
+                    <a href="#" class="nav-link dropdown-toggle">Quick Links <i class="fas fa-chevron-down"></i></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="index.html#brands">Brands</a></li>
+                        <li><a href="index.html#collections">Collections</a></li>
+                        <li><a href="index.html#top-rated">Top Rated</a></li>
+                        <li><a href="index.html#shop">Shop</a></li>
+                        <li><a href="customer-service.html">Customer Service</a></li>
+                        <li><a href="contact.html">Contact Us</a></li>
+                        <li><a href="size-guide.html">Size Guide</a></li>
+                        <li><a href="faq.html">FAQ</a></li>
+                        <li><a href="auth.html">Sign In/Up</a></li>
+                    </ul>
+                </li>
+            </ul>
+            <div class="nav-right">
+                <div class="search-container">
+                    <input type="text" placeholder="Search fragrances..." class="search-input">
+                    <button class="search-btn">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+                <a href="auth.html" class="login-btn">
+                    <i class="fas fa-user"></i>
+                </a>
+            </div>
+            <div class="hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contact Header -->
+    <section class="contact-header">
+        <div class="container">
+            <h1 class="contact-title">Contact Us</h1>
+            <p class="contact-subtitle">We're here to help you discover your perfect fragrance</p>
+        </div>
+    </section>
+
+    <!-- Contact Content -->
+    <section class="contact-content">
+        <div class="container">
+            <div class="contact-wrapper">
+                <!-- Contact Form -->
+                <div class="contact-form-section">
+                    <h2 class="form-title">Send Us a Message</h2>
+                    <form class="contact-form" id="contactForm">
+                        <div class="form-group">
+                            <label for="name" class="form-label">Full Name</label>
+                            <input type="text" id="name" name="name" class="form-input" placeholder="Enter your full name" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="email" class="form-label">Email Address</label>
+                            <input type="email" id="email" name="email" class="form-input" placeholder="Enter your email address" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="subject" class="form-label">Subject</label>
+                            <select id="subject" name="subject" class="form-select" required>
+                                <option value="">Select a subject</option>
+                                <option value="general">General Inquiry</option>
+                                <option value="product">Product Information</option>
+                                <option value="order">Order Status</option>
+                                <option value="feedback">Feedback & Suggestions</option>
+                                <option value="partnership">Partnership Opportunities</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="message" class="form-label">Message</label>
+                            <textarea id="message" name="message" class="form-textarea" rows="6" placeholder="Tell us how we can help you..." required></textarea>
+                        </div>
+                        
+                        <button type="submit" class="submit-btn">
+                            <span>Send Message</span>
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Contact Information -->
+                <div class="contact-info-section">
+                    <h2 class="info-title">Get in Touch</h2>
+                    <p class="info-subtitle">Our luxury fragrance experts are here to assist you with any questions or concerns.</p>
+                    
+                    <div class="contact-details">
+                        <div class="contact-item">
+                            <div class="contact-icon">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <div class="contact-text">
+                                <h3>Email Us</h3>
+                                <p>info@fragrancecollect.com</p>
+                                <span class="response-time">Response within 24 hours</span>
+                            </div>
+                        </div>
+                        <div class="contact-item">
+                            <div class="contact-icon">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <div class="contact-text">
+                                <h3>Support</h3>
+                                <p>support@fragrancecollect.com</p>
+                                <span class="response-time">Response within 2 hours</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="social-section">
+                        <h3 class="social-title">Follow Us</h3>
+                        <p class="social-subtitle">Stay connected for the latest fragrances and exclusive offers</p>
+                        <div class="social-links">
+                            <a href="https://www.tiktok.com/@the.cologne.archi" class="social-link" aria-label="TikTok" target="_blank" rel="noopener noreferrer">
+                                <i class="fab fa-tiktok"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="faq-section">
+        <div class="container">
+            <h2 class="faq-title">Frequently Asked Questions</h2>
+            <div class="faq-grid">
+                <div class="faq-item">
+                    <h3 class="faq-question">How do I choose the right fragrance?</h3>
+                    <p class="faq-answer">Our fragrance experts can help you find your perfect scent based on your preferences, skin type, and occasion. Contact us for a personalized consultation.</p>
+                </div>
+                
+                <div class="faq-item">
+                    <h3 class="faq-question">What is your return policy?</h3>
+                    <p class="faq-answer">We offer a 30-day return policy for all unopened and unused fragrances. Contact our customer service team to initiate a return.</p>
+                </div>
+                
+                <div class="faq-item">
+                    <h3 class="faq-question">Do you ship internationally?</h3>
+                    <p class="faq-answer">Yes, we ship to most countries worldwide. Shipping times and costs vary by location. Contact us for specific details.</p>
+                </div>
+                
+                <div class="faq-item">
+                    <h3 class="faq-question">Can I get samples before purchasing?</h3>
+                    <p class="faq-answer">We offer sample sets for many of our fragrances. Contact us to inquire about available samples for your preferred scents.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3 class="footer-title">Fragrance Collect</h3>
+                    <p>Discover the world's finest fragrances curated for the discerning connoisseur.</p>
+                    <div class="social-links">
+                        <a href="https://www.tiktok.com/@the.cologne.archi" class="social-link" target="_blank" rel="noopener noreferrer"><i class="fab fa-tiktok"></i></a>
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul class="footer-links">
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="index.html#brands">Brands</a></li>
+                        <li><a href="index.html#collections">Collections</a></li>
+                        <li><a href="index.html#top-rated">Top Rated</a></li>
+                        <li><a href="index.html#shop">Shop</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Customer Service</h4>
+                    <ul class="footer-links">
+                        <li><a href="customer-service.html">Customer Service</a></li>
+                        <li><a href="contact.html">Contact Us</a></li>
+                        <li><a href="size-guide.html">Size Guide</a></li>
+                        <li><a href="faq.html">FAQ</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Contact Info</h4>
+                    <div class="contact-info">
+                        <p><i class="fas fa-envelope"></i> info@fragrancecollect.com</p>
+                        <p><i class="fas fa-envelope"></i> support@fragrancecollect.com</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2025 Fragrance Collect. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+    <script src="contact-script.js"></script>
+</body>
+</html> 
