@@ -703,115 +703,75 @@ function initModal() {
     }
 }
 
-// Mobile menu functionality
+// Desktop-like mobile navigation - keep navigation visible
 function checkMobileMenu() {
     const navMenu = document.querySelector('.nav-menu');
     const hamburger = document.querySelector('.hamburger');
     
-    if (window.innerWidth <= 768) {
-        // Mobile: ensure hamburger is visible and nav menu uses CSS positioning
-        if (hamburger) {
-            hamburger.style.display = 'flex';
-        }
-        if (navMenu) {
-            // Ensure mobile menu is properly positioned
-            navMenu.style.position = 'fixed';
-            navMenu.style.left = '-100%';
-            navMenu.style.top = '0';
-            navMenu.style.width = '280px';
-            navMenu.style.height = '100vh';
-            navMenu.style.zIndex = '1000';
-        }
-    } else {
-        // Desktop: show nav menu normally, hide hamburger
-        if (navMenu) {
-            navMenu.style.position = 'static';
-            navMenu.style.left = '0';
-            navMenu.style.top = 'auto';
-            navMenu.style.width = 'auto';
-            navMenu.style.height = 'auto';
-            navMenu.style.display = 'flex';
-            navMenu.classList.remove('active');
-        }
-        if (hamburger) {
-            hamburger.style.display = 'none';
-            hamburger.classList.remove('active');
-        }
+    // Always keep navigation visible like desktop
+    if (navMenu) {
+        navMenu.style.position = 'static';
+        navMenu.style.left = '0';
+        navMenu.style.top = 'auto';
+        navMenu.style.width = 'auto';
+        navMenu.style.height = 'auto';
+        navMenu.style.display = 'flex';
+        navMenu.style.flexDirection = 'row';
+        navMenu.style.background = 'none';
+        navMenu.style.boxShadow = 'none';
+        navMenu.style.border = 'none';
+        navMenu.style.zIndex = 'auto';
+        navMenu.classList.remove('active');
+    }
+    
+    // Hide hamburger menu since we're keeping desktop navigation
+    if (hamburger) {
+        hamburger.style.display = 'none';
+        hamburger.classList.remove('active');
     }
 }
 
-// Hamburger menu toggle
+// Simplified mobile navigation - no hamburger needed
 function initHamburgerMenu() {
-    const hamburger = document.querySelector('.hamburger');
+    // Since we're keeping desktop navigation visible, no hamburger functionality needed
+    // Just ensure navigation is always visible
     const navMenu = document.querySelector('.nav-menu');
-    const body = document.body;
-    
-    if (hamburger && navMenu) {
-        hamburger.addEventListener('click', function(e) {
-            e.stopPropagation();
-            hamburger.classList.toggle('active');
-            navMenu.classList.toggle('active');
-            
-            // Prevent body scroll when menu is open
-            if (navMenu.classList.contains('active')) {
-                body.style.overflow = 'hidden';
-            } else {
-                body.style.overflow = '';
-            }
-        });
-        
-        // Close menu when clicking on a link
-        const navLinks = document.querySelectorAll('.nav-link');
-        navLinks.forEach(link => {
-            link.addEventListener('click', () => {
-                hamburger.classList.remove('active');
-                navMenu.classList.remove('active');
-                body.style.overflow = '';
-            });
-        });
-        
-        // Close menu when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!hamburger.contains(e.target) && !navMenu.contains(e.target)) {
-                hamburger.classList.remove('active');
-                navMenu.classList.remove('active');
-                body.style.overflow = '';
-            }
-        });
-        
-        // Close menu on escape key
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && navMenu.classList.contains('active')) {
-                hamburger.classList.remove('active');
-                navMenu.classList.remove('active');
-                body.style.overflow = '';
-            }
-        });
+    if (navMenu) {
+        navMenu.style.display = 'flex';
+        navMenu.style.flexDirection = 'row';
+        navMenu.style.position = 'static';
+        navMenu.style.background = 'none';
+        navMenu.style.boxShadow = 'none';
+        navMenu.style.border = 'none';
     }
 }
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     initializeApp();
-    // Ensure navigation is visible on desktop
+    
+    // Always ensure navigation is visible (desktop-like on all devices)
     const navMenu = document.querySelector('.nav-menu');
     const hamburger = document.querySelector('.hamburger');
     
-    // Set initial state based on screen size
-    if (window.innerWidth > 768) {
-        // Desktop: ensure nav menu is visible
-        if (navMenu) {
-            navMenu.style.display = 'flex';
-            navMenu.style.left = '0';
-        }
-        if (hamburger) {
-            hamburger.style.display = 'none';
-        }
-    } else {
-        // Mobile: let CSS handle the positioning
-        if (hamburger) {
-            hamburger.style.display = 'flex';
-        }
+    if (navMenu) {
+        navMenu.style.display = 'flex';
+        navMenu.style.flexDirection = 'row';
+        navMenu.style.position = 'static';
+        navMenu.style.background = 'none';
+        navMenu.style.boxShadow = 'none';
+        navMenu.style.border = 'none';
+        navMenu.style.zIndex = 'auto';
+        navMenu.style.left = '0';
+        navMenu.style.top = 'auto';
+        navMenu.style.width = 'auto';
+        navMenu.style.height = 'auto';
+    }
+    
+    // Always hide hamburger since we're keeping desktop navigation
+    if (hamburger) {
+        hamburger.style.display = 'none';
+        hamburger.classList.remove('active');
     }
     
     checkMobileMenu();
