@@ -1,3 +1,58 @@
+// Sliding Panel Functionality
+function initSlidingPanel() {
+    const panelTrigger = document.querySelector('.panel-trigger-btn');
+    const slidingPanel = document.getElementById('sliding-panel');
+    const panelOverlay = document.getElementById('panel-overlay');
+    const panelCloseBtn = document.querySelector('.panel-close-btn');
+    const panelLinks = document.querySelectorAll('.panel-link');
+
+    // Open panel
+    if (panelTrigger) {
+        panelTrigger.addEventListener('click', function(e) {
+            e.preventDefault();
+            slidingPanel.classList.add('active');
+            panelOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+    }
+
+    // Close panel with close button
+    if (panelCloseBtn) {
+        panelCloseBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            closePanel();
+        });
+    }
+
+    // Close panel with overlay
+    if (panelOverlay) {
+        panelOverlay.addEventListener('click', function(e) {
+            e.preventDefault();
+            closePanel();
+        });
+    }
+
+    // Close panel when clicking on links
+    panelLinks.forEach(link => {
+        link.addEventListener('click', function() {
+            closePanel();
+        });
+    });
+
+    // Close panel with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && slidingPanel.classList.contains('active')) {
+            closePanel();
+        }
+    });
+
+    function closePanel() {
+        slidingPanel.classList.remove('active');
+        panelOverlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+}
+
 // Mock perfume data
 const perfumeData = [
     {
@@ -129,6 +184,7 @@ function initializeApp() {
     initializeExistingFeatures();
     initHamburgerMenu();
     initModal();
+    initSlidingPanel(); // Initialize sliding panel
 }
 
 // Display products in the grid

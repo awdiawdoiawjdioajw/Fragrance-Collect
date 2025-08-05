@@ -40,23 +40,13 @@
                 <li><a href="#shop" class="nav-link">Shop</a></li>
             </ul>
             
-            <!-- Search and dropdown row -->
+            <!-- Search and sliding panel row -->
             <div class="search-row">
-                <!-- Dropdown on the left -->
-                <div class="dropdown">
-                    <a href="#" class="nav-link dropdown-toggle">Quick Links <i class="fas fa-chevron-down"></i></a>
-                    <ul class="dropdown-menu">
-                        <li><a href="#home">Home</a></li>
-                        <li><a href="#brands">Brands</a></li>
-                        <li><a href="#collections">Collections</a></li>
-                        <li><a href="#top-rated">Top Rated</a></li>
-                        <li><a href="#shop">Shop</a></li>
-                        <li><a href="customer-service.html">Customer Service</a></li>
-                        <li><a href="contact.html">Contact Us</a></li>
-                        <li><a href="size-guide.html">Size Guide</a></li>
-                        <li><a href="faq.html">FAQ</a></li>
-                        <li><a href="auth.html">Sign In/Up</a></li>
-                    </ul>
+                <!-- Sliding panel trigger on the left -->
+                <div class="sliding-panel-trigger">
+                    <button class="panel-trigger-btn">
+                        <i class="fas fa-bars"></i>
+                    </button>
                 </div>
                 
                 <!-- Centered Search Container -->
@@ -70,6 +60,33 @@
                     </button>
                 </div>
             </div>
+            
+            <!-- Sliding Panel -->
+            <div class="sliding-panel" id="sliding-panel">
+                <div class="panel-header">
+                    <h3>Quick Links</h3>
+                    <button class="panel-close-btn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="panel-content">
+                    <ul class="panel-menu">
+                        <li><a href="#home" class="panel-link">Home</a></li>
+                        <li><a href="#brands" class="panel-link">Brands</a></li>
+                        <li><a href="#collections" class="panel-link">Collections</a></li>
+                        <li><a href="#top-rated" class="panel-link">Top Rated</a></li>
+                        <li><a href="#shop" class="panel-link">Shop</a></li>
+                        <li><a href="customer-service.html" class="panel-link">Customer Service</a></li>
+                        <li><a href="contact.html" class="panel-link">Contact Us</a></li>
+                        <li><a href="size-guide.html" class="panel-link">Size Guide</a></li>
+                        <li><a href="faq.html" class="panel-link">FAQ</a></li>
+                        <li><a href="auth.html" class="panel-link">Sign In/Up</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Panel overlay -->
+            <div class="panel-overlay" id="panel-overlay"></div>
             
             <div class="nav-right">
                 <a href="auth.html" class="login-btn">
