@@ -26,16 +26,24 @@
     <!-- Navigation -->
     <nav class="navbar">
         <div class="nav-container">
+            <!-- Logo at the top -->
             <div class="nav-logo">
                 <h2>Fragrance Collect</h2>
             </div>
+            
+            <!-- Navigation menu -->
             <ul class="nav-menu">
                 <li><a href="#home" class="nav-link">Home</a></li>
                 <li><a href="#brands" class="nav-link">Brands</a></li>
                 <li><a href="#collections" class="nav-link">Collections</a></li>
                 <li><a href="#top-rated" class="nav-link">Top Rated</a></li>
                 <li><a href="#shop" class="nav-link">Shop</a></li>
-                <li class="dropdown">
+            </ul>
+            
+            <!-- Search and dropdown row -->
+            <div class="search-row">
+                <!-- Dropdown on the left -->
+                <div class="dropdown">
                     <a href="#" class="nav-link dropdown-toggle">Quick Links <i class="fas fa-chevron-down"></i></a>
                     <ul class="dropdown-menu">
                         <li><a href="#home">Home</a></li>
@@ -49,18 +57,20 @@
                         <li><a href="faq.html">FAQ</a></li>
                         <li><a href="auth.html">Sign In/Up</a></li>
                     </ul>
-                </li>
-            </ul>
-            <!-- Centered Search Container -->
-            <div class="search-container">
-                <input type="text" placeholder="Search fragrances..." class="search-input" id="main-search">
-                <button class="search-btn">
-                    <i class="fas fa-search"></i>
-                </button>
-                <button class="clear-search-btn" id="clear-search" style="display: none;">
-                    <i class="fas fa-times"></i>
-                </button>
+                </div>
+                
+                <!-- Centered Search Container -->
+                <div class="search-container">
+                    <input type="text" placeholder="Search fragrances..." class="search-input" id="main-search">
+                    <button class="search-btn">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <button class="clear-search-btn" id="clear-search" style="display: none;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
             </div>
+            
             <div class="nav-right">
                 <a href="auth.html" class="login-btn">
                     <i class="fas fa-user"></i>
