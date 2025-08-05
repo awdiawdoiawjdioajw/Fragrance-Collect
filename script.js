@@ -6,10 +6,11 @@ function initSlidingPanel() {
     const panelCloseBtn = document.querySelector('.panel-close-btn');
     const panelLinks = document.querySelectorAll('.panel-link');
 
-    // Open panel
+    // Only open panel when trigger button is clicked
     if (panelTrigger) {
         panelTrigger.addEventListener('click', function(e) {
             e.preventDefault();
+            e.stopPropagation();
             slidingPanel.classList.add('active');
             panelOverlay.classList.add('active');
             document.body.style.overflow = 'hidden';
