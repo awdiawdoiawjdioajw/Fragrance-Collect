@@ -1,0 +1,70 @@
+<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Gold gradient -->
+    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#FFA500;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#DAA520;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Shimmer effect -->
+    <linearGradient id="shimmer" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:0" />
+      <stop offset="50%" style="stop-color:#FFFFFF;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#FFFFFF;stop-opacity:0" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle (optional) -->
+  <circle cx="30" cy="30" r="28" fill="none" stroke="url(#goldGradient)" stroke-width="1" opacity="0.3"/>
+  
+  <!-- Perfume bottle -->
+  <g transform="translate(30, 35)">
+    <!-- Bottle body -->
+    <path d="M-8,8 L-8,-8 L-4,-8 L-4,-4 L4,-4 L4,-8 L8,-8 L8,8 Z" fill="url(#goldGradient)" stroke="#DAA520" stroke-width="0.5"/>
+    
+    <!-- Bottle neck -->
+    <rect x="-2" y="-8" width="4" height="4" fill="url(#goldGradient)" stroke="#DAA520" stroke-width="0.5"/>
+    
+    <!-- Bottle top -->
+    <rect x="-3" y="-12" width="6" height="4" fill="url(#goldGradient)" stroke="#DAA520" stroke-width="0.5"/>
+    
+    <!-- "Fc" letters inside bottle -->
+    <text x="0" y="2" font-family="serif" font-size="8" font-weight="bold" text-anchor="middle" fill="#8B4513">Fc</text>
+  </g>
+  
+  <!-- Crown -->
+  <g transform="translate(30, 15)">
+    <!-- Crown base -->
+    <rect x="-6" y="0" width="12" height="2" fill="url(#goldGradient)" stroke="#DAA520" stroke-width="0.5"/>
+    
+    <!-- Crown jewels (dots) -->
+    <circle cx="-4" cy="1" r="0.5" fill="#FFD700"/>
+    <circle cx="-2" cy="1" r="0.5" fill="#FFD700"/>
+    <circle cx="0" cy="1" r="0.5" fill="#FFD700"/>
+    <circle cx="2" cy="1" r="0.5" fill="#FFD700"/>
+    <circle cx="4" cy="1" r="0.5" fill="#FFD700"/>
+    
+    <!-- Crown points -->
+    <path d="M-6,0 L-4,-4 L-2,-2 L0,-6 L2,-2 L4,-4 L6,0 Z" fill="url(#goldGradient)" stroke="#DAA520" stroke-width="0.5"/>
+    
+    <!-- Central crown point with cross -->
+    <path d="M-1,-6 L1,-6 L1,-8 L-1,-8 Z" fill="url(#goldGradient)" stroke="#DAA520" stroke-width="0.5"/>
+    <line x1="0" y1="-8" x2="0" y2="-10" stroke="#DAA520" stroke-width="0.5"/>
+    <line x1="-1" y1="-9" x2="1" y2="-9" stroke="#DAA520" stroke-width="0.5"/>
+  </g>
+  
+  <!-- Decorative scrollwork on sides -->
+  <g transform="translate(10, 30)">
+    <!-- Left scrollwork -->
+    <path d="M0,0 Q-5,-5 -8,0 Q-5,5 0,0 Q5,-5 8,0 Q5,5 0,0" fill="none" stroke="url(#goldGradient)" stroke-width="1.5" opacity="0.8"/>
+  </g>
+  
+  <g transform="translate(50, 30)">
+    <!-- Right scrollwork -->
+    <path d="M0,0 Q5,-5 8,0 Q5,5 0,0 Q-5,-5 -8,0 Q-5,5 0,0" fill="none" stroke="url(#goldGradient)" stroke-width="1.5" opacity="0.8"/>
+  </g>
+  
+  <!-- Shimmer effect overlay -->
+  <rect width="60" height="60" fill="url(#shimmer)" opacity="0.2"/>
+</svg> 
