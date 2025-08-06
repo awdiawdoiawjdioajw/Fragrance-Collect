@@ -11,13 +11,23 @@ A luxury fragrance e-commerce website showcasing premium fragrances and collecti
 - Authentication system
 - Mobile-friendly navigation
 
-## Hosting Options
+## 🚀 Quick Start - GitHub Pages Deployment
 
-### Option 1: GitHub Pages (Recommended - FREE)
+### Option 1: Automated Setup (Recommended)
+
+1. **Run the deployment script:**
+   ```powershell
+   # In PowerShell, navigate to your project folder and run:
+   .\deploy.ps1
+   ```
+   This script will guide you through the entire setup process automatically.
+
+### Option 2: Manual Setup
 
 1. **Create a GitHub repository:**
    - Go to [GitHub](https://github.com) and create a new repository
-   - Name it `fragrance-collect-website` or similar
+   - Name it `fragrance-collect` or similar
+   - Make it **Public** (required for free hosting)
 
 2. **Upload your files:**
    ```bash
@@ -26,7 +36,7 @@ A luxury fragrance e-commerce website showcasing premium fragrances and collecti
    git add .
    git commit -m "Initial commit"
    git branch -M main
-   git remote add origin https://github.com/YOUR_USERNAME/fragrance-collect-website.git
+   git remote add origin https://github.com/YOUR_USERNAME/fragrance-collect.git
    git push -u origin main
    ```
 
@@ -37,7 +47,13 @@ A luxury fragrance e-commerce website showcasing premium fragrances and collecti
    - Click "Save"
 
 4. **Your website will be available at:**
-   `https://YOUR_USERNAME.github.io/fragrance-collect-website`
+   `https://YOUR_USERNAME.github.io/fragrance-collect`
+
+### 📖 Detailed Setup Guide
+
+For complete step-by-step instructions, see [GITHUB_PAGES_SETUP.md](GITHUB_PAGES_SETUP.md)
+
+## Hosting Options
 
 ### Option 2: Netlify (FREE - Drag & Drop)
 
