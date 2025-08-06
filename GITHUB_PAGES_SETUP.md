@@ -1,176 +1,149 @@
-# GitHub Pages Setup for fragrancecollect.com
+# GitHub Pages Setup Guide
 
-This guide will help you deploy your Fragrance Collect website to GitHub Pages with your custom domain `fragrancecollect.com`.
+This guide will walk you through setting up your Fragrance Collect website on GitHub Pages.
 
-## 🚀 **Step-by-Step Setup**
+## Prerequisites
 
-### **Step 1: Create GitHub Repository**
+- A GitHub account
+- Git installed on your computer
+- Your website files ready
 
-1. Go to [GitHub.com](https://github.com) and sign in
-2. Click the **"+"** icon in the top right → **"New repository"**
-3. Repository name: `fragrancecollect-website`
-4. Make it **Public** (required for free hosting)
-5. Click **"Create repository"**
+## Step-by-Step Setup
 
-### **Step 2: Upload Your Website Files**
+### 1. Create a GitHub Repository
 
-**Option A: Using GitHub Desktop (Recommended)**
-1. Download [GitHub Desktop](https://desktop.github.com/)
-2. Install and sign in with your GitHub account
-3. Click **"Clone a repository"** → Select your new `fragrancecollect-website` repository
-4. Copy **ALL** your website files into the cloned folder:
-   - `main.html`
-   - `contact.html`
-   - `auth.html`
-   - `customer-service.html`
-   - `size-guide.html`
-   - `faq.html`
-   - `styles.css`
-   - `script.js`
-   - All other CSS and JS files
-   - `CNAME` file (already created)
-5. In GitHub Desktop: **Commit** → **Push origin**
+1. Go to [GitHub](https://github.com) and sign in
+2. Click the "+" icon in the top right corner
+3. Select "New repository"
+4. Name your repository: `fragrance-collect` (or your preferred name)
+5. Make it **Public** (required for free GitHub Pages)
+6. Don't initialize with README (since you already have one)
+7. Click "Create repository"
 
-**Option B: Using Command Line**
+### 2. Upload Your Files
+
+Open your terminal/command prompt and navigate to your project folder:
+
 ```bash
-# Navigate to your website folder
-cd "C:\Users\heart\Roman Website"
+# Navigate to your project directory
+cd "C:\Users\heart\New folder\Fragrance-Collect"
 
 # Initialize git repository
 git init
+
+# Add all files to git
 git add .
-git commit -m "Initial website commit for fragrancecollect.com"
+
+# Create initial commit
+git commit -m "Initial commit: Fragrance Collect website"
+
+# Rename the default branch to main
 git branch -M main
-git remote add origin https://github.com/YOUR_USERNAME/fragrancecollect-website.git
+
+# Add your GitHub repository as remote
+# Replace YOUR_USERNAME with your actual GitHub username
+git remote add origin https://github.com/YOUR_USERNAME/fragrance-collect.git
+
+# Push to GitHub
 git push -u origin main
 ```
 
-### **Step 3: Enable GitHub Pages**
+### 3. Enable GitHub Pages
 
-1. Go to your repository on GitHub: `https://github.com/YOUR_USERNAME/fragrancecollect-website`
-2. Click **"Settings"** tab
-3. Scroll down to **"Pages"** section (left sidebar)
-4. Under **"Source"**, select **"Deploy from a branch"**
-5. Choose **"main"** branch
-6. Click **"Save"**
+1. Go to your repository on GitHub
+2. Click on "Settings" tab
+3. Scroll down to "Pages" section (in the left sidebar)
+4. Under "Source", select "Deploy from a branch"
+5. Choose "main" branch
+6. Select "/ (root)" folder
+7. Click "Save"
 
-### **Step 4: Add Custom Domain**
+### 4. Configure GitHub Pages Settings
 
-1. In the same **"Pages"** section
-2. Under **"Custom domain"**, enter: `fragrancecollect.com`
-3. Click **"Save"**
-4. Check the box for **"Enforce HTTPS"** (recommended)
+1. Still in Settings → Pages:
+2. Under "Custom domain" (optional):
+   - If you have a custom domain, enter it here
+   - Check "Enforce HTTPS" if using custom domain
+3. Under "Build and deployment":
+   - Source: "Deploy from a branch"
+   - Branch: "main"
+   - Folder: "/ (root)"
 
-### **Step 5: Configure DNS with Your Domain Provider**
+### 5. Wait for Deployment
 
-You need to add these DNS records to your domain provider (GoDaddy, Namecheap, etc.):
+- GitHub will automatically build and deploy your site
+- This usually takes 2-5 minutes
+- You'll see a green checkmark when deployment is complete
 
-#### **For fragrancecollect.com:**
+### 6. Access Your Website
 
+Your website will be available at:
 ```
-Type: CNAME
-Name: www
-Value: YOUR_USERNAME.github.io
-TTL: 3600 (or default)
-
-Type: A
-Name: @ (or leave blank)
-Value: 185.199.108.153
-TTL: 3600
-
-Type: A
-Name: @ (or leave blank)
-Value: 185.199.109.153
-TTL: 3600
-
-Type: A
-Name: @ (or leave blank)
-Value: 185.199.110.153
-TTL: 3600
-
-Type: A
-Name: @ (or leave blank)
-Value: 185.199.111.153
-TTL: 3600
+https://YOUR_USERNAME.github.io/fragrance-collect
 ```
 
-**Replace `YOUR_USERNAME` with your actual GitHub username.**
+## Automatic Deployment
 
-## 🔧 **DNS Configuration by Provider**
+The repository includes a GitHub Actions workflow (`.github/workflows/deploy.yml`) that will automatically deploy your site whenever you push changes to the main branch.
 
-### **GoDaddy**
-1. Login to GoDaddy
-2. Go to **"My Products"** → **"DNS"**
-3. Click **"Manage DNS"** for `fragrancecollect.com`
-4. Add the records above
+## Custom Domain (Optional)
 
-### **Namecheap**
-1. Login to Namecheap
-2. Go to **"Domain List"** → **"Manage"** for `fragrancecollect.com`
-3. Click **"Advanced DNS"**
-4. Add the records above
+If you want to use a custom domain:
 
-### **Google Domains**
-1. Go to Google Domains
-2. Click on `fragrancecollect.com`
-3. Go to **"DNS"** → **"Manage custom records"**
-4. Add the records above
+1. Purchase a domain from a registrar (Namecheap, GoDaddy, etc.)
+2. In your repository Settings → Pages:
+3. Enter your custom domain
+4. Add a `CNAME` file to your repository root with your domain name
+5. Configure DNS settings with your domain provider
 
-## ⏱️ **Timeline**
+## Troubleshooting
 
-- **Repository setup**: 5 minutes
-- **File upload**: 10-15 minutes
-- **GitHub Pages activation**: 2-5 minutes
-- **DNS configuration**: 10-15 minutes
-- **DNS propagation**: 24-48 hours (usually much faster)
+### Common Issues:
 
-## 🎯 **Your Website URLs**
+1. **Site not loading**: Check if the repository is public
+2. **404 errors**: Ensure `main.html` is renamed to `index.html` or set as the default page
+3. **Styling issues**: Check that all CSS and JS files are properly linked
+4. **Images not loading**: Verify image paths are correct
 
-After setup, your website will be available at:
-- **Primary**: `https://fragrancecollect.com`
-- **www version**: `https://www.fragrancecollect.com` (automatic redirect)
-- **GitHub Pages**: `https://YOUR_USERNAME.github.io/fragrancecollect-website`
+### Rename main.html to index.html (Recommended)
 
-## ✅ **Verification Checklist**
+For better compatibility, rename `main.html` to `index.html`:
 
-- [ ] GitHub repository created
-- [ ] All website files uploaded
-- [ ] GitHub Pages enabled
-- [ ] Custom domain added: `fragrancecollect.com`
-- [ ] HTTPS enforced
-- [ ] CNAME file in repository
-- [ ] DNS records configured
-- [ ] Domain propagation complete (24-48 hours)
+```bash
+git mv main.html index.html
+git commit -m "Rename main.html to index.html for better GitHub Pages compatibility"
+git push
+```
 
-## 🆘 **Troubleshooting**
+## Updating Your Website
 
-### **Domain Not Working?**
-1. **Check DNS propagation**: [whatsmydns.net](https://whatsmydns.net)
-2. **Verify DNS records** are correct
-3. **Wait 24-48 hours** for full propagation
-4. **Check GitHub Pages status** in repository settings
+To update your website:
 
-### **HTTPS Not Working?**
-- GitHub Pages automatically provides SSL certificates
-- May take up to 24 hours to activate
-- Make sure "Enforce HTTPS" is checked in repository settings
+```bash
+# Make your changes to the files
+# Then commit and push:
+git add .
+git commit -m "Update website content"
+git push
+```
 
-### **Files Not Showing?**
-- Make sure all files are in the main branch
-- Check that `main.html` is in the root directory
-- Verify file paths are relative (not absolute)
+The changes will automatically deploy to GitHub Pages within a few minutes.
 
-## 🎉 **Success!**
+## Security Headers
 
-Once everything is set up, your Fragrance Collect website will be live at:
-**`https://fragrancecollect.com`**
+Your website already includes security headers in the HTML files, which is great for production deployment.
 
-Your website will have:
-- ✅ Professional custom domain
-- ✅ Automatic HTTPS/SSL
-- ✅ Fast global CDN
-- ✅ Unlimited bandwidth
-- ✅ 24/7 uptime
-- ✅ Mobile-responsive design
+## Performance Tips
 
-**Congratulations! Your luxury fragrance website is now live on the internet!** 
+1. Optimize images before uploading
+2. Minify CSS and JavaScript files
+3. Use CDN links for external resources (already implemented)
+4. Enable compression on your web server
+
+## Support
+
+If you encounter issues:
+1. Check GitHub Pages documentation
+2. Verify your repository settings
+3. Check the Actions tab for deployment logs
+4. Ensure all file paths are correct 
