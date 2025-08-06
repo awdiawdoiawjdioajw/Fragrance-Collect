@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  fragrance-collect:
+    build: .
+    ports:
+      - "8080:80"
+    container_name: fragrance-collect-website
+    restart: unless-stopped
+    volumes:
+      # Optional: Mount for development (uncomment if you want live reloading)
+      # - .:/usr/share/nginx/html:ro
+      - ./logs:/var/log/nginx
+    environment:
+      - NGINX_HOST=localhost
+      - NGINX_PORT=80 

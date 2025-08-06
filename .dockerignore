@@ -1,0 +1,41 @@
+# Git files
+.git/
+.gitignore
+
+# Documentation files
+README.md
+*.md
+
+# PowerShell scripts
+*.ps1
+
+# Batch files
+*.bat
+
+# GitHub workflows
+.github/
+
+# Security files
+security.txt
+SECURITY_SETUP.md
+
+# Deployment files
+DEPLOYMENT.md
+CUSTOM_DOMAIN.md
+NAMECHEAP_DNS_SETUP.md
+GITHUB_PAGES_SETUP.md
+
+# Docker files
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# Reference images (keep only the actual emblem)
+Ref_pic.png
+Ref_img.png
+
+# Development files
+node_modules/
+*.log
+.DS_Store
+Thumbs.db 
