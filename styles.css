@@ -72,6 +72,9 @@ h1, h2, h3, h4, h5, h6 {
     height: 40px;
     object-fit: contain;
     flex-shrink: 0;
+    max-width: 40px;
+    max-height: 40px;
+    display: block;
 }
 
 .nav-logo h2 {
@@ -1221,6 +1224,8 @@ h1, h2, h3, h4, h5, h6 {
     .logo-emblem {
         width: 35px;
         height: 35px;
+        max-width: 35px;
+        max-height: 35px;
     }
 }
 
@@ -1251,6 +1256,8 @@ h1, h2, h3, h4, h5, h6 {
     .logo-emblem {
         width: 30px;
         height: 30px;
+        max-width: 30px;
+        max-height: 30px;
     }
     
     /* Keep navigation menu visible but smaller */
@@ -1487,6 +1494,8 @@ h1, h2, h3, h4, h5, h6 {
     .logo-emblem {
         width: 25px;
         height: 25px;
+        max-width: 25px;
+        max-height: 25px;
     }
     
     .nav-menu {
