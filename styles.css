@@ -67,8 +67,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .logo-emblem {
-    width: 40px;
-    height: 40px;
+    width: 50px;
+    height: 50px;
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
     transition: transform 0.3s ease-in-out;
 }
@@ -1046,8 +1046,8 @@ h1, h2, h3, h4, h5, h6 {
     }
     
     .logo-emblem {
-        width: 35px;
-        height: 35px;
+        width: 45px;
+        height: 45px;
     }
 }
 
@@ -1072,8 +1072,8 @@ h1, h2, h3, h4, h5, h6 {
     }
     
     .logo-emblem {
-        width: 30px;
-        height: 30px;
+        width: 40px;
+        height: 40px;
     }
     
     /* Keep navigation menu visible but smaller */
@@ -1293,8 +1293,8 @@ h1, h2, h3, h4, h5, h6 {
     }
     
     .logo-emblem {
-        width: 25px;
-        height: 25px;
+        width: 35px;
+        height: 35px;
     }
     
     .nav-menu {
