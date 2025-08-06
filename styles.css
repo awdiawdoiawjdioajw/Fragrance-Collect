@@ -53,13 +53,24 @@ h1, h2, h3, h4, h5, h6 {
     margin: 0 auto;
     padding: 0 20px;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
     gap: 1.5rem;
     position: relative;
 }
 
 .nav-logo {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: -10px;
+}
+
+.logo-emblem {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
     flex-shrink: 0;
 }
 
@@ -396,8 +407,179 @@ h1, h2, h3, h4, h5, h6 {
     font-size: 4rem;
     font-weight: 700;
     color: var(--warm-white);
-    margin-bottom: 1rem;
+    margin-bottom: 20px;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    letter-spacing: -0.02em;
+}
+
+.hero-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.hero-title-accent {
+    width: 120px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--antique-gold), #e6c866);
+    margin: 0 auto;
+    border-radius: 2px;
+    position: relative;
+}
+
+.hero-title-accent::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 8px;
+    height: 8px;
+    background: var(--antique-gold);
+    border-radius: 50%;
+}
+
+/* Contact Page Styles */
+.contact-header-content {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.contact-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 3.5rem;
+    font-weight: 700;
+    color: var(--warm-white);
+    margin-bottom: 20px;
+    letter-spacing: -0.02em;
+}
+
+.contact-title-accent {
+    width: 120px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--antique-gold), #e6c866);
+    margin: 0 auto;
+    border-radius: 2px;
+    position: relative;
+}
+
+.contact-title-accent::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 8px;
+    height: 8px;
+    background: var(--antique-gold);
+    border-radius: 50%;
+}
+
+/* Customer Service Page Styles */
+.service-header-content {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.service-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 3.5rem;
+    font-weight: 700;
+    color: var(--warm-white);
+    margin-bottom: 20px;
+    letter-spacing: -0.02em;
+}
+
+.service-title-accent {
+    width: 120px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--antique-gold), #e6c866);
+    margin: 0 auto;
+    border-radius: 2px;
+    position: relative;
+}
+
+.service-title-accent::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 8px;
+    height: 8px;
+    background: var(--antique-gold);
+    border-radius: 50%;
+}
+
+/* Size Guide Page Styles */
+.size-guide-header-content {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.size-guide-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 3.5rem;
+    font-weight: 700;
+    color: var(--warm-white);
+    margin-bottom: 20px;
+    letter-spacing: -0.02em;
+}
+
+.size-guide-title-accent {
+    width: 120px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--antique-gold), #e6c866);
+    margin: 0 auto;
+    border-radius: 2px;
+    position: relative;
+}
+
+.size-guide-title-accent::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 8px;
+    height: 8px;
+    background: var(--antique-gold);
+    border-radius: 50%;
+}
+
+/* Auth Page Styles */
+.auth-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.form-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--warm-white);
+    margin-bottom: 20px;
+    letter-spacing: -0.02em;
+}
+
+.form-title-accent {
+    width: 120px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--antique-gold), #e6c866);
+    margin: 0 auto;
+    border-radius: 2px;
+    position: relative;
+}
+
+.form-title-accent::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 8px;
+    height: 8px;
+    background: var(--antique-gold);
+    border-radius: 50%;
 }
 
 .hero-subtitle {
@@ -1025,10 +1207,20 @@ h1, h2, h3, h4, h5, h6 {
     
     .nav-container {
         gap: 1rem;
+        justify-content: flex-start;
+    }
+    
+    .nav-logo {
+        margin-left: -8px;
     }
     
     .nav-logo h2 {
         font-size: 1.8rem;
+    }
+    
+    .logo-emblem {
+        width: 35px;
+        height: 35px;
     }
 }
 
@@ -1044,12 +1236,21 @@ h1, h2, h3, h4, h5, h6 {
         gap: 1rem;
         /* Keep the same flex layout as desktop */
         display: flex;
-        justify-content: space-between;
+        justify-content: flex-start;
         align-items: center;
+    }
+    
+    .nav-logo {
+        margin-left: -6px;
     }
     
     .nav-logo h2 {
         font-size: 1.3rem;
+    }
+    
+    .logo-emblem {
+        width: 30px;
+        height: 30px;
     }
     
     /* Keep navigation menu visible but smaller */
@@ -1182,6 +1383,16 @@ h1, h2, h3, h4, h5, h6 {
         font-size: 0.9rem;
     }
     
+    .contact-title,
+    .service-title,
+    .size-guide-title {
+        font-size: 2.5rem;
+    }
+    
+    .form-title {
+        font-size: 2rem;
+    }
+    
     .section-title {
         font-size: 1.8rem;
     }
@@ -1261,11 +1472,21 @@ h1, h2, h3, h4, h5, h6 {
     
     .nav-container {
         padding: 0 10px;
-        gap: 0.6rem;
+        gap: 0.8rem;
+        justify-content: flex-start;
+    }
+    
+    .nav-logo {
+        margin-left: -4px;
     }
     
     .nav-logo h2 {
-        font-size: 1rem;
+        font-size: 1.1rem;
+    }
+    
+    .logo-emblem {
+        width: 25px;
+        height: 25px;
     }
     
     .nav-menu {
@@ -1331,6 +1552,16 @@ h1, h2, h3, h4, h5, h6 {
     
     .hero-subtitle {
         font-size: 0.8rem;
+    }
+    
+    .contact-title,
+    .service-title,
+    .size-guide-title {
+        font-size: 2rem;
+    }
+    
+    .form-title {
+        font-size: 1.8rem;
     }
     
     .section-title {

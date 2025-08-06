@@ -135,15 +135,33 @@
 
 .form-title {
     font-family: 'Playfair Display', serif;
-    font-size: 2.2rem;
-    font-weight: 600;
+    font-size: 2.5rem;
+    font-weight: 700;
     color: var(--warm-white);
+    margin-bottom: 20px;
     text-align: center;
-    margin-bottom: 0.5rem;
-    background: linear-gradient(135deg, var(--warm-white) 0%, var(--antique-gold) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    letter-spacing: -0.02em;
+}
+
+.form-title-accent {
+    width: 120px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--antique-gold), #e6c866);
+    margin: 0 auto;
+    border-radius: 2px;
+    position: relative;
+}
+
+.form-title-accent::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 8px;
+    height: 8px;
+    background: var(--antique-gold);
+    border-radius: 50%;
 }
 
 .form-subtitle {
