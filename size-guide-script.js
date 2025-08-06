@@ -317,7 +317,7 @@ document.addEventListener('DOMContentLoaded', function() {
         searchBtn.addEventListener('click', function() {
             const query = searchInput.value.trim();
             if (query) {
-                window.location.href = `index.html?search=${encodeURIComponent(query)}`;
+                window.location.href = `main.html?search=${encodeURIComponent(query)}`;
             }
         });
         
@@ -325,7 +325,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (e.key === 'Enter') {
                 const query = this.value.trim();
                 if (query) {
-                    window.location.href = `index.html?search=${encodeURIComponent(query)}`;
+                    window.location.href = `main.html?search=${encodeURIComponent(query)}`;
                 }
             }
         });

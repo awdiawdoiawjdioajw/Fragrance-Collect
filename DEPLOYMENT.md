@@ -80,7 +80,7 @@ Your website will be available at:
    ```
 3. Follow the prompts:
    - Select your project
-   - Use `index.html` as public directory
+   - Use `main.html` as public directory
    - Configure as single-page app: No
 4. Deploy:
    ```bash

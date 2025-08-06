@@ -23,7 +23,7 @@ www.fragrancecollect.com
 
 ### **Step 3: Force HTTPS Redirects**
 
-I've already added HTTPS enforcement to your `index.html`. The script will automatically redirect HTTP to HTTPS.
+I've already added HTTPS enforcement to your `main.html`. The script will automatically redirect HTTP to HTTPS.
 
 ## 🛡️ **Security Headers Added**
 

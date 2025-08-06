@@ -1,66 +1,4 @@
-// Sliding Panel Functionality - Hover-based
-function initSlidingPanel() {
-    const panelTrigger = document.querySelector('.sliding-panel-trigger');
-    const slidingPanel = document.getElementById('sliding-panel');
-    const panelOverlay = document.getElementById('panel-overlay');
-    const panelCloseBtn = document.querySelector('.panel-close-btn');
-    const panelLinks = document.querySelectorAll('.panel-link');
 
-    // Hover events for the trigger
-    if (panelTrigger) {
-        panelTrigger.addEventListener('mouseenter', function() {
-            slidingPanel.classList.add('active');
-            panelOverlay.classList.add('active');
-        });
-
-        panelTrigger.addEventListener('mouseleave', function(e) {
-            // Check if mouse is still over the panel or trigger
-            const relatedTarget = e.relatedTarget;
-            if (!slidingPanel.contains(relatedTarget) && !panelTrigger.contains(relatedTarget)) {
-                closePanel();
-            }
-        });
-    }
-
-    // Hover events for the panel itself
-    if (slidingPanel) {
-        slidingPanel.addEventListener('mouseenter', function() {
-            slidingPanel.classList.add('active');
-            panelOverlay.classList.add('active');
-        });
-
-        slidingPanel.addEventListener('mouseleave', function() {
-            closePanel();
-        });
-    }
-
-    // Close panel with close button
-    if (panelCloseBtn) {
-        panelCloseBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            closePanel();
-        });
-    }
-
-    // Close panel when clicking on links
-    panelLinks.forEach(link => {
-        link.addEventListener('click', function() {
-            closePanel();
-        });
-    });
-
-    // Close panel with Escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && slidingPanel.classList.contains('active')) {
-            closePanel();
-        }
-    });
-
-    function closePanel() {
-        slidingPanel.classList.remove('active');
-        panelOverlay.classList.remove('active');
-    }
-}
 
 // Mock perfume data
 const perfumeData = [
@@ -193,7 +131,6 @@ function initializeApp() {
     initializeExistingFeatures();
     initHamburgerMenu();
     initModal();
-    initSlidingPanel(); // Initialize sliding panel
 }
 
 // Display products in the grid

@@ -65,7 +65,7 @@ A luxury fragrance e-commerce website showcasing premium fragrances and collecti
 
 ```
 Roman Website/
-├── index.html              # Main homepage
+├── main.html              # Main homepage
 ├── contact.html            # Contact page
 ├── auth.html              # Authentication page
 ├── customer-service.html   # Customer service page
@@ -91,7 +91,7 @@ Roman Website/
 To run the website locally:
 
 1. Clone or download the repository
-2. Open `index.html` in your web browser
+2. Open `main.html` in your web browser
 3. Or use a local server:
    ```bash
    # Using Python

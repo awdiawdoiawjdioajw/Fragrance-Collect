@@ -19,7 +19,7 @@ This guide will help you deploy your Fragrance Collect website to GitHub Pages w
 2. Install and sign in with your GitHub account
 3. Click **"Clone a repository"** → Select your new `fragrancecollect-website` repository
 4. Copy **ALL** your website files into the cloned folder:
-   - `index.html`
+   - `main.html`
    - `contact.html`
    - `auth.html`
    - `customer-service.html`
@@ -157,7 +157,7 @@ After setup, your website will be available at:
 
 ### **Files Not Showing?**
 - Make sure all files are in the main branch
-- Check that `index.html` is in the root directory
+- Check that `main.html` is in the root directory
 - Verify file paths are relative (not absolute)
 
 ## 🎉 **Success!**
