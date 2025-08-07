@@ -13,7 +13,38 @@ let cjProducts = [];
 let filteredPerfumes = [];
 
 // Allow overriding the API base URL (for Cloudflare Worker)
-const API_BASE = (typeof window !== 'undefined' && window.API_BASE) ? window.API_BASE : '/api';
+const API_ROOT = ((typeof window !== 'undefined' && window.API_BASE) ? window.API_BASE : '/api').replace(/\/+$/, '');
+
+function showStatusMessage(message, isError = false) {
+    const grid = document.getElementById('products-grid');
+    const noResults = document.getElementById('no-results');
+    if (grid) grid.innerHTML = '';
+    if (noResults) {
+        noResults.style.display = 'block';
+        noResults.innerHTML = `<p>${message}</p>`;
+        noResults.style.color = isError ? '#ffb4b4' : '';
+    }
+}
+
+function showLoading() { showStatusMessage('Loading products...'); }
+function hideLoading() {
+    const noResults = document.getElementById('no-results');
+    if (noResults) noResults.style.display = 'none';
+}
+
+async function checkApiHealth() {
+    try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 6000);
+        const res = await fetch(`${API_ROOT}/health`, { signal: controller.signal });
+        clearTimeout(timer);
+        if (!res.ok) return false;
+        const data = await res.json().catch(() => ({}));
+        return (data && (data.status === 'ok' || data.ok === true));
+    } catch (_) {
+        return false;
+    }
+}
 
 function normalizeShippingLocal(cost, shippingField) {
     if (typeof cost === 'string' && cost.trim().toLowerCase() === 'free') return 0;
@@ -27,7 +58,7 @@ function normalizeShippingLocal(cost, shippingField) {
 }
 
 async function fetchCJProducts(query = '') {
-    const url = `${API_BASE}/products${query ? `?q=${encodeURIComponent(query)}` : ''}`;
+    const url = `${API_ROOT}/products${query ? `?q=${encodeURIComponent(query)}` : ''}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`CJ fetch failed (${res.status})`);
     const data = await res.json();
@@ -117,11 +148,22 @@ async function loadCJProductsMulti(queries) {
 
 // Initialize the application
 async function initializeApp() {
+    showLoading();
+    const healthy = await checkApiHealth();
+    if (!healthy) {
+        showStatusMessage('Backend API is unreachable. Please confirm your Cloudflare Worker URL and secrets.', true);
+        return;
+    }
     await loadCJProducts('perfume fragrance cologne');
     if (!cjProducts.length) {
         await loadCJProductsMulti(['perfume','cologne','eau de parfum','eau de toilette']);
     }
     filteredPerfumes = [...cjProducts];
+    if (!filteredPerfumes.length) {
+        showStatusMessage('No products found yet. Try a different search or confirm CJ.com has joined advertisers.', true);
+        return;
+    }
+    hideLoading();
     displayProducts(filteredPerfumes);
     displayTopRated();
     populateBrandFilter();
