@@ -63,9 +63,12 @@ ehthumbs.db
 Thumbs.db
 
 # Logs
-logs
+logs/
 *.log
 
 # Temporary files
 tmp/
 temp/ 
+
+# Do not commit backend proxy code or secrets
+api/
