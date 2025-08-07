@@ -14,3 +14,15 @@ services:
     environment:
       - NGINX_HOST=localhost
       - NGINX_PORT=80 
+    depends_on:
+      - api
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: fragrance-collect-api
+    environment:
+      - CJ_DEV_KEY=${CJ_DEV_KEY}
+      - CJ_WEBSITE_ID=${CJ_WEBSITE_ID}
+    restart: unless-stopped

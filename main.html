@@ -20,6 +20,8 @@
         if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
             location.replace(`https:${location.href.substring(location.protocol.length)}`);
         }
+        // Use Cloudflare Worker API
+        window.API_BASE = 'https://weathered-mud-6ed5.joshuablaszczyk.workers.dev';
     </script>
 </head>
 <body>
@@ -127,6 +129,19 @@
                 </div>
                 
                 <div class="filter-group">
+                    <label for="shipping-filter" class="filter-label">Shipping</label>
+                    <select id="shipping-filter" class="filter-select">
+                        <option value="">All Shipping</option>
+                        <option value="free">Free shipping</option>
+                        <option value="0-5">$0 - $5</option>
+                        <option value="5-10">$5 - $10</option>
+                        <option value="10-20">$10 - $20</option>
+                        <option value="20+">$20+</option>
+                        <option value="unknown">Unknown</option>
+                    </select>
+                 </div>
+
+                 <div class="filter-group">
                     <label for="price-filter" class="filter-label">Price Range</label>
                     <select id="price-filter" class="filter-select">
                         <option value="">All Prices</option>

@@ -1,130 +1,59 @@
-
-
-// Mock perfume data
-const perfumeData = [
-    {
-        id: 1,
-        name: "Midnight Rose",
-        brand: "Maison de Luxe",
-        price: 285,
-        rating: 4.9,
-        image: "https://images.unsplash.com/photo-1541643600914-78b084683601?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
-        description: "A sophisticated blend of dark roses and midnight jasmine"
-    },
-    {
-        id: 2,
-        name: "Vanilla Dreams",
-        brand: "Parfum Élégant",
-        price: 320,
-        rating: 4.8,
-        image: "https://images.unsplash.com/photo-1587017539504-67cfbddac569?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
-        description: "Luxurious vanilla with hints of caramel and sandalwood"
-    },
-    {
-        id: 3,
-        name: "Ocean Breeze",
-        brand: "Aqua Fragrances",
-        price: 195,
-        rating: 4.2,
-        image: "https://images.unsplash.com/photo-1592945403244-b3faa5b613b0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
-        description: "Fresh oceanic notes with marine accords"
-    },
-    {
-        id: 4,
-        name: "Golden Amber",
-        brand: "Oriental Scents",
-        price: 450,
-        rating: 4.7,
-        image: "https://images.unsplash.com/photo-1615639164213-aab04da93c7c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
-        description: "Rich amber with golden spices and oud"
-    },
-    {
-        id: 5,
-        name: "Lavender Fields",
-        brand: "Provence Parfums",
-        price: 165,
-        rating: 4.3,
-        image: "https://images.unsplash.com/photo-1588405748880-12d1d1a6d4a1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
-        description: "Pure lavender essence from Provence fields"
-    },
-    {
-        id: 6,
-        name: "Mystic Woods",
-        brand: "Forest Essence",
-        price: 380,
-        rating: 4.6,
-        image: "https://images.unsplash.com/photo-1590736969955-71cc94901354?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
-        description: "Deep forest notes with moss and cedar"
-    },
-    {
-        id: 7,
-        name: "Royal Jasmine",
-        brand: "Maison de Luxe",
-        price: 520,
-        rating: 4.9,
-        image: "https://images.unsplash.com/photo-1587017539504-67cfbddac569?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
-        description: "Exquisite jasmine with royal oud and musk"
-    },
-    {
-        id: 8,
-        name: "Citrus Sunrise",
-        brand: "Aqua Fragrances",
-        price: 180,
-        rating: 4.1,
-        image: "https://images.unsplash.com/photo-1592945403244-b3faa5b613b0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
-        description: "Bright citrus blend with morning dew"
-    },
-    {
-        id: 9,
-        name: "Velvet Orchid",
-        brand: "Oriental Scents",
-        price: 395,
-        rating: 4.5,
-        image: "https://images.unsplash.com/photo-1615639164213-aab04da93c7c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
-        description: "Luxurious orchid with velvet undertones"
-    },
-    {
-        id: 10,
-        name: "Sandalwood Serenity",
-        brand: "Forest Essence",
-        price: 275,
-        rating: 4.4,
-        image: "https://images.unsplash.com/photo-1590736969955-71cc94901354?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
-        description: "Peaceful sandalwood with meditation notes"
-    },
-    {
-        id: 11,
-        name: "Rose Garden",
-        brand: "Provence Parfums",
-        price: 220,
-        rating: 4.3,
-        image: "https://images.unsplash.com/photo-1588405748880-12d1d1a6d4a1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
-        description: "Romantic rose garden in full bloom"
-    },
-    {
-        id: 12,
-        name: "Diamond Dust",
-        brand: "Maison de Luxe",
-        price: 650,
-        rating: 5.0,
-        image: "https://images.unsplash.com/photo-1587017539504-67cfbddac569?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
-        description: "Exclusive diamond-infused fragrance"
-    }
-];
+// Live data only: populated from CJ via Cloudflare Worker
 
 // Global variables
 let currentFilters = {
     brand: '',
     priceRange: '',
     rating: '',
+    shipping: '',
     search: ''
 };
 
-let filteredPerfumes = [...perfumeData];
+let cjProducts = [];
+let filteredPerfumes = [];
+
+// Allow overriding the API base URL (for Cloudflare Worker)
+const API_BASE = (typeof window !== 'undefined' && window.API_BASE) ? window.API_BASE : '/api';
+
+async function loadCJProducts(query = '') {
+    try {
+        const url = `${API_BASE}/products${query ? `?q=${encodeURIComponent(query)}` : ''}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Failed to load CJ products');
+        const data = await res.json();
+        cjProducts = (data.products || []).map(p => ({
+            id: p.id,
+            name: p.name,
+            brand: p.brand || 'Unknown',
+            price: p.price || 0,
+            rating: p.rating || 0,
+            image: p.image,
+            description: p.description || '',
+            buyUrl: p.cjLink,
+            shippingCost: typeof p.shippingCost === 'number' ? p.shippingCost : null,
+            isReal: true
+        }));
+
+        // Prefer free shipping on price ties, then lowest price
+        cjProducts.sort((a, b) => {
+            if (a.price === b.price) {
+                const aFree = a.shippingCost === 0 ? 1 : 0;
+                const bFree = b.shippingCost === 0 ? 1 : 0;
+                return bFree - aFree;
+            }
+            return a.price - b.price;
+        });
+    } catch (e) {
+        console.error('CJ load failed:', e);
+        cjProducts = [];
+    }
+}
 
 // Initialize the application
-function initializeApp() {
-    displayProducts(perfumeData);
+async function initializeApp() {
+    await loadCJProducts();
+    filteredPerfumes = [...cjProducts];
+    displayProducts(filteredPerfumes);
     displayTopRated();
     populateBrandFilter();
     addEventListeners();
@@ -152,7 +81,7 @@ function displayProducts(perfumes) {
     
     // Show search results count if there's an active search
     if (currentFilters.search && searchResultsInfo) {
-        const totalProducts = perfumeData.length;
+        const totalProducts = cjProducts.length;
         const foundProducts = perfumes.length;
         searchResultsInfo.innerHTML = `
             <p>Found ${foundProducts} of ${totalProducts} fragrances for "${currentFilters.search}"</p>
@@ -170,7 +99,7 @@ function displayTopRated() {
     const topRatedGrid = document.getElementById('top-rated-grid');
     if (!topRatedGrid) return;
     
-    const topRated = perfumeData
+    const topRated = [...cjProducts]
         .sort((a, b) => b.rating - a.rating)
         .slice(0, 4);
     
@@ -178,14 +107,21 @@ function displayTopRated() {
 }
 
 // Create product card HTML
+function formatShipping(perfume) {
+    if (perfume.shippingCost === 0) return { text: 'Free shipping', cls: 'free' };
+    if (typeof perfume.shippingCost === 'number') return { text: `$${perfume.shippingCost.toFixed(2)} shipping`, cls: '' };
+    return { text: 'Unknown shipping', cls: 'unknown' };
+}
+
 function createProductCard(perfume) {
     const stars = generateStars(perfume.rating);
+    const shipping = formatShipping(perfume);
     return `
         <div class="product-card" data-id="${perfume.id}" data-brand="${perfume.brand.toLowerCase().replace(/\s+/g, '-')}" data-price="${perfume.price}" data-rating="${perfume.rating}">
             <div class="product-image">
                 <img src="${perfume.image}" alt="${perfume.name}">
                 <div class="product-overlay">
-                    <button class="view-details-btn" data-perfume-id="${perfume.id}">View Details</button>
+                    ${perfume.buyUrl ? `<a class="view-details-btn" href="${perfume.buyUrl}" target="_blank" rel="nofollow sponsored noopener">Buy Now</a>` : `<button class=\"view-details-btn\" data-perfume-id=\"${perfume.id}\">View Details</button>`}
                 </div>
             </div>
             <div class="product-info">
@@ -195,7 +131,10 @@ function createProductCard(perfume) {
                     ${stars}
                     <span class="rating-text">(${perfume.rating})</span>
                 </div>
-                <p class="product-price">$${perfume.price}</p>
+                <div class="product-price-container">
+                    <p class="product-price">$${perfume.price}</p>
+                    <span class="shipping-badge ${shipping.cls}">${shipping.text}</span>
+                </div>
             </div>
         </div>
     `;
@@ -228,7 +167,8 @@ function populateBrandFilter() {
     const brandFilter = document.getElementById('brand-filter');
     if (!brandFilter) return;
     
-    const brands = [...new Set(perfumeData.map(perfume => perfume.brand))];
+    brandFilter.innerHTML = '<option value="">All Brands</option>';
+    const brands = [...new Set(cjProducts.map(perfume => perfume.brand))].filter(Boolean).sort();
     brands.forEach(brand => {
         const option = document.createElement('option');
         option.value = brand.toLowerCase().replace(/\s+/g, '-');
@@ -243,6 +183,7 @@ function addEventListeners() {
     const brandFilter = document.getElementById('brand-filter');
     const priceFilter = document.getElementById('price-filter');
     const ratingFilter = document.getElementById('rating-filter');
+    const shippingFilter = document.getElementById('shipping-filter');
     const clearFiltersBtn = document.getElementById('clear-filters');
     const mainSearch = document.getElementById('main-search');
     const searchBtn = document.querySelector('.search-btn');
@@ -258,6 +199,9 @@ function addEventListeners() {
     
     if (ratingFilter) {
         ratingFilter.addEventListener('change', applyFilters);
+    }
+    if (shippingFilter) {
+        shippingFilter.addEventListener('change', applyFilters);
     }
     
     if (clearFiltersBtn) {
@@ -335,14 +279,17 @@ function addEventListeners() {
     
     // Product card event listeners
     document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('view-details-btn')) {
-            e.preventDefault();
-            const perfumeId = parseInt(e.target.getAttribute('data-perfume-id'));
-            const perfume = perfumeData.find(p => p.id === perfumeId);
-            
-            if (perfume) {
-                showPerfumeDetails(perfume);
+        const target = e.target;
+        if (target.classList.contains('view-details-btn')) {
+            const idAttr = target.getAttribute('data-perfume-id');
+            if (idAttr) {
+                e.preventDefault();
+                const perfume = cjProducts.find(p => String(p.id) === String(idAttr));
+                if (perfume) {
+                    showPerfumeDetails(perfume);
+                }
             }
+            // If no data-perfume-id, this is a Buy Now link; allow default navigation
         }
     });
 }
@@ -352,19 +299,42 @@ function applyFilters() {
     const brandFilter = document.getElementById('brand-filter');
     const priceFilter = document.getElementById('price-filter');
     const ratingFilter = document.getElementById('rating-filter');
+    const shippingFilter = document.getElementById('shipping-filter');
     
     currentFilters.brand = brandFilter ? brandFilter.value : '';
     currentFilters.priceRange = priceFilter ? priceFilter.value : '';
     currentFilters.rating = ratingFilter ? ratingFilter.value : '';
+    currentFilters.shipping = shippingFilter ? shippingFilter.value : '';
     
     filterPerfumes();
 }
 
 // Filter perfumes based on current filters
+function matchesShipping(perfume, filterVal) {
+    if (!filterVal) return true;
+    const cost = typeof perfume.shippingCost === 'number' ? perfume.shippingCost : null;
+    switch (filterVal) {
+        case 'free':
+            return cost === 0;
+        case 'unknown':
+            return cost === null;
+        case '20+':
+            return cost !== null && cost >= 20;
+        default: {
+            const [minStr, maxStr] = filterVal.split('-');
+            const min = Number(minStr);
+            const max = maxStr ? Number(maxStr) : null;
+            if (cost === null) return false;
+            if (max === null) return cost >= min;
+            return cost >= min && cost <= max;
+        }
+    }
+}
+
 function filterPerfumes() {
-    filteredPerfumes = perfumeData.filter(perfume => {
+    filteredPerfumes = cjProducts.filter(perfume => {
         // Brand filter
-        if (currentFilters.brand && perfume.brand !== currentFilters.brand) {
+        if (currentFilters.brand && perfume.brand.toLowerCase().replace(/\s+/g, '-') !== currentFilters.brand) {
             return false;
         }
         
@@ -385,6 +355,10 @@ function filterPerfumes() {
                 return false;
             }
         }
+        // Shipping filter
+        if (!matchesShipping(perfume, currentFilters.shipping)) {
+            return false;
+        }
         
         // Search filter
         if (currentFilters.search) {
@@ -401,83 +375,63 @@ function filterPerfumes() {
         return true;
     });
     
+    // Sort with free shipping priority on price ties
+    filteredPerfumes.sort((a, b) => {
+        if (a.price === b.price) {
+            const aFree = a.shippingCost === 0 ? 1 : 0;
+            const bFree = b.shippingCost === 0 ? 1 : 0;
+            return bFree - aFree;
+        }
+        return a.price - b.price;
+    });
+
     displayProducts(filteredPerfumes);
 }
 
 // Filter by collection type
 function filterByCollection(collectionTitle) {
     // Clear existing filters
-    currentFilters = {
-        brand: '',
-        priceRange: '',
-        rating: '',
-        search: ''
-    };
-    
+    currentFilters = { brand: '', priceRange: '', rating: '', shipping: '', search: '' };
+
     // Reset filter dropdowns
     const brandFilter = document.getElementById('brand-filter');
     const priceFilter = document.getElementById('price-filter');
     const ratingFilter = document.getElementById('rating-filter');
+    const shippingFilter = document.getElementById('shipping-filter');
     const mainSearch = document.getElementById('main-search');
-    
     if (brandFilter) brandFilter.value = '';
     if (priceFilter) priceFilter.value = '';
     if (ratingFilter) ratingFilter.value = '';
+    if (shippingFilter) shippingFilter.value = '';
     if (mainSearch) mainSearch.value = '';
-    
+
     // Filter based on collection type
     let filteredResults = [];
-    
-    switch(collectionTitle) {
+    switch (collectionTitle) {
         case 'Evening Luxury':
-            // Filter for sophisticated, luxury fragrances (higher price, higher rating)
-            filteredResults = perfumeData.filter(perfume => 
-                perfume.price >= 200 && perfume.rating >= 4.0
-            );
+            filteredResults = cjProducts.filter(p => p.price >= 200 && p.rating >= 4.0);
             break;
         case 'Fresh & Floral':
-            // Filter for fresh, floral fragrances (look for keywords in description)
-            filteredResults = perfumeData.filter(perfume => 
-                perfume.description.toLowerCase().includes('fresh') ||
-                perfume.description.toLowerCase().includes('floral') ||
-                perfume.description.toLowerCase().includes('light') ||
-                perfume.description.toLowerCase().includes('spring')
-            );
+            filteredResults = cjProducts.filter(p => (p.description || '').toLowerCase().match(/fresh|floral|light|spring/));
             break;
         case 'Rare Finds':
-            // Filter for exclusive, limited edition fragrances (higher price, unique brands)
-            filteredResults = perfumeData.filter(perfume => 
-                perfume.price >= 300 || 
-                perfume.description.toLowerCase().includes('exclusive') ||
-                perfume.description.toLowerCase().includes('limited') ||
-                perfume.description.toLowerCase().includes('rare')
-            );
+            filteredResults = cjProducts.filter(p => p.price >= 300 || (p.description || '').toLowerCase().match(/exclusive|limited|rare/));
             break;
         case 'Artisan Creations':
-            // Filter for handcrafted, artisan fragrances
-            filteredResults = perfumeData.filter(perfume => 
-                perfume.description.toLowerCase().includes('artisan') ||
-                perfume.description.toLowerCase().includes('handcrafted') ||
-                perfume.description.toLowerCase().includes('master') ||
-                perfume.description.toLowerCase().includes('crafted')
-            );
+            filteredResults = cjProducts.filter(p => (p.description || '').toLowerCase().match(/artisan|handcrafted|master|crafted/));
             break;
         default:
-            filteredResults = [...perfumeData];
+            filteredResults = [...cjProducts];
     }
-    
-    // Update the display
+
     filteredPerfumes = filteredResults;
     displayProducts(filteredPerfumes);
-    
-    // Show collection filter message
+
     const searchResultsInfo = document.getElementById('search-results-info');
     if (searchResultsInfo) {
-        const totalProducts = perfumeData.length;
+        const totalProducts = cjProducts.length;
         const foundProducts = filteredResults.length;
-        searchResultsInfo.innerHTML = `
-            <p>Showing ${foundProducts} of ${totalProducts} fragrances in "${collectionTitle}" collection</p>
-        `;
+        searchResultsInfo.innerHTML = `<p>Showing ${foundProducts} of ${totalProducts} fragrances in "${collectionTitle}" collection</p>`;
         searchResultsInfo.style.display = 'block';
     }
 }
@@ -487,21 +441,18 @@ function clearFilters() {
     const brandFilter = document.getElementById('brand-filter');
     const priceFilter = document.getElementById('price-filter');
     const ratingFilter = document.getElementById('rating-filter');
+    const shippingFilter = document.getElementById('shipping-filter');
     const mainSearch = document.getElementById('main-search');
     
     if (brandFilter) brandFilter.value = '';
     if (priceFilter) priceFilter.value = '';
     if (ratingFilter) ratingFilter.value = '';
+    if (shippingFilter) shippingFilter.value = '';
     if (mainSearch) mainSearch.value = '';
     
-    currentFilters = {
-        brand: '',
-        priceRange: '',
-        rating: '',
-        search: ''
-    };
+    currentFilters = { brand: '', priceRange: '', rating: '', shipping: '', search: '' };
     
-    filteredPerfumes = [...perfumeData];
+    filteredPerfumes = [...cjProducts];
     displayProducts(filteredPerfumes);
 }
 
@@ -512,13 +463,15 @@ function performSearch() {
     
     const searchTerm = searchInput.value.trim();
     currentFilters.search = searchTerm;
+    // Always reload from CJ with query
+    loadCJProducts(searchTerm).then(() => {
+        filterPerfumes();
+    });
     
     // Scroll to shop section if search is performed and we're not already there
     if (searchTerm && !isElementInViewport(document.getElementById('shop'))) {
         document.getElementById('shop').scrollIntoView({ behavior: 'smooth' });
     }
-    
-    filterPerfumes();
     
     // Add visual feedback for search
     if (searchTerm) {
@@ -616,6 +569,7 @@ function showPerfumeDetails(perfume) {
     const modalRating = document.getElementById('modal-perfume-rating');
     const modalDescription = document.getElementById('modal-perfume-description');
     const modalPrice = document.getElementById('modal-perfume-price');
+    const modalBtn = document.querySelector('.modal-btn');
     
     if (modal && modalImage && modalName && modalBrand && modalRating && modalDescription && modalPrice) {
         modalImage.src = perfume.image;
@@ -623,8 +577,17 @@ function showPerfumeDetails(perfume) {
         modalName.textContent = perfume.name;
         modalBrand.textContent = perfume.brand;
         modalRating.innerHTML = generateStars(perfume.rating) + ` <span class="rating-text">(${perfume.rating})</span>`;
-        modalDescription.textContent = perfume.description;
+        modalDescription.textContent = perfume.description || '';
         modalPrice.textContent = `$${perfume.price}`;
+        if (modalBtn) {
+            if (perfume.buyUrl) {
+                modalBtn.textContent = 'Buy from retailer';
+                modalBtn.onclick = () => window.open(perfume.buyUrl, '_blank', 'noopener');
+                modalBtn.style.display = 'inline-block';
+            } else {
+                modalBtn.style.display = 'none';
+            }
+        }
         
         modal.style.display = 'flex';
     }

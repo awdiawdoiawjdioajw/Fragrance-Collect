@@ -1107,6 +1107,26 @@ h1, h2, h3, h4, h5, h6 {
     gap: 0.5rem;
 }
 
+/* Shipping badges and price block */
+.shipping-badge {
+    display: inline-block;
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 10px;
+    margin-top: 6px;
+    background: rgba(255,255,255,0.06);
+}
+.shipping-badge.free {
+    background: #2e7d32;
+    color: #fff;
+}
+.shipping-badge.unknown {
+    background: #616161;
+    color: #fff;
+}
+.product-price-container { display: flex; align-items: center; gap: 10px; }
+.product-shipping { font-size: 13px; color: #ccc; }
+
 .filter-label {
     color: var(--antique-gold);
     font-weight: 600;

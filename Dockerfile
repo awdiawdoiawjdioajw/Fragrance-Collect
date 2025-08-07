@@ -8,6 +8,7 @@ RUN mkdir -p /var/log/nginx
 COPY nginx.conf /etc/nginx/nginx.conf
 
 # Copy the website files to the Nginx html directory
+# Copy only frontend assets (exclude backend API code)
 COPY . /usr/share/nginx/html/
 
 # Expose port 80

@@ -30,6 +30,9 @@ Dockerfile
 .dockerignore
 docker-compose.yml
 
+# Local logs
+logs/
+
 # Reference images (keep only the actual emblem)
 Ref_pic.png
 Ref_img.png
