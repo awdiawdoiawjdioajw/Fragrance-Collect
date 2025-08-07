@@ -15,43 +15,64 @@ let filteredPerfumes = [];
 // Allow overriding the API base URL (for Cloudflare Worker)
 const API_BASE = (typeof window !== 'undefined' && window.API_BASE) ? window.API_BASE : '/api';
 
+async function fetchCJProducts(query = '') {
+    const url = `${API_BASE}/products${query ? `?q=${encodeURIComponent(query)}` : ''}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`CJ fetch failed (${res.status})`);
+    const data = await res.json();
+    const items = (data.products || []).map(p => ({
+        id: p.id,
+        name: p.name,
+        brand: p.brand || 'Unknown',
+        price: p.price || 0,
+        rating: p.rating || 0,
+        image: p.image,
+        description: p.description || '',
+        buyUrl: p.cjLink,
+        shippingCost: typeof p.shippingCost === 'number' ? p.shippingCost : null,
+        isReal: true
+    }));
+    return items;
+}
+
+function sortWithFreeShippingPriority(list) {
+    return list.sort((a, b) => {
+        if (a.price === b.price) {
+            const aFree = a.shippingCost === 0 ? 1 : 0;
+            const bFree = b.shippingCost === 0 ? 1 : 0;
+            return bFree - aFree;
+        }
+        return a.price - b.price;
+    });
+}
+
 async function loadCJProducts(query = '') {
     try {
-        const url = `${API_BASE}/products${query ? `?q=${encodeURIComponent(query)}` : ''}`;
-        const res = await fetch(url);
-        if (!res.ok) throw new Error('Failed to load CJ products');
-        const data = await res.json();
-        cjProducts = (data.products || []).map(p => ({
-            id: p.id,
-            name: p.name,
-            brand: p.brand || 'Unknown',
-            price: p.price || 0,
-            rating: p.rating || 0,
-            image: p.image,
-            description: p.description || '',
-            buyUrl: p.cjLink,
-            shippingCost: typeof p.shippingCost === 'number' ? p.shippingCost : null,
-            isReal: true
-        }));
-
-        // Prefer free shipping on price ties, then lowest price
-        cjProducts.sort((a, b) => {
-            if (a.price === b.price) {
-                const aFree = a.shippingCost === 0 ? 1 : 0;
-                const bFree = b.shippingCost === 0 ? 1 : 0;
-                return bFree - aFree;
-            }
-            return a.price - b.price;
-        });
+        const items = await fetchCJProducts(query);
+        cjProducts = sortWithFreeShippingPriority(items);
     } catch (e) {
         console.error('CJ load failed:', e);
         cjProducts = [];
     }
 }
 
+async function loadCJProductsMulti(queries) {
+    const results = await Promise.allSettled(queries.map(q => fetchCJProducts(q)));
+    const map = new Map();
+    results.forEach(r => {
+        if (r.status === 'fulfilled' && Array.isArray(r.value)) {
+            r.value.forEach(p => map.set(p.id, p));
+        }
+    });
+    cjProducts = sortWithFreeShippingPriority(Array.from(map.values()));
+}
+
 // Initialize the application
 async function initializeApp() {
-    await loadCJProducts();
+    await loadCJProducts('perfume fragrance cologne');
+    if (!cjProducts.length) {
+        await loadCJProductsMulti(['perfume','cologne','eau de parfum','eau de toilette']);
+    }
     filteredPerfumes = [...cjProducts];
     displayProducts(filteredPerfumes);
     displayTopRated();
@@ -389,7 +410,7 @@ function filterPerfumes() {
 }
 
 // Filter by collection type
-function filterByCollection(collectionTitle) {
+async function filterByCollection(collectionTitle) {
     // Clear existing filters
     currentFilters = { brand: '', priceRange: '', rating: '', shipping: '', search: '' };
 
@@ -405,24 +426,20 @@ function filterByCollection(collectionTitle) {
     if (shippingFilter) shippingFilter.value = '';
     if (mainSearch) mainSearch.value = '';
 
-    // Filter based on collection type
-    let filteredResults = [];
-    switch (collectionTitle) {
-        case 'Evening Luxury':
-            filteredResults = cjProducts.filter(p => p.price >= 200 && p.rating >= 4.0);
-            break;
-        case 'Fresh & Floral':
-            filteredResults = cjProducts.filter(p => (p.description || '').toLowerCase().match(/fresh|floral|light|spring/));
-            break;
-        case 'Rare Finds':
-            filteredResults = cjProducts.filter(p => p.price >= 300 || (p.description || '').toLowerCase().match(/exclusive|limited|rare/));
-            break;
-        case 'Artisan Creations':
-            filteredResults = cjProducts.filter(p => (p.description || '').toLowerCase().match(/artisan|handcrafted|master|crafted/));
-            break;
-        default:
-            filteredResults = [...cjProducts];
+    // Live themed fetch
+    const themedQueries = {
+        'Evening Luxury': ['luxury perfume', 'amber oud night', 'evening cologne'],
+        'Fresh & Floral': ['fresh floral perfume', 'jasmine rose citrus', 'spring fragrance'],
+        'Rare Finds': ['exclusive limited niche perfume', 'rare niche fragrance'],
+        'Artisan Creations': ['artisan handcrafted indie perfume', 'small batch fragrance']
+    };
+    const q = themedQueries[collectionTitle];
+    if (q) {
+        await loadCJProductsMulti(q);
+    } else {
+        await loadCJProducts('perfume fragrance cologne');
     }
+    const filteredResults = [...cjProducts];
 
     filteredPerfumes = filteredResults;
     displayProducts(filteredPerfumes);
