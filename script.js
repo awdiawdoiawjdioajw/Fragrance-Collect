@@ -15,24 +15,72 @@ let filteredPerfumes = [];
 // Allow overriding the API base URL (for Cloudflare Worker)
 const API_BASE = (typeof window !== 'undefined' && window.API_BASE) ? window.API_BASE : '/api';
 
+function normalizeShippingLocal(cost, shippingField) {
+    if (typeof cost === 'string' && cost.trim().toLowerCase() === 'free') return 0;
+    if (typeof cost === 'number') return cost;
+    if (shippingField && typeof shippingField === 'string') {
+        if (shippingField.toLowerCase().includes('free')) return 0;
+        const m = shippingField.match(/\$([0-9]+(\.[0-9]{1,2})?)/);
+        if (m) return Number(m[1]);
+    }
+    return null;
+}
+
 async function fetchCJProducts(query = '') {
     const url = `${API_BASE}/products${query ? `?q=${encodeURIComponent(query)}` : ''}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`CJ fetch failed (${res.status})`);
     const data = await res.json();
-    const items = (data.products || []).map(p => ({
-        id: p.id,
-        name: p.name,
-        brand: p.brand || 'Unknown',
-        price: p.price || 0,
-        rating: p.rating || 0,
-        image: p.image,
-        description: p.description || '',
-        buyUrl: p.cjLink,
-        shippingCost: typeof p.shippingCost === 'number' ? p.shippingCost : null,
-        isReal: true
-    }));
-    return items;
+    // Support both normalized Worker output and raw CJ output
+    if (Array.isArray(data.products)) {
+        const items = data.products.map(p => ({
+            id: p.id,
+            name: p.name,
+            brand: p.brand || 'Unknown',
+            price: Number(p.price) || 0,
+            rating: Number(p.rating) || 0,
+            image: p.image,
+            description: p.description || '',
+            buyUrl: p.cjLink,
+            shippingCost: typeof p.shippingCost === 'number' ? p.shippingCost : null,
+            isReal: true
+        }));
+        return items;
+    }
+    if (data && data.products && Array.isArray(data.products.product)) {
+        const raw = data.products.product;
+        return raw.map(p => ({
+            id: p.sku || p.ad_id || p.productId,
+            name: p.name,
+            brand: p.manufacturer || p.advertiserName || 'Unknown',
+            price: Number(p.price) || Number(p.salePrice) || 0,
+            rating: Number(p.rating) || 0,
+            image: p.imageUrl,
+            description: p.description || '',
+            buyUrl: p.buyUrl,
+            shippingCost: normalizeShippingLocal(p.shippingCost, p.shipping),
+            isReal: true
+        }));
+    }
+    if (data && data.product && Array.isArray(data.product)) {
+        const raw = data.product;
+        return raw.map(p => ({
+            id: p.sku || p.ad_id || p.productId,
+            name: p.name,
+            brand: p.manufacturer || p.advertiserName || 'Unknown',
+            price: Number(p.price) || Number(p.salePrice) || 0,
+            rating: Number(p.rating) || 0,
+            image: p.imageUrl,
+            description: p.description || '',
+            buyUrl: p.buyUrl,
+            shippingCost: normalizeShippingLocal(p.shippingCost, p.shipping),
+            isReal: true
+        }));
+    }
+    if (data && data.error) {
+        throw new Error(data.error + (data.details ? `: ${data.details}` : ''));
+    }
+    return [];
 }
 
 function sortWithFreeShippingPriority(list) {
@@ -140,7 +188,7 @@ function createProductCard(perfume) {
     return `
         <div class="product-card" data-id="${perfume.id}" data-brand="${perfume.brand.toLowerCase().replace(/\s+/g, '-')}" data-price="${perfume.price}" data-rating="${perfume.rating}">
             <div class="product-image">
-                <img src="${perfume.image}" alt="${perfume.name}">
+                <img src="${perfume.image || ''}" alt="${perfume.name}" onerror="this.onerror=null;this.src='https://via.placeholder.com/600x600?text=No+Image';">
                 <div class="product-overlay">
                     ${perfume.buyUrl ? `<a class="view-details-btn" href="${perfume.buyUrl}" target="_blank" rel="nofollow sponsored noopener">Buy Now</a>` : `<button class=\"view-details-btn\" data-perfume-id=\"${perfume.id}\">View Details</button>`}
                 </div>
@@ -153,7 +201,7 @@ function createProductCard(perfume) {
                     <span class="rating-text">(${perfume.rating})</span>
                 </div>
                 <div class="product-price-container">
-                    <p class="product-price">$${perfume.price}</p>
+                    <p class="product-price">$${Number(perfume.price).toFixed(2)}</p>
                     <span class="shipping-badge ${shipping.cls}">${shipping.text}</span>
                 </div>
             </div>
@@ -168,16 +216,16 @@ function generateStars(rating) {
     let starsHTML = '';
     
     for (let i = 0; i < fullStars; i++) {
-        starsHTML += '<i class="fas fa-star"></i>';
+        starsHTML += '<i class="fa-solid fa-star"></i>';
     }
     
     if (hasHalfStar) {
-        starsHTML += '<i class="fas fa-star-half-alt"></i>';
+        starsHTML += '<i class="fa-solid fa-star-half-stroke"></i>';
     }
     
     const emptyStars = 5 - Math.ceil(rating);
     for (let i = 0; i < emptyStars; i++) {
-        starsHTML += '<i class="far fa-star"></i>';
+        starsHTML += '<i class="fa-regular fa-star"></i>';
     }
     
     return starsHTML;
