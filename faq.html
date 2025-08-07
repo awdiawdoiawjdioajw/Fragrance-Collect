@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQ - Fragrance Collect</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="faq.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <!-- Logo on the left -->
+            <div class="nav-logo">
+                <img src="emblem.png" alt="Fragrance Collect Logo" class="logo-emblem">
+                <h2>Fragrance Collect</h2>
+            </div>
+            
+            <!-- Navigation menu in center -->
+            <ul class="nav-menu">
+                                        <li><a href="main.html" class="nav-link">Home</a></li>
+                        <li><a href="main.html#brands" class="nav-link">Brands</a></li>
+                        <li><a href="main.html#collections" class="nav-link">Collections</a></li>
+                        <li><a href="main.html#top-rated" class="nav-link">Top Rated</a></li>
+                        <li><a href="main.html#shop" class="nav-link">Shop</a></li>
+            </ul>
+            
+            <!-- Search and dropdown row -->
+            <div class="search-row">
+                <!-- Dropdown menu on the left -->
+                <div class="dropdown">
+                    <a href="#" class="dropdown-toggle">
+                        <i class="fas fa-bars"></i>
+                        <span>Menu</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="main.html">Home</a></li>
+                        <li><a href="main.html#brands">Brands</a></li>
+                        <li><a href="main.html#collections">Collections</a></li>
+                        <li><a href="main.html#top-rated">Top Rated</a></li>
+                        <li><a href="main.html#shop">Shop</a></li>
+                        <li><a href="customer-service.html">Customer Service</a></li>
+                        <li><a href="contact.html">Contact Us</a></li>
+                        <li><a href="size-guide.html">Size Guide</a></li>
+                        <li><a href="faq.html">FAQ</a></li>
+                        <li><a href="auth.html">Sign In/Up</a></li>
+                    </ul>
+                </div>
+                
+                <!-- Centered Search Container -->
+                <div class="search-container">
+                    <input type="text" placeholder="Search fragrances..." class="search-input">
+                    <button class="search-btn">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Login button on the right -->
+            <div class="nav-right">
+                <a href="auth.html" class="login-btn">
+                    <i class="fas fa-user"></i>
+                </a>
+            </div>
+            
+            <!-- Hamburger menu for mobile -->
+            <div class="hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+        
+        
+    </nav>
+
+    <!-- FAQ Section -->
+    <section class="faq-section">
+        <div class="container">
+            <div class="faq-header">
+                <h1 class="faq-title">Frequently Asked Questions</h1>
+                <div class="faq-title-accent"></div>
+            </div>
+
+            <!-- Search Input -->
+            <div class="faq-search-container">
+                <div class="search-wrapper">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="faq-search" class="faq-search-input" placeholder="Search questions...">
+                </div>
+            </div>
+
+            <!-- FAQ Accordion -->
+            <div class="faq-accordion" id="faq-accordion">
+                <div class="faq-item" data-category="general">
+                    <div class="faq-question">
+                        <h3>What makes Fragrance Collect different from other perfume retailers?</h3>
+                        <div class="faq-icon">
+                            <i class="fas fa-plus"></i>
+                        </div>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Fragrance Collect is a luxury perfume aggregator that curates the world's finest fragrances from exclusive brands and master perfumers. We focus on rare, limited-edition, and artisanal scents that you won't find in typical retail stores. Our expert curation ensures every fragrance in our collection meets the highest standards of quality and sophistication.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item" data-category="product">
+                    <div class="faq-question">
+                        <h3>How do I choose the right fragrance for me?</h3>
+                        <div class="faq-icon">
+                            <i class="fas fa-plus"></i>
+                        </div>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Choosing the perfect fragrance is a personal journey. We recommend starting with our fragrance finder quiz, which considers your preferences, skin type, and lifestyle. You can also order our sample collection, which includes 5-8 curated samples based on your preferences. Our fragrance experts are also available for personal consultations to help you discover your signature scent.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item" data-category="product">
+                    <div class="faq-question">
+                        <h3>Are your fragrances authentic and original?</h3>
+                        <div class="faq-icon">
+                            <i class="fas fa-plus"></i>
+                        </div>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Absolutely. We only source fragrances directly from authorized distributors and the brands themselves. Every fragrance in our collection is 100% authentic and original. We maintain strict quality control measures and work exclusively with reputable suppliers to ensure the authenticity and quality of every product we offer.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item" data-category="general">
+                    <div class="faq-question">
+                        <h3>Do you offer gift wrapping and personalization?</h3>
+                        <div class="faq-icon">
+                            <i class="fas fa-plus"></i>
+                        </div>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Yes, we offer premium gift wrapping services for an additional $10. Our gift wrapping includes elegant packaging with antique gold accents, a personalized message card, and a beautiful ribbon. For special occasions, we also offer custom gift boxes and personalized fragrance consultations to help you select the perfect gift.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item" data-category="account">
+                    <div class="faq-question">
+                        <h3>How do I create an account and manage my preferences?</h3>
+                        <div class="faq-icon">
+                            <i class="fas fa-plus"></i>
+                        </div>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Creating an account is simple and free. Click the user icon in the top right corner and select "Create Account." You can then set your fragrance preferences, save your favorite scents, and receive personalized recommendations. Your account also allows you to track orders, manage your wishlist, and receive exclusive offers and early access to new collections.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item" data-category="product">
+                    <div class="faq-question">
+                        <h3>How long do fragrances typically last?</h3>
+                        <div class="faq-icon">
+                            <i class="fas fa-plus"></i>
+                        </div>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Fragrance longevity varies depending on the concentration, ingredients, and your skin chemistry. Eau de Toilette typically lasts 3-4 hours, Eau de Parfum 4-6 hours, and Parfum 6-8 hours or more. To maximize longevity, apply to pulse points, moisturize your skin first, and store fragrances in a cool, dark place away from direct sunlight.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item" data-category="general">
+                    <div class="faq-question">
+                        <h3>How can I contact customer service?</h3>
+                        <div class="faq-icon">
+                            <i class="fas fa-plus"></i>
+                        </div>
+                    </div>
+                    <div class="faq-answer">
+                        <p>You can reach our customer service team by email at info@fragrancecollect.com or support@fragrancecollect.com, or through our live chat feature on the website. We also offer virtual consultations with our fragrance experts by appointment.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3 class="footer-title">Fragrance Collect</h3>
+                    <p>Discover the world's finest fragrances curated for the discerning connoisseur.</p>
+                    <div class="social-links">
+                        <a href="https://www.tiktok.com/@the.cologne.archi" class="social-link" target="_blank" rel="noopener noreferrer"><i class="fab fa-tiktok"></i></a>
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul class="footer-links">
+                        <li><a href="main.html">Home</a></li>
+                        <li><a href="main.html#brands">Brands</a></li>
+                        <li><a href="main.html#collections">Collections</a></li>
+                        <li><a href="main.html#top-rated">Top Rated</a></li>
+                        <li><a href="main.html#shop">Shop</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Customer Service</h4>
+                    <ul class="footer-links">
+                        <li><a href="customer-service.html">Customer Service</a></li>
+                        <li><a href="contact.html">Contact Us</a></li>
+                        <li><a href="size-guide.html">Size Guide</a></li>
+                        <li><a href="faq.html">FAQ</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Contact Info</h4>
+                    <div class="contact-info">
+                        <p><i class="fas fa-envelope"></i> info@fragrancecollect.com</p>
+                        <p><i class="fas fa-envelope"></i> support@fragrancecollect.com</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2025 Fragrance Collect. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+    <script src="faq.js"></script>
+</body>
+</html> 
