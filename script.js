@@ -57,14 +57,10 @@ function normalizeShippingLocal(cost, shippingField) {
     return null;
 }
 
-async function fetchCJProducts(query = '') {
-    const url = `${API_ROOT}/products${query ? `?q=${encodeURIComponent(query)}` : ''}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`CJ fetch failed (${res.status})`);
-    const data = await res.json();
-    // Support both normalized Worker output and raw CJ output
+function mapProductsDataToItems(data) {
+    if (!data) return [];
     if (Array.isArray(data.products)) {
-        const items = data.products.map(p => ({
+        return data.products.map(p => ({
             id: p.id,
             name: p.name,
             brand: p.brand || 'Unknown',
@@ -76,11 +72,10 @@ async function fetchCJProducts(query = '') {
             shippingCost: typeof p.shippingCost === 'number' ? p.shippingCost : null,
             isReal: true
         }));
-        return items;
     }
-    if (data && data.products && Array.isArray(data.products.product)) {
-        const raw = data.products.product;
-        return raw.map(p => ({
+    if (data.products && data.products.product) {
+        const arr = Array.isArray(data.products.product) ? data.products.product : [data.products.product];
+        return arr.map(p => ({
             id: p.sku || p.ad_id || p.productId,
             name: p.name,
             brand: p.manufacturer || p.advertiserName || 'Unknown',
@@ -93,9 +88,9 @@ async function fetchCJProducts(query = '') {
             isReal: true
         }));
     }
-    if (data && data.product && Array.isArray(data.product)) {
-        const raw = data.product;
-        return raw.map(p => ({
+    if (data.product) {
+        const arr = Array.isArray(data.product) ? data.product : [data.product];
+        return arr.map(p => ({
             id: p.sku || p.ad_id || p.productId,
             name: p.name,
             brand: p.manufacturer || p.advertiserName || 'Unknown',
@@ -108,8 +103,27 @@ async function fetchCJProducts(query = '') {
             isReal: true
         }));
     }
-    if (data && data.error) {
-        throw new Error(data.error + (data.details ? `: ${data.details}` : ''));
+    return [];
+}
+
+async function fetchCJProducts(query = '') {
+    const base = `${API_ROOT}/products`;
+    const url = `${base}${query ? `?q=${encodeURIComponent(query)}` : ''}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`CJ fetch failed (${res.status})`);
+    const data = await res.json();
+    if (data && data.error) throw new Error(data.error + (data.details ? `: ${data.details}` : ''));
+    let items = mapProductsDataToItems(data);
+    if (items.length > 0) return items;
+    // Fallback: broaden scope to all advertisers if Worker supports it
+    const urlAll = `${base}?${query ? `q=${encodeURIComponent(query)}&` : ''}scope=all`;
+    const resAll = await fetch(urlAll);
+    if (resAll.ok) {
+        const dataAll = await resAll.json();
+        if (!(dataAll && dataAll.error)) {
+            const itemsAll = mapProductsDataToItems(dataAll);
+            if (itemsAll.length > 0) return itemsAll;
+        }
     }
     return [];
 }
@@ -128,6 +142,20 @@ function sortWithFreeShippingPriority(list) {
 async function loadCJProducts(query = '') {
     try {
         const items = await fetchCJProducts(query);
+        // If nothing returned and we know some joined advertisers exist,
+        // try some brand-focused queries to increase hit rate
+        if (!items.length) {
+            const brandQueries = [
+                'FragranceShop',
+                'Fragrance Shop',
+                'TikTok Shop',
+                'TikTok Shop US',
+                'Eau de Parfum',
+                'Eau de Toilette'
+            ];
+            await loadCJProductsMulti(brandQueries);
+            return;
+        }
         cjProducts = sortWithFreeShippingPriority(items);
     } catch (e) {
         console.error('CJ load failed:', e);
