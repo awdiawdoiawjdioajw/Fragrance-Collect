@@ -108,7 +108,12 @@ function mapProductsDataToItems(data) {
 
 async function fetchCJProducts(query = '') {
     const base = `${API_ROOT}/products`;
-    const url = `${base}${query ? `?q=${encodeURIComponent(query)}` : ''}`;
+    const sp = new URLSearchParams();
+    if (query) sp.set('q', query);
+    // Force broader catalog to ensure results on first load
+    sp.set('scope', 'all');
+    sp.set('limit', '50');
+    const url = `${base}?${sp.toString()}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`CJ fetch failed (${res.status})`);
     const data = await res.json();
