@@ -20,10 +20,13 @@ const SECURITY_CONFIG = {
 // Configuration with fallbacks
 const config = {
   CJ_DEV_KEY: process.env.CJ_DEV_KEY,
+  CJ_PERSONAL_ACCESS_TOKEN: process.env.CJ_PERSONAL_ACCESS_TOKEN, // For GraphQL
+  CJ_COMPANY_ID: process.env.CJ_COMPANY_ID, // Your publisher/company ID
   CJ_WEBSITE_ID: process.env.CJ_WEBSITE_ID,
   NODE_ENV: process.env.NODE_ENV || 'development',
   PORT: process.env.PORT || 3000,
   CJ_API_BASE: 'https://product-search.api.cj.com/v2',
+  CJ_GQL_API_BASE: 'https://ads.api.cj.com/query', // GraphQL endpoint
   DEFAULT_SEARCH: 'perfume fragrance cologne',
   DEFAULT_LIMIT: 50,
   DEFAULT_PAGE: 1
@@ -200,6 +203,61 @@ function handleCJError(response, responseText) {
   return errorMessage;
 }
 
+// New function to fetch product feeds using GraphQL
+async function getProductFeeds() {
+  if (!config.CJ_PERSONAL_ACCESS_TOKEN || !config.CJ_COMPANY_ID) {
+    console.warn('⚠️ Missing CJ_PERSONAL_ACCESS_TOKEN or CJ_COMPANY_ID for GraphQL API. Skipping feed fetch.');
+    return [];
+  }
+
+  const query = `
+    query productFeeds($companyId: Int!) {
+      productFeeds(companyId: $companyId) {
+        totalCount
+        count
+        resultList {
+          adId
+          feedName
+          advertiserId
+          productCount
+          lastUpdated
+          advertiserName
+        }
+      }
+    }
+  `;
+
+  const variables = {
+    companyId: parseInt(config.CJ_COMPANY_ID)
+  };
+
+  try {
+    const response = await fetch(config.CJ_GQL_API_BASE, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${config.CJ_PERSONAL_ACCESS_TOKEN}`
+      },
+      body: JSON.stringify({ query, variables })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`CJ GraphQL API error (${response.status}): ${errorText}`);
+    }
+
+    const jsonResponse = await response.json();
+    if (jsonResponse.errors) {
+        throw new Error(`CJ GraphQL API error: ${JSON.stringify(jsonResponse.errors)}`);
+    }
+
+    return jsonResponse.data.productFeeds.resultList || [];
+  } catch (error) {
+    console.error('❌ CJ GraphQL fetch failed:', error.message);
+    throw error;
+  }
+}
+
 // Improved product data mapping from CJ API with XSS protection
 function mapCJProduct(cjProduct) {
   return {
@@ -251,7 +309,8 @@ async function searchCJProducts(searchParams) {
     search = config.DEFAULT_SEARCH,
     perPage = config.DEFAULT_LIMIT,
     page = config.DEFAULT_PAGE,
-    scope = 'joined'
+    scope = 'joined',
+    advertiserIds = '' // New parameter
   } = searchParams;
 
   // Validate and sanitize inputs
@@ -262,7 +321,7 @@ async function searchCJProducts(searchParams) {
 
   const queryParams = new URLSearchParams({
     'website-id': config.CJ_WEBSITE_ID,
-    'advertiser-ids': validatedScope,
+    'advertiser-ids': advertiserIds || validatedScope, // Use advertiserIds if provided
     keywords: validatedSearch,
     'records-per-page': validatedLimit.toString(),
     'page-number': validatedPage.toString(),
@@ -389,6 +448,17 @@ const server = http.createServer(async (req, res) => {
       return res.end(JSON.stringify(health, null, 2));
     }
 
+    // New endpoint to get product feeds
+    if (url.pathname === '/feeds') {
+      try {
+        const feeds = await getProductFeeds();
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify(feeds, null, 2));
+      } catch (error) {
+        return sendErrorResponse(res, 500, 'Failed to fetch product feeds', error.message);
+      }
+    }
+
     // Products search endpoint
     if (url.pathname === '/products') {
       // Validate and sanitize query parameters
@@ -396,7 +466,8 @@ const server = http.createServer(async (req, res) => {
         search: InputValidator.validateSearchQuery(url.searchParams.get('q') || config.DEFAULT_SEARCH),
         perPage: InputValidator.validateLimit(url.searchParams.get('limit') || config.DEFAULT_LIMIT),
         page: InputValidator.validatePage(url.searchParams.get('page') || config.DEFAULT_PAGE),
-        scope: InputValidator.validateScope(url.searchParams.get('scope') || 'joined')
+        scope: InputValidator.validateScope(url.searchParams.get('scope') || 'joined'),
+        advertiserIds: InputValidator.sanitizeString(url.searchParams.get('advertiserIds') || '', 500)
       };
 
       try {
