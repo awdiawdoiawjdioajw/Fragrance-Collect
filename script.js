@@ -78,7 +78,7 @@ let filteredPerfumes = [];
 const config = {
   // --- IMPORTANT ---
   // PASTE YOUR CLOUDFLARE WORKER URL HERE
-  API_ENDPOINT: 'https://fragrance-collect.yasiin-bey.workers.dev', 
+  API_ENDPOINT: 'https://weathered-mud-6ed5.joshuablaszczyk.workers.dev', 
   DEFAULT_SEARCH_TERM: 'fragrance',
   RESULTS_PER_PAGE: 50,
 };
