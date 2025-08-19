@@ -268,28 +268,14 @@ async function initializeApp() {
         showStatusMessage(`Error: ${health.message}`, true);
         return;
     }
-    await loadCJProducts('perfume fragrance cologne');
+    // Set a default rating filter and load initial products
+    currentFilters.rating = '5'; // Set default filter state
+    await loadCJProducts('fragrance'); // Load top 50 fragrances by default
     
-    // NEW: Filter out banner ads and text links from the initial load
-    cjProducts = cjProducts.filter(p => p.image && !p.name.toLowerCase().includes('banner') && !p.name.toLowerCase().includes('logo'));
+    // The API doesn't support rating filters, so we perform a client-side sort
+    // as a substitute. Here we'll sort by price as the default.
+    cjProducts.sort((a, b) => a.price - b.price);
 
-    if (!cjProducts.length) {
-        // Broader diagnostic search to find any product from active partners
-        const diagnosticQueries = [
-            'perfume', 'cologne', 'eau de parfum', 'eau de toilette', 
-            'fragrance', 'beauty', 'gift', 'sale', 'shop'
-        ];
-        const promises = diagnosticQueries.map(q => fetchCJProducts(q));
-        const results = await Promise.allSettled(promises);
-        const map = new Map();
-        results.forEach(r => {
-            if (r.status === 'fulfilled' && Array.isArray(r.value)) {
-                r.value.forEach(p => map.set(p.id, p));
-            }
-        });
-        cjProducts = sortWithFreeShippingPriority(Array.from(map.values()));
-    }
-    
     filteredPerfumes = [...cjProducts].filter(p => p.image && !p.name.toLowerCase().includes('banner') && !p.name.toLowerCase().includes('logo'));
 
     if (!filteredPerfumes.length) {
@@ -683,23 +669,39 @@ async function filterByCollection(collectionTitle) {
 
 // Clear all filters
 function clearFilters() {
-    const brandFilter = document.getElementById('brand-filter');
-    const priceFilter = document.getElementById('price-filter');
-    const ratingFilter = document.getElementById('rating-filter');
-    const shippingFilter = document.getElementById('shipping-filter');
+    // Reset all filter select elements to their default value
+    const filterElements = document.querySelectorAll('.filter-select');
+    filterElements.forEach(select => {
+        select.value = '';
+    });
+
+    // Clear the main search input
     const mainSearch = document.getElementById('main-search');
+    if (mainSearch) {
+        mainSearch.value = '';
+    }
     
-    if (brandFilter) brandFilter.value = '';
-    if (priceFilter) priceFilter.value = '';
-    if (ratingFilter) ratingFilter.value = '';
-    if (shippingFilter) shippingFilter.value = '';
-    if (mainSearch) mainSearch.value = '';
-    
+    // Hide the clear search button
+    const clearSearchBtn = document.getElementById('clear-search');
+    if (clearSearchBtn) {
+        clearSearchBtn.style.display = 'none';
+    }
+
+    // Reset the internal filters state object
     currentFilters = { brand: '', priceRange: '', rating: '', shipping: '', search: '' };
     
+    // Hide the search results informational text
+    const searchResultsInfo = document.getElementById('search-results-info');
+    if(searchResultsInfo) {
+        searchResultsInfo.style.display = 'none';
+    }
+
+    // Show loading indicator and reload the default set of products
     showLoading();
-    loadCJProducts('').then(() => {
-         filteredPerfumes = [...cjProducts];
+    loadCJProducts('fragrance').then(() => { // Reload with default query
+        filteredPerfumes = [...cjProducts];
+        // As the API doesn't support rating filters, sort by price as the default criteria.
+        filteredPerfumes.sort((a, b) => a.price - b.price);
         displayProducts(filteredPerfumes);
         hideLoading();
     });
