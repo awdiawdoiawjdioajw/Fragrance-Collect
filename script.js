@@ -1,5 +1,67 @@
 // Live data only: populated from CJ via Cloudflare Worker
 
+// Security utilities for XSS prevention
+const SecurityUtils = {
+  // HTML entity encoding to prevent XSS
+  escapeHtml(text) {
+    if (typeof text !== 'string') return '';
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;')
+      .replace(/\//g, '&#x2F;');
+  },
+
+  // Validate and sanitize search queries
+  validateSearchQuery(query) {
+    if (!query || typeof query !== 'string') return '';
+    
+    // Remove potentially dangerous characters
+    let sanitized = query.replace(/[<>\"'&]/g, '');
+    
+    // Only allow alphanumeric, spaces, and safe punctuation
+    sanitized = sanitized.replace(/[^a-zA-Z0-9\s\-.,&()]/g, '');
+    
+    // Limit length
+    return sanitized.substring(0, 200).trim();
+  },
+
+  // Validate numeric inputs
+  validateNumber(value, min = 0, max = Infinity, defaultValue = 0) {
+    const num = Number(value);
+    return isNaN(num) || num < min || num > max ? defaultValue : num;
+  },
+
+  // Validate URLs
+  validateUrl(url) {
+    if (!url || typeof url !== 'string') return '';
+    
+    try {
+      const urlObj = new URL(url);
+      // Only allow HTTPS URLs
+      if (urlObj.protocol !== 'https:') return '';
+      return url;
+    } catch {
+      return '';
+    }
+  },
+
+  // Safe DOM manipulation
+  setInnerHTML(element, content) {
+    if (!element || !content) return;
+    
+    // Use textContent for safety, or create safe HTML
+    if (typeof content === 'string' && content.includes('<')) {
+      // If content contains HTML, sanitize it
+      element.innerHTML = this.escapeHtml(content);
+    } else {
+      element.textContent = content;
+    }
+  }
+};
+
 // Global variables
 let currentFilters = {
     brand: '',
@@ -12,8 +74,14 @@ let currentFilters = {
 let cjProducts = [];
 let filteredPerfumes = [];
 
-// Allow overriding the API base URL (for Cloudflare Worker)
-const API_ROOT = ((typeof window !== 'undefined' && window.API_BASE) ? window.API_BASE : '/api').replace(/\/+$/, '');
+// Configuration
+const config = {
+  // --- IMPORTANT ---
+  // PASTE YOUR CLOUDFLARE WORKER URL HERE
+  API_ENDPOINT: 'https://fragrance-collect.yasiin-bey.workers.dev', 
+  DEFAULT_SEARCH_TERM: 'fragrance',
+  RESULTS_PER_PAGE: 50,
+};
 
 function showStatusMessage(message, isError = false) {
     const grid = document.getElementById('products-grid');
@@ -21,7 +89,8 @@ function showStatusMessage(message, isError = false) {
     if (grid) grid.innerHTML = '';
     if (noResults) {
         noResults.style.display = 'block';
-        noResults.innerHTML = `<p>${message}</p>`;
+        // Use safe DOM manipulation
+        SecurityUtils.setInnerHTML(noResults, message);
         noResults.style.color = isError ? '#ffb4b4' : '';
     }
 }
@@ -36,7 +105,7 @@ async function checkApiHealth() {
     try {
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), 6000);
-        const res = await fetch(`${API_ROOT}/health`, { signal: controller.signal });
+        const res = await fetch(`${config.API_ENDPOINT}/health`, { signal: controller.signal });
         clearTimeout(timer);
         if (!res.ok) return false;
         const data = await res.json().catch(() => ({}));
@@ -46,6 +115,8 @@ async function checkApiHealth() {
     }
 }
 
+// SIMPLIFIED: This function is no longer needed as the new API provides clean data.
+/*
 function normalizeShippingLocal(cost, shippingField) {
     if (typeof cost === 'string' && cost.trim().toLowerCase() === 'free') return 0;
     if (typeof cost === 'number') return cost;
@@ -56,81 +127,71 @@ function normalizeShippingLocal(cost, shippingField) {
     }
     return null;
 }
+*/
 
+// SIMPLIFIED: This function now only handles the single, clean `products` array from the worker.
 function mapProductsDataToItems(data) {
-    if (!data) return [];
-    if (Array.isArray(data.products)) {
-        return data.products.map(p => ({
-            id: p.id,
-            name: p.name,
-            brand: p.brand || 'Unknown',
-            price: Number(p.price) || 0,
-            rating: Number(p.rating) || 0,
-            image: p.image,
-            description: p.description || '',
-            buyUrl: p.cjLink,
-            shippingCost: typeof p.shippingCost === 'number' ? p.shippingCost : null,
-            isReal: true
-        }));
-    }
-    if (data.products && data.products.product) {
-        const arr = Array.isArray(data.products.product) ? data.products.product : [data.products.product];
-        return arr.map(p => ({
-            id: p.sku || p.ad_id || p.productId,
-            name: p.name,
-            brand: p.manufacturer || p.advertiserName || 'Unknown',
-            price: Number(p.price) || Number(p.salePrice) || 0,
-            rating: Number(p.rating) || 0,
-            image: p.imageUrl,
-            description: p.description || '',
-            buyUrl: p.buyUrl,
-            shippingCost: normalizeShippingLocal(p.shippingCost, p.shipping),
-            isReal: true
-        }));
-    }
-    if (data.product) {
-        const arr = Array.isArray(data.product) ? data.product : [data.product];
-        return arr.map(p => ({
-            id: p.sku || p.ad_id || p.productId,
-            name: p.name,
-            brand: p.manufacturer || p.advertiserName || 'Unknown',
-            price: Number(p.price) || Number(p.salePrice) || 0,
-            rating: Number(p.rating) || 0,
-            image: p.imageUrl,
-            description: p.description || '',
-            buyUrl: p.buyUrl,
-            shippingCost: normalizeShippingLocal(p.shippingCost, p.shipping),
-            isReal: true
-        }));
-    }
-    return [];
+    if (!data || !Array.isArray(data.products)) return [];
+    
+    return data.products.map(p => ({
+        id: SecurityUtils.escapeHtml(p.id || `cj_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`),
+        name: SecurityUtils.escapeHtml(p.name || 'Unnamed Product'),
+        brand: SecurityUtils.escapeHtml(p.brand || 'Unknown Brand'),
+        price: SecurityUtils.validateNumber(p.price, 0, 10000, 0),
+        rating: SecurityUtils.validateNumber(p.rating, 0, 5, 0),
+        image: SecurityUtils.validateUrl(p.image || ''),
+        description: SecurityUtils.escapeHtml(p.description || ''),
+        buyUrl: SecurityUtils.validateUrl(p.cjLink || p.buyUrl || ''),
+        shippingCost: p.shippingCost, // The worker now provides this as null
+        advertiser: SecurityUtils.escapeHtml(p.advertiser || 'Unknown'),
+        category: SecurityUtils.escapeHtml(p.category || 'Fragrance'),
+        availability: 'In Stock',
+        currency: 'USD',
+        isReal: true
+    }));
 }
 
+// SIMPLIFIED: Fetch logic is much cleaner now.
 async function fetchCJProducts(query = '') {
-    const base = `${API_ROOT}/products`;
+    const base = `${config.API_ENDPOINT}/products`;
     const sp = new URLSearchParams();
-    if (query) sp.set('q', query);
-    // Force broader catalog to ensure results on first load
-    sp.set('scope', 'all');
-    sp.set('limit', '50');
+    
+    const sanitizedQuery = SecurityUtils.validateSearchQuery(query);
+    if (sanitizedQuery) sp.set('q', sanitizedQuery);
+    
+    sp.set('limit', config.RESULTS_PER_PAGE.toString());
     const url = `${base}?${sp.toString()}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`CJ fetch failed (${res.status})`);
-    const data = await res.json();
-    if (data && data.error) throw new Error(data.error + (data.details ? `: ${data.details}` : ''));
-    let items = mapProductsDataToItems(data);
-    if (items.length > 0) return items;
-    // Fallback: broaden scope to all advertisers if Worker supports it
-    const urlAll = `${base}?${query ? `q=${encodeURIComponent(query)}&` : ''}scope=all`;
-    const resAll = await fetch(urlAll);
-    if (resAll.ok) {
-        const dataAll = await resAll.json();
-        if (!(dataAll && dataAll.error)) {
-            const itemsAll = mapProductsDataToItems(dataAll);
-            if (itemsAll.length > 0) return itemsAll;
+    
+    try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 20000); // 20s timeout
+        const res = await fetch(url, { signal: controller.signal });
+        clearTimeout(timer);
+
+        if (!res.ok) {
+            const errorText = await res.text();
+            let errorMessage = `API fetch failed (${res.status})`;
+            try {
+                const errorData = JSON.parse(errorText);
+                if (errorData.details) errorMessage += `: ${SecurityUtils.escapeHtml(errorData.details)}`;
+            } catch (e) {
+                if (errorText && errorText.length < 100) errorMessage += `: ${SecurityUtils.escapeHtml(errorText)}`;
+            }
+            throw new Error(errorMessage);
         }
+        
+        const data = await res.json();
+        if (data && data.error) {
+            throw new Error(data.error + (data.details ? `: ${SecurityUtils.escapeHtml(data.details)}` : ''));
+        }
+        
+        return mapProductsDataToItems(data);
+
+    } catch (error) {
+        console.error('CJ API fetch error:', error);
+        showStatusMessage(`Error: Could not fetch products. ${error.message}`, true);
+        return []; // Return empty array on failure
     }
-    return [];
 }
 
 function sortWithFreeShippingPriority(list) {
@@ -188,9 +249,15 @@ async function initializeApp() {
         return;
     }
     await loadCJProducts('perfume fragrance cologne');
+    
+    // NEW: Filter out banner ads and text links from the initial load
+    cjProducts = cjProducts.filter(p => p.image && !p.name.toLowerCase().includes('banner') && !p.name.toLowerCase().includes('logo'));
+
     if (!cjProducts.length) {
         await loadCJProductsMulti(['perfume','cologne','eau de parfum','eau de toilette']);
+        cjProducts = cjProducts.filter(p => p.image && !p.name.toLowerCase().includes('banner') && !p.name.toLowerCase().includes('logo'));
     }
+    
     filteredPerfumes = [...cjProducts];
     if (!filteredPerfumes.length) {
         showStatusMessage('No products found yet. Try a different search or confirm CJ.com has joined advertisers.', true);
@@ -227,9 +294,8 @@ function displayProducts(perfumes) {
     if (currentFilters.search && searchResultsInfo) {
         const totalProducts = cjProducts.length;
         const foundProducts = perfumes.length;
-        searchResultsInfo.innerHTML = `
-            <p>Found ${foundProducts} of ${totalProducts} fragrances for "${currentFilters.search}"</p>
-        `;
+        // Use safe DOM manipulation
+        SecurityUtils.setInnerHTML(searchResultsInfo, `Found ${foundProducts} of ${totalProducts} fragrances for "${SecurityUtils.escapeHtml(currentFilters.search)}"`);
         searchResultsInfo.style.display = 'block';
     } else if (searchResultsInfo) {
         searchResultsInfo.style.display = 'none';
@@ -250,7 +316,7 @@ function displayTopRated() {
     topRatedGrid.innerHTML = topRated.map(perfume => createProductCard(perfume)).join('');
 }
 
-// Create product card HTML
+// Create product card HTML with XSS protection
 function formatShipping(perfume) {
     if (perfume.shippingCost === 0) return { text: 'Free shipping', cls: 'free' };
     if (typeof perfume.shippingCost === 'number') return { text: `$${perfume.shippingCost.toFixed(2)} shipping`, cls: '' };
@@ -260,12 +326,14 @@ function formatShipping(perfume) {
 function createProductCard(perfume) {
     const stars = generateStars(perfume.rating);
     const shipping = formatShipping(perfume);
+    
+    // All data is already sanitized in mapProductsDataToItems
     return `
         <div class="product-card" data-id="${perfume.id}" data-brand="${perfume.brand.toLowerCase().replace(/\s+/g, '-')}" data-price="${perfume.price}" data-rating="${perfume.rating}">
             <div class="product-image">
                 <img src="${perfume.image || ''}" alt="${perfume.name}" onerror="this.onerror=null;this.src='https://via.placeholder.com/600x600?text=No+Image';">
                 <div class="product-overlay">
-                    ${perfume.buyUrl ? `<a class="view-details-btn" href="${perfume.buyUrl}" target="_blank" rel="nofollow sponsored noopener">Buy Now</a>` : `<button class=\"view-details-btn\" data-perfume-id=\"${perfume.id}\">View Details</button>`}
+                    ${perfume.buyUrl ? `<a class="view-details-btn" href="${perfume.buyUrl}" target="_blank" rel="nofollow sponsored noopener">Buy Now</a>` : `<button class="view-details-btn" data-perfume-id="${perfume.id}">View Details</button>`}
                 </div>
             </div>
             <div class="product-info">
@@ -316,7 +384,7 @@ function populateBrandFilter() {
     brands.forEach(brand => {
         const option = document.createElement('option');
         option.value = brand.toLowerCase().replace(/\s+/g, '-');
-        option.textContent = brand;
+        option.textContent = brand; // textContent is safe
         brandFilter.appendChild(option);
     });
 }
@@ -571,7 +639,8 @@ async function filterByCollection(collectionTitle) {
     if (searchResultsInfo) {
         const totalProducts = cjProducts.length;
         const foundProducts = filteredResults.length;
-        searchResultsInfo.innerHTML = `<p>Showing ${foundProducts} of ${totalProducts} fragrances in "${collectionTitle}" collection</p>`;
+        // Use safe DOM manipulation
+        SecurityUtils.setInnerHTML(searchResultsInfo, `Showing ${foundProducts} of ${totalProducts} fragrances in "${SecurityUtils.escapeHtml(collectionTitle)}" collection`);
         searchResultsInfo.style.display = 'block';
     }
 }
@@ -596,25 +665,28 @@ function clearFilters() {
     displayProducts(filteredPerfumes);
 }
 
-// Perform search
+// Perform search with input validation
 function performSearch() {
     const searchInput = document.getElementById('main-search');
     if (!searchInput) return;
     
     const searchTerm = searchInput.value.trim();
-    currentFilters.search = searchTerm;
+    // Validate and sanitize search term
+    const validatedSearchTerm = SecurityUtils.validateSearchQuery(searchTerm);
+    currentFilters.search = validatedSearchTerm;
+    
     // Always reload from CJ with query
-    loadCJProducts(searchTerm).then(() => {
+    loadCJProducts(validatedSearchTerm).then(() => {
         filterPerfumes();
     });
     
     // Scroll to shop section if search is performed and we're not already there
-    if (searchTerm && !isElementInViewport(document.getElementById('shop'))) {
+    if (validatedSearchTerm && !isElementInViewport(document.getElementById('shop'))) {
         document.getElementById('shop').scrollIntoView({ behavior: 'smooth' });
     }
     
     // Add visual feedback for search
-    if (searchTerm) {
+    if (validatedSearchTerm) {
         const searchBtn = document.querySelector('.search-btn');
         if (searchBtn) {
             searchBtn.style.transform = 'scale(0.95)';
@@ -714,7 +786,7 @@ function showPerfumeDetails(perfume) {
     if (modal && modalImage && modalName && modalBrand && modalRating && modalDescription && modalPrice) {
         modalImage.src = perfume.image;
         modalImage.alt = perfume.name;
-        modalName.textContent = perfume.name;
+        modalName.textContent = perfume.name; // textContent is safe
         modalBrand.textContent = perfume.brand;
         modalRating.innerHTML = generateStars(perfume.rating) + ` <span class="rating-text">(${perfume.rating})</span>`;
         modalDescription.textContent = perfume.description || '';
