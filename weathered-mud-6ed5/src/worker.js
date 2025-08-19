@@ -161,15 +161,8 @@ async function handleProductsRequest(url, env) {
     const linkList = linkData.links || [];
     console.log(`Found ${linkList.length} affiliate links from link-search API`);
 
-    // Filter out promotional/banner links, keep only product links
-    const productLinks = linkList.filter(link => {
-      const name = link.linkName?.toLowerCase() || '';
-      return !name.includes('banner') && 
-             !name.includes('logo') && 
-             !name.includes('promotional') &&
-             link.clickUrl && 
-             link.clickUrl.trim() !== '';
-    });
+    // Temporarily relax the filter to allow more results
+    const productLinks = linkList.filter(link => link.clickUrl && link.clickUrl.trim() !== '');
 
     console.log(`Filtered to ${productLinks.length} product links`);
 
@@ -229,10 +222,10 @@ async function handleProductsRequest(url, env) {
       debug: {
         totalProducts: linkList.length,
         productsWithLinks: productsWithLinks.length,
-        productsWithoutLinks: products.length - productsWithLinks.length,
-        filteredOut: products.length - productsWithLinks.length,
-        note: "Using link-search API for real affiliate links - limited product data available",
-        rawFirstProduct: productLinks.length > 0 ? productLinks[0] : null
+        productsWithoutLinks: filteredProducts.length - productsWithLinks.length,
+        filteredOut: linkList.length - productsWithLinks.length,
+        note: "Using link-search API for real affiliate links. Filtering is relaxed.",
+        rawFirstProduct: linkList.length > 0 ? linkList[0] : null
       }
     }, env);
 
