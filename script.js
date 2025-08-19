@@ -415,23 +415,20 @@ function createProductCard(perfume) {
     // All data is already sanitized in mapProductsDataToItems
     return `
         <div class="product-card" data-id="${perfume.id}" data-brand="${perfume.brand.toLowerCase().replace(/\s+/g, '-')}" data-price="${perfume.price}" data-rating="${perfume.rating}">
-            <div class="product-image">
-                <img src="${perfume.image || ''}" alt="${perfume.name}" onerror="this.onerror=null;this.src='https://via.placeholder.com/600x600?text=No+Image';">
-                <div class="product-overlay">
-                    ${perfume.buyUrl ? `<a class="view-details-btn" href="${perfume.buyUrl}" target="_blank" rel="nofollow sponsored noopener">Buy Now</a>` : `<button class="view-details-btn" data-perfume-id="${perfume.id}">View Details</button>`}
-                </div>
+            <div class="product-image-container">
+                <img src="${perfume.image || ''}" alt="${perfume.name}" class="product-image" onerror="this.onerror=null;this.src='https://via.placeholder.com/600x600?text=No+Image';">
             </div>
             <div class="product-info">
-                <h3 class="product-name">${perfume.name}</h3>
                 <p class="product-brand">${perfume.brand}</p>
-                <div class="product-rating">
-                    ${stars}
-                    <span class="rating-text">(${perfume.rating})</span>
-                </div>
+                <h3 class="product-name">${perfume.name}</h3>
                 <div class="product-price-container">
                     <p class="product-price">$${Number(perfume.price).toFixed(2)}</p>
                     <span class="shipping-badge ${shipping.cls}">${shipping.text}</span>
                 </div>
+                 <div class="product-rating">
+                    ${stars}
+                </div>
+                <a href="${perfume.buyUrl}" class="buy-now-btn" target="_blank" rel="nofollow sponsored noopener">Buy Now</a>
             </div>
         </div>
     `;

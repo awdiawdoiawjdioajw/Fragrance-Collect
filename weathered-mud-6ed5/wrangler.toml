@@ -1,0 +1,12 @@
+name = "weathered-mud-6ed5"
+main = "src/worker.js"
+compatibility_date = "2025-08-07"
+
+# This section is for non-secret variables that are safe to commit to Git.
+[vars]
+CJ_WEBSITE_ID = "101510315"
+# Add your Company ID here. It's usually not a secret.
+CJ_COMPANY_ID = "7673871"# <-- PUT YOUR COMPANY ID HERE
+
+# The .dev.vars file is used for local development secrets and is NOT committed to Git.
+# 'wrangler dev' will automatically load this file.
