@@ -107,11 +107,29 @@ async function checkApiHealth() {
         const timer = setTimeout(() => controller.abort(), 6000);
         const res = await fetch(`${config.API_ENDPOINT}/health`, { signal: controller.signal });
         clearTimeout(timer);
-        if (!res.ok) return false;
+        if (!res.ok) {
+            console.error('API health check failed with status:', res.status);
+            return { healthy: false, message: `API returned status ${res.status}` };
+        }
         const data = await res.json().catch(() => ({}));
-        return (data && (data.status === 'ok' || data.ok === true));
-    } catch (_) {
-        return false;
+        console.log('API Health Check Response:', data); // Log the full response
+        
+        const isOverallHealthy = data && (data.status === 'ok' || data.ok === true);
+        const isCjHealthy = data && data.cj && data.cj.status === 'ok';
+
+        if (!isOverallHealthy) {
+            return { healthy: false, message: 'Backend API is not healthy.' };
+        }
+        if (!isCjHealthy) {
+            const cjMessage = data.cj ? data.cj.message : 'CJ connection check failed.';
+            return { healthy: false, message: `API is running, but CJ connection failed: ${cjMessage}` };
+        }
+
+        return { healthy: true, message: 'API and CJ connection are healthy.' };
+
+    } catch (e) {
+        console.error('API health check threw an error:', e);
+        return { healthy: false, message: 'Could not connect to the Backend API.' };
     }
 }
 
@@ -243,9 +261,9 @@ async function loadCJProductsMulti(queries) {
 // Initialize the application
 async function initializeApp() {
     showLoading();
-    const healthy = await checkApiHealth();
-    if (!healthy) {
-        showStatusMessage('Backend API is unreachable. Please confirm your Cloudflare Worker URL and secrets.', true);
+    const health = await checkApiHealth();
+    if (!health.healthy) {
+        showStatusMessage(`Error: ${health.message}`, true);
         return;
     }
     await loadCJProducts('perfume fragrance cologne');
