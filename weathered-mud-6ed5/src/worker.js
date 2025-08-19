@@ -98,129 +98,100 @@ async function handleFeedsRequest(env) {
  * Since the API doesn't provide affiliate links directly, we construct them manually.
  */
 async function handleProductsRequest(url, env) {
-  // Check for all required GraphQL API credentials
-  if (!env.CJ_DEV_KEY || !env.CJ_COMPANY_ID) {
-    const missing = [
-      !env.CJ_DEV_KEY && "CJ_DEV_KEY",
-      !env.CJ_COMPANY_ID && "CJ_COMPANY_ID"
-    ].filter(Boolean).join(', ');
-    return json({ error: `Missing required credentials: ${missing}` }, env, 500);
+  // Check for the required credentials
+  if (!env.CJ_DEV_KEY || !env.CJ_WEBSITE_ID) {
+    return json({ error: 'Missing required credentials: CJ_DEV_KEY, CJ_WEBSITE_ID' }, env, 500);
   }
 
-  // Build GraphQL Query Parameters
-  const advertiserIds = url.searchParams.get('advertiserIds');
-  const keywords = url.searchParams.get('q') || 'fragrance';
-  const limit = parseInt(url.searchParams.get('limit') || '50');
-  const page = parseInt(url.searchParams.get('page') || '1');
-  const offset = (page - 1) * limit;
+  const searchParams = url.searchParams;
+  const query = searchParams.get('q') || 'fragrance';
+  const limit = parseInt(searchParams.get('limit') || '50');
+  const advertiserIds = searchParams.get('advertiserIds') || '';
 
-  // Convert keywords string to array for GraphQL
-  const keywordsArray = keywords.split(/\s+/).filter(k => k.trim().length > 0);
-
-  // Build advertiser filter
-  let advertiserFilter = '';
-  if (advertiserIds && advertiserIds.trim() !== '') {
-    const advertiserArray = advertiserIds.split(',').map(id => `"${id.trim()}"`).join(', ');
-    advertiserFilter = `, advertiserIds: [${advertiserArray}]`;
-  }
-
-  const query = `
-    query GetProducts($companyId: ID!, $keywords: [String!], $limit: Int!, $offset: Int!) {
-      products(
-        companyId: $companyId
-        keywords: $keywords
-        limit: $limit
-        offset: $offset
-        ${advertiserFilter}
-      ) {
-        totalCount
-        resultList {
-          id
-          title
-          description
-          price {
-            amount
-            currency
-          }
-          imageLink
-          advertiserId
-          catalogId
-        }
-      }
-    }
-  `;
+  console.log(`Products request: query="${query}", limit=${limit}, advertiserIds="${advertiserIds}"`);
 
   try {
-    const cjRes = await fetch('https://ads.api.cj.com/query', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${env.CJ_DEV_KEY}`,
-        'Accept': 'application/json, */*',
-        'Content-Type': 'application/json',
-        'User-Agent': 'Fragrance-Collect/1.0'
-      },
-      body: JSON.stringify({
-        query,
-        variables: {
-          companyId: env.CJ_COMPANY_ID,
-          keywords: keywordsArray,
-          limit: limit,
-          offset: offset
-        }
-      })
+    // Use the link-search API to get real affiliate links
+    const linkSearchParams = new URLSearchParams({
+      'website-id': env.CJ_WEBSITE_ID,
+      'keywords': query,
+      'records-per-page': limit.toString(),
+      'page-number': '1'
     });
 
-    if (!cjRes.ok) {
-      const errorText = await cjRes.text();
-      return json({ error: 'CJ GraphQL API request failed (products)', status: cjRes.status, details: errorText }, env, cjRes.status);
+    if (advertiserIds && advertiserIds.trim() !== '') {
+      linkSearchParams.set('advertiser-ids', advertiserIds);
     }
-    
-    const data = await cjRes.json();
-    
-    if (data.errors) {
-      return json({ error: 'CJ GraphQL API returned errors', details: data.errors[0]?.message || 'Unknown error' }, env, 400);
+
+    const linkSearchUrl = `https://link-search.api.cj.com/v2/link-search?${linkSearchParams}`;
+    console.log('Link search URL:', linkSearchUrl);
+
+    const linkRes = await fetch(linkSearchUrl, {
+      headers: {
+        'Authorization': `Bearer ${env.CJ_DEV_KEY}`,
+        'Accept': 'application/json, */*'
+      }
+    });
+
+    if (!linkRes.ok) {
+      const errorText = await linkRes.text();
+      console.error('Link search API error:', linkRes.status, errorText);
+      return json({ error: 'CJ link-search API request failed', status: linkRes.status, details: errorText }, env, linkRes.status);
     }
-    
-    // Extract products from GraphQL response
-    const productList = data.data?.products?.resultList || [];
-    
-    // Debug logging
-    console.log('Raw CJ GraphQL API response:', JSON.stringify(data, null, 2));
-    console.log('Product count:', productList.length);
-    
-    const products = productList.map((p, index) => {
-      // Log each product to see what fields are available
-      console.log(`Product ${index + 1}:`, {
-        id: p.id,
-        title: p.title,
-        hasImage: !!p.imageLink,
-        hasPrice: !!p.price?.amount,
-        advertiserId: p.advertiserId
+
+    const linkData = await linkRes.json();
+    console.log('Link search response structure:', Object.keys(linkData));
+
+    if (linkData.errorMessage) {
+      console.error('Link search error:', linkData.errorMessage);
+      return json({ error: 'CJ link-search API error', details: linkData.errorMessage }, env, 500);
+    }
+
+    const linkList = linkData.links || [];
+    console.log(`Found ${linkList.length} affiliate links from link-search API`);
+
+    // Filter out promotional/banner links, keep only product links
+    const productLinks = linkList.filter(link => {
+      const name = link.linkName?.toLowerCase() || '';
+      return !name.includes('banner') && 
+             !name.includes('logo') && 
+             !name.includes('promotional') &&
+             link.clickUrl && 
+             link.clickUrl.trim() !== '';
+    });
+
+    console.log(`Filtered to ${productLinks.length} product links`);
+
+    // Map the link data to our product format
+    const products = productLinks.map((link, index) => {
+      console.log(`Product link ${index + 1}:`, {
+        linkId: link.linkId,
+        linkName: link.linkName,
+        hasImage: !!link.imageUrl,
+        hasClickUrl: !!link.clickUrl,
+        advertiserName: link.advertiserName
       });
-      
-      // Construct affiliate link manually using CJ pattern
-      const cjLink = constructCJAffiliateLink(p.id, p.advertiserId, env.CJ_WEBSITE_ID);
-      
+
       return {
-        id: p.id || `${p.advertiserId}-${p.catalogId || Date.now()}`,
-        name: p.title || 'Unknown Product',
-        brand: p.advertiserId || 'Unknown',
-        price: p.price?.amount ? parseFloat(p.price.amount) : 0,
-        rating: 0, // Rating not available in GraphQL API
-        image: p.imageLink || null,
-        description: p.description || '',
-        cjLink: cjLink,
-        advertiser: p.advertiserId || 'Unknown',
-        shippingCost: null, // Shipping cost not available in GraphQL API
-        currency: p.price?.currency || 'USD',
+        id: link.linkId || `link_${Date.now()}_${index}`,
+        name: link.linkName || 'Unknown Product',
+        brand: link.advertiserName || 'Unknown Brand',
+        price: 0, // Price not available in link-search API
+        rating: 0, // Rating not available in link-search API
+        image: link.imageUrl || null,
+        description: link.description || '',
+        cjLink: link.clickUrl || '', // Use the real affiliate link
+        advertiser: link.advertiserName || 'Unknown',
+        shippingCost: null, // Shipping cost not available in link-search API
+        currency: 'USD',
         // Add debug info
         debug: {
-          hasImage: !!p.imageLink,
-          hasPrice: !!p.price?.amount,
-          hasLink: !!cjLink,
-          advertiserId: p.advertiserId,
-          catalogId: p.catalogId,
-          constructedLink: cjLink
+          hasImage: !!link.imageUrl,
+          hasPrice: false,
+          hasLink: !!link.clickUrl,
+          advertiserId: link.advertiserId,
+          linkId: link.linkId,
+          realAffiliateLink: link.clickUrl
         }
       };
     });
@@ -230,7 +201,7 @@ async function handleProductsRequest(url, env) {
     if (advertiserIds && advertiserIds.trim() !== '') {
       const advertiserArray = advertiserIds.split(',').map(id => id.trim());
       filteredProducts = products.filter(p => 
-        p.advertiserId && advertiserArray.includes(p.advertiserId)
+        p.advertiser && advertiserArray.includes(p.advertiser)
       );
       console.log(`Advertiser filtered: ${products.length} total, ${filteredProducts.length} after advertiser filter`);
     }
@@ -243,19 +214,19 @@ async function handleProductsRequest(url, env) {
     return json({ 
       products: productsWithLinks, 
       total: productsWithLinks.length,
-      originalTotal: productList.length,
+      originalTotal: linkList.length,
       debug: {
-        totalProducts: productList.length,
+        totalProducts: linkList.length,
         productsWithLinks: productsWithLinks.length,
         productsWithoutLinks: products.length - productsWithLinks.length,
         filteredOut: products.length - productsWithLinks.length,
-        note: "Using GraphQL API with manually constructed affiliate links - no shipping data available",
-        rawFirstProduct: productList.length > 0 ? productList[0] : null
+        note: "Using link-search API for real affiliate links - limited product data available",
+        rawFirstProduct: productLinks.length > 0 ? productLinks[0] : null
       }
     }, env);
 
   } catch (error) {
-    return json({ error: 'Failed to fetch from CJ GraphQL API', details: error.message }, env, 500);
+    return json({ error: 'Failed to fetch from CJ link-search API', details: error.message }, env, 500);
   }
 }
 
