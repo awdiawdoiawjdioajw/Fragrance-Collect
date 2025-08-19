@@ -161,24 +161,8 @@ async function handleProductsRequest(url, env) {
     const linkList = linkData.links || [];
     console.log(`Found ${linkList.length} affiliate links from link-search API`);
 
-    // Define keywords for more relevant filtering
-    const fragranceKeywords = ['fragrance', 'perfume', 'cologne', 'eau de toilette', 'parfum', 'scent'];
-
-    // Implement smarter filtering
-    const productLinks = linkList.filter(link => {
-      if (!link.clickUrl || link.clickUrl.trim() === '') {
-        return false;
-      }
-      
-      const name = link.linkName?.toLowerCase() || '';
-      const description = link.description?.toLowerCase() || '';
-      
-      // Check for fragrance-related keywords and exclude common promotional terms
-      const hasKeyword = fragranceKeywords.some(keyword => name.includes(keyword) || description.includes(keyword));
-      const isPromotional = name.includes('banner') || name.includes('logo') || name.includes('free shipping') || name.includes('homepage');
-      
-      return hasKeyword && !isPromotional;
-    });
+    // Revert to the relaxed filter to ensure all products with links are displayed
+    const productLinks = linkList.filter(link => link.clickUrl && link.clickUrl.trim() !== '');
 
     console.log(`Filtered to ${productLinks.length} product links`);
 
@@ -240,7 +224,7 @@ async function handleProductsRequest(url, env) {
         productsWithLinks: productsWithLinks.length,
         productsWithoutLinks: filteredProducts.length - productsWithLinks.length,
         filteredOut: linkList.length - productsWithLinks.length,
-        note: "Using link-search API with smarter, keyword-based filtering.",
+        note: "Using link-search API with relaxed filtering to display all products.",
         rawFirstProduct: linkList.length > 0 ? linkList[0] : null
       }
     }, env);
