@@ -115,18 +115,16 @@ async function checkApiHealth() {
         const data = await res.json().catch(() => ({}));
         console.log('API Health Check Response:', data); // Log the full response
         
+        // Check if the API is responding (your worker returns { status: 'ok' })
         const isOverallHealthy = data && (data.status === 'ok' || data.ok === true);
-        const isCjHealthy = data && data.cj && data.cj.status === 'ok';
-
+        
         if (!isOverallHealthy) {
             return { healthy: false, message: 'Backend API is not healthy.' };
         }
-        if (!isCjHealthy) {
-            const cjMessage = data.cj ? data.cj.message : 'CJ connection check failed.';
-            return { healthy: false, message: `API is running, but CJ connection failed: ${cjMessage}` };
-        }
 
-        return { healthy: true, message: 'API and CJ connection are healthy.' };
+        // Since your worker doesn't have a separate CJ health check,
+        // we'll consider it healthy if the API responds
+        return { healthy: true, message: 'API is healthy and ready to serve products.' };
 
     } catch (e) {
         console.error('API health check threw an error:', e);
