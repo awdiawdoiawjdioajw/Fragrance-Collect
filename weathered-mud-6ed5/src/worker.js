@@ -139,8 +139,17 @@ async function handleProductsRequest(url, env) {
       return json({ error: 'CJ link-search API request failed', status: linkRes.status, details: errorText }, env, linkRes.status);
     }
 
-    const linkData = await linkRes.json();
-    console.log('Link search response structure:', Object.keys(linkData));
+    // Try to parse as JSON first, fallback to XML
+    let linkData;
+    try {
+      linkData = await linkRes.json();
+      console.log('Link search response structure:', Object.keys(linkData));
+    } catch (jsonError) {
+      console.log('JSON parsing failed, trying XML...');
+      const xmlText = await linkRes.text();
+      linkData = parseCJXML(xmlText);
+      console.log('XML parsed response structure:', Object.keys(linkData));
+    }
 
     if (linkData.errorMessage) {
       console.error('Link search error:', linkData.errorMessage);
