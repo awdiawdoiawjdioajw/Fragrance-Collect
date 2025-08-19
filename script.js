@@ -254,7 +254,12 @@ async function initializeApp() {
     cjProducts = cjProducts.filter(p => p.image && !p.name.toLowerCase().includes('banner') && !p.name.toLowerCase().includes('logo'));
 
     if (!cjProducts.length) {
-        await loadCJProductsMulti(['perfume','cologne','eau de parfum','eau de toilette']);
+        // Broader diagnostic search to find any product from active partners
+        const diagnosticQueries = [
+            'perfume', 'cologne', 'eau de parfum', 'eau de toilette', 
+            'fragrance', 'beauty', 'gift', 'sale', 'shop'
+        ];
+        await loadCJProductsMulti(diagnosticQueries);
         cjProducts = cjProducts.filter(p => p.image && !p.name.toLowerCase().includes('banner') && !p.name.toLowerCase().includes('logo'));
     }
     
