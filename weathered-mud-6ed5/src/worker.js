@@ -139,16 +139,18 @@ async function handleProductsRequest(url, env) {
       return json({ error: 'CJ link-search API request failed', status: linkRes.status, details: errorText }, env, linkRes.status);
     }
 
+    // Read the response body as text ONCE to avoid "body already used" error
+    const responseText = await linkRes.text();
+
     // Try to parse as JSON first, fallback to XML
     let linkData;
     try {
-      linkData = await linkRes.json();
-      console.log('Link search response structure:', Object.keys(linkData));
+      linkData = JSON.parse(responseText);
+      console.log('Link search response parsed as JSON.');
     } catch (jsonError) {
       console.log('JSON parsing failed, trying XML...');
-      const xmlText = await linkRes.text();
-      linkData = parseCJXML(xmlText);
-      console.log('XML parsed response structure:', Object.keys(linkData));
+      linkData = parseCJXML(responseText);
+      console.log('Link search response parsed as XML.');
     }
 
     if (linkData.errorMessage) {
