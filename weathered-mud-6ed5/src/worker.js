@@ -23,7 +23,7 @@ export default {
           return await handleFeedsRequest(env);
 
         case 'products':
-          return await handleProductsRequest(url, env);
+          return await handleProductsRequest(req, url, env);
 
         case 'test-cj':
           return await handleTestCJRequest(env);
@@ -97,7 +97,7 @@ async function handleFeedsRequest(env) {
  * Handles requests to the /products endpoint using the CJ GraphQL API.
  * Since the API doesn't provide affiliate links directly, we construct them manually.
  */
-async function handleProductsRequest(url, env) {
+async function handleProductsRequest(req, url, env) {
   // Check for all required credentials
   if (!env.CJ_DEV_KEY || !env.CJ_COMPANY_ID || !env.CJ_WEBSITE_ID) {
     return json({ error: 'Missing required credentials: CJ_DEV_KEY, CJ_COMPANY_ID, CJ_WEBSITE_ID' }, env, 500);
