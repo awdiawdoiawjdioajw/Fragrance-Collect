@@ -108,9 +108,8 @@ async function handleProductsRequest(req, url, env) {
   const limit = parseInt(searchParams.get('limit') || '20');
   const page = parseInt(searchParams.get('page') || '1');
   const offset = (page - 1) * limit;
-  const brand = searchParams.get('brand') || null;
 
-  console.log(`Products request: query="${query}", limit=${limit}, page=${page}, offset=${offset}, brand=${brand}`);
+  console.log(`Products request: query="${query}", limit=${limit}, page=${page}, offset=${offset}`);
 
   // Implement caching
   const cache = caches.default;

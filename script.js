@@ -171,17 +171,16 @@ function mapProductsDataToItems(data) {
 }
 
 // SIMPLIFIED: Fetch logic is much cleaner now.
-async function fetchCJProducts(query = '', page = 1, brand = '') {
+async function fetchCJProducts(query = '', page = 1) {
     const base = `${config.API_ENDPOINT}/products`;
     const sp = new URLSearchParams();
-    
+
     const sanitizedQuery = SecurityUtils.validateSearchQuery(query);
     if (sanitizedQuery) sp.set('q', sanitizedQuery);
-    
+
     sp.set('limit', config.RESULTS_PER_PAGE.toString());
     sp.set('page', page.toString());
-    if (brand) sp.set('brand', brand);
-    
+
     const url = `${base}?${sp.toString()}`;
     
     try {
@@ -448,7 +447,6 @@ function populateBrandFilter() {
 // Add event listeners
 function addEventListeners() {
     // Filter event listeners
-    const brandFilter = document.getElementById('brand-filter');
     const priceFilter = document.getElementById('price-filter');
     const ratingFilter = document.getElementById('rating-filter');
     const shippingFilter = document.getElementById('shipping-filter');
@@ -456,23 +454,19 @@ function addEventListeners() {
     const mainSearch = document.getElementById('main-search');
     const searchBtn = document.querySelector('.search-btn');
     const browseFragrancesBtn = document.getElementById('browse-fragrances');
-    
-    if (brandFilter) {
-        brandFilter.addEventListener('change', applyFilters);
-    }
-    
+
     if (priceFilter) {
         priceFilter.addEventListener('change', applyFilters);
     }
-    
+
     if (ratingFilter) {
         ratingFilter.addEventListener('change', applyFilters);
     }
-    
+
     if (shippingFilter) {
         shippingFilter.addEventListener('change', applyFilters);
     }
-    
+
     if (clearFiltersBtn) {
         clearFiltersBtn.addEventListener('click', clearFilters);
     }
@@ -565,21 +559,17 @@ function addEventListeners() {
 
 // Apply filters
 function applyFilters() {
-    const brandFilter = document.getElementById('brand-filter');
     const priceFilter = document.getElementById('price-filter');
     const ratingFilter = document.getElementById('rating-filter');
     const shippingFilter = document.getElementById('shipping-filter');
-    
-    currentFilters.brand = brandFilter ? brandFilter.value : '';
+
     currentFilters.priceRange = priceFilter ? priceFilter.value : '';
     currentFilters.rating = ratingFilter ? ratingFilter.value : '';
     currentFilters.shipping = shippingFilter ? shippingFilter.value : '';
 
-    const searchTerm = document.getElementById('main-search')?.value || '';
-    
     showLoading();
-    loadCJProducts(searchTerm, currentPage).then(() => {
-        filterPerfumes(); // This will apply client-side filters like brand
+    loadCJProducts('', currentPage).then(() => {
+        filterPerfumes(); // This will apply client-side filters like price/rating/shipping
         hideLoading();
     });
 }
@@ -587,11 +577,6 @@ function applyFilters() {
 // Filter perfumes based on current filters
 function filterPerfumes() {
     filteredPerfumes = cjProducts.filter(perfume => {
-        // Brand filter (client-side for current page)
-        if (currentFilters.brand && perfume.brand.toLowerCase().replace(/\s+/g, '-') !== currentFilters.brand) {
-            return false;
-        }
-        
         // Price range filter
         if (currentFilters.priceRange) {
             const [min, max] = currentFilters.priceRange.split('-').map(Number);
@@ -601,7 +586,7 @@ function filterPerfumes() {
                 return false;
             }
         }
-        
+
         // Rating filter
         if (currentFilters.rating) {
             const minRating = parseInt(currentFilters.rating);
@@ -609,29 +594,17 @@ function filterPerfumes() {
                 return false;
             }
         }
-        
+
         // Shipping filter
         if (currentFilters.shipping) {
             if (!matchesShipping(perfume, currentFilters.shipping)) {
                 return false;
             }
         }
-        
-        // Search filter
-        if (currentFilters.search) {
-            const searchTerm = currentFilters.search.toLowerCase();
-            const matchesName = perfume.name.toLowerCase().includes(searchTerm);
-            const matchesBrand = perfume.brand.toLowerCase().includes(searchTerm);
-            const matchesDescription = perfume.description.toLowerCase().includes(searchTerm);
-            
-            if (!matchesName && !matchesBrand && !matchesDescription) {
-                return false;
-            }
-        }
-        
+
         return true;
     });
-    
+
     // Sort with free shipping priority on price ties
     filteredPerfumes.sort((a, b) => {
         if (a.price === b.price) {
@@ -670,16 +643,14 @@ function matchesShipping(perfume, filterVal) {
 // Filter by collection type
 async function filterByCollection(collectionTitle) {
     // Clear existing filters
-    currentFilters = { brand: '', priceRange: '', rating: '', shipping: '', search: '' };
+    currentFilters = { priceRange: '', rating: '', shipping: '', search: '' };
 
     // Reset filter dropdowns
-    const brandFilter = document.getElementById('brand-filter');
     const priceFilter = document.getElementById('price-filter');
     const ratingFilter = document.getElementById('rating-filter');
     const shippingFilter = document.getElementById('shipping-filter');
     const mainSearch = document.getElementById('main-search');
-    
-    if (brandFilter) brandFilter.value = '';
+
     if (priceFilter) priceFilter.value = '';
     if (ratingFilter) ratingFilter.value = '';
     if (shippingFilter) shippingFilter.value = '';
@@ -716,18 +687,16 @@ async function filterByCollection(collectionTitle) {
 // Clear all filters
 function clearFilters() {
     // Reset all filter select elements to their default value
-    const brandFilter = document.getElementById('brand-filter');
     const priceFilter = document.getElementById('price-filter');
     const ratingFilter = document.getElementById('rating-filter');
     const shippingFilter = document.getElementById('shipping-filter');
     const mainSearch = document.getElementById('main-search');
-    
-    if (brandFilter) brandFilter.value = '';
+
     if (priceFilter) priceFilter.value = '';
     if (ratingFilter) ratingFilter.value = '';
     if (shippingFilter) shippingFilter.value = '';
     if (mainSearch) mainSearch.value = '';
-    
+
     // Hide the clear search button
     const clearSearchBtn = document.getElementById('clear-search');
     if (clearSearchBtn) {
@@ -735,8 +704,8 @@ function clearFilters() {
     }
 
     // Reset the internal filters state object
-    currentFilters = { brand: '', priceRange: '', rating: '', shipping: '', search: '' };
-    
+    currentFilters = { priceRange: '', rating: '', shipping: '', search: '' };
+
     // Hide the search results informational text
     const searchResultsInfo = document.getElementById('search-results-info');
     if(searchResultsInfo) {
@@ -745,9 +714,9 @@ function clearFilters() {
 
     // Show loading indicator and reload the default set of products
     showLoading();
-    loadCJProducts('fragrance', currentPage).then(() => { // Reload with default query
+    loadCJProducts('fragrance', currentPage).then(() => {
         filteredPerfumes = [...cjProducts];
-        // As the API doesn't support rating filters, sort by price as the default criteria.
+        // Sort by price as the default criteria.
         filteredPerfumes.sort((a, b) => a.price - b.price);
         displayProducts(filteredPerfumes);
         hideLoading();
