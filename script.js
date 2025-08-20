@@ -470,7 +470,11 @@ function addEventListeners() {
     if (clearFiltersBtn) {
         clearFiltersBtn.addEventListener('click', clearFilters);
     }
-    
+
+    if (searchBtn) {
+        searchBtn.addEventListener('click', performSearch);
+    }
+
     if (mainSearch) {
         mainSearch.addEventListener('input', performSearch);
         // Add Enter key support for search
