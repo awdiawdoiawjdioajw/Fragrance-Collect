@@ -118,7 +118,6 @@ async function handleProductsRequest(url, env) {
             id
             title
             description
-            link # <-- Add this to get the product's destination URL
             price {
               amount
               currency
@@ -126,7 +125,6 @@ async function handleProductsRequest(url, env) {
             imageLink
             advertiserId
             advertiserName
-            link
           }
         }
       }
@@ -157,21 +155,42 @@ async function handleProductsRequest(url, env) {
     const productList = gqlData.data?.products?.resultList || [];
     console.log(`Found ${productList.length} products from GraphQL API`);
 
-    // Step 2: Directly process products from GraphQL, constructing deep links
+    // Step 2: Get monetizable links from link-search API
+    const linkSearchParams = new URLSearchParams({
+      'website-id': env.CJ_WEBSITE_ID,
+      'keywords': query,
+      'advertiser-ids': 'joined',
+      'records-per-page': '100'
+    });
+
+    const linkSearchUrl = `https://link-search.api.cj.com/v2/link-search?${linkSearchParams}`;
+    const linkRes = await fetch(linkSearchUrl, {
+      headers: { 'Authorization': `Bearer ${env.CJ_DEV_KEY}`, 'Accept': 'application/json, */*' }
+    });
+
+    if (!linkRes.ok) {
+      const errorText = await linkRes.text();
+      return json({ error: 'CJ link-search API request failed', status: linkRes.status, details: errorText }, env, linkRes.status);
+    }
+    
+    const responseText = await linkRes.text();
+    let linkData;
+    try {
+      linkData = JSON.parse(responseText);
+    } catch (e) {
+      linkData = parseCJXML(responseText);
+    }
+    
+    const monetizableLinks = new Map((linkData.links || []).map(link => [link.advertiserId, link.clickUrl]));
+    console.log(`Found ${monetizableLinks.size} unique monetizable links`);
+
+    // Step 3: Combine and filter
     const products = productList
       .map(p => {
-        // The 'link' property from GraphQL is the direct product URL.
-        // We must URL-encode it to be used in our affiliate link.
-        if (!p.link) {
-          return null; // Skip products without a destination URL
+        const cjLink = monetizableLinks.get(p.advertiserId);
+        if (!cjLink) {
+          return null; // Discard product if no monetizable link is found
         }
-
-        // Construct a CJ deep link.
-        // This format redirects through CJ's servers to the product page,
-        // ensuring the affiliate is credited.
-        const encodedUrl = encodeURIComponent(p.link);
-        const cjLink = `https://www.anrdoezrs.net/click-${env.CJ_WEBSITE_ID}-0?url=${encodedUrl}`;
-        
         return {
           id: p.id,
           name: p.title,
@@ -179,25 +198,25 @@ async function handleProductsRequest(url, env) {
           price: parseFloat(p.price?.amount || 0),
           image: p.imageLink,
           description: p.description,
-          cjLink: cjLink, // Use the constructed deep link
+          cjLink: cjLink, // Use the real, monetizable link
           advertiser: p.advertiserName,
           currency: p.price?.currency || 'USD',
           debug: {
-            source: 'GraphQL with constructed deep link'
+            source: 'GraphQL + Link Search Hybrid'
           }
         };
       })
       .filter(Boolean) // Remove null entries
       .slice(0, limit); // Apply limit after filtering
 
-    console.log(`Returning ${products.length} processed products with deep links`);
+    console.log(`Returning ${products.length} combined and filtered products`);
 
     return json({
       products: products,
       total: products.length,
       originalTotal: productList.length,
       debug: {
-        note: "Using GraphQL with constructed deep links. Products without destination URLs are skipped.",
+        note: "Using hybrid GraphQL and link-search approach for rich data and monetizable links.",
         rawFirstProduct: productList.length > 0 ? productList[0] : null
       }
     }, env);
