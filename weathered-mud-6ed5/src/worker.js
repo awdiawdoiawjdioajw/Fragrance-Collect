@@ -105,11 +105,12 @@ async function handleProductsRequest(req, url, env) {
 
   const searchParams = url.searchParams;
   const query = searchParams.get('q') || 'fragrance';
-  const limit = parseInt(searchParams.get('limit') || '50');
+  const limit = parseInt(searchParams.get('limit') || '20');
   const page = parseInt(searchParams.get('page') || '1');
   const offset = (page - 1) * limit;
+  const brand = searchParams.get('brand') || null;
 
-  console.log(`Products request: query="${query}", limit=${limit}, page=${page}, offset=${offset}`);
+  console.log(`Products request: query="${query}", limit=${limit}, page=${page}, offset=${offset}, brand=${brand}`);
 
   // Implement caching
   const cache = caches.default;
@@ -126,8 +127,8 @@ async function handleProductsRequest(req, url, env) {
   try {
     // Step 1: Get rich product data from GraphQL API
     const gqlQuery = `
-      query products($companyId: ID!, $keywords: [String!], $limit: Int!, $offset: Int!, $websiteId: ID!) {
-        products(companyId: $companyId, keywords: $keywords, limit: $limit, offset: $offset) {
+      query products($companyId: ID!, $keywords: [String!], $limit: Int!, $offset: Int!, $websiteId: ID!, $brand: String) {
+        products(companyId: $companyId, keywords: $keywords, limit: $limit, offset: $offset, brand: $brand) {
           totalCount
           resultList {
             id
@@ -153,7 +154,8 @@ async function handleProductsRequest(req, url, env) {
       keywords: query.split(/\s+/).filter(k => k.length > 0),
       limit: limit, // Use the limit from the request
       offset: offset,
-      websiteId: env.CJ_WEBSITE_ID
+      websiteId: env.CJ_WEBSITE_ID,
+      brand: brand
     };
 
     const gqlRes = await fetch('https://ads.api.cj.com/query', {

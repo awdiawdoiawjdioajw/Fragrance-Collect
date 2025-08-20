@@ -171,7 +171,7 @@ function mapProductsDataToItems(data) {
 }
 
 // SIMPLIFIED: Fetch logic is much cleaner now.
-async function fetchCJProducts(query = '', page = 1) {
+async function fetchCJProducts(query = '', page = 1, brand = '') {
     const base = `${config.API_ENDPOINT}/products`;
     const sp = new URLSearchParams();
     
@@ -180,6 +180,7 @@ async function fetchCJProducts(query = '', page = 1) {
     
     sp.set('limit', config.RESULTS_PER_PAGE.toString());
     sp.set('page', page.toString());
+    if (brand) sp.set('brand', brand);
     
     const url = `${base}?${sp.toString()}`;
     
@@ -367,8 +368,9 @@ function changePage(page) {
     if (page < 1 || page > totalPages) return;
     currentPage = page;
     const searchTerm = document.getElementById('main-search')?.value || '';
+    const brand = currentFilters.brand || '';
     showLoading();
-    loadCJProducts(searchTerm, currentPage).then(() => {
+    loadCJProducts(searchTerm, currentPage, brand).then(() => {
         filterPerfumes();
         hideLoading();
         document.getElementById('shop').scrollIntoView({ behavior: 'smooth' });
@@ -575,9 +577,10 @@ function applyFilters() {
     currentFilters.shipping = shippingFilter ? shippingFilter.value : '';
 
     const searchTerm = document.getElementById('main-search')?.value || '';
+    const brand = currentFilters.brand || '';
     
     showLoading();
-    loadCJProducts(searchTerm, currentPage).then(() => {
+    loadCJProducts(searchTerm, 1, brand).then(() => {
         filterPerfumes(); // This will apply client-side filters like brand/price
         hideLoading();
     });
