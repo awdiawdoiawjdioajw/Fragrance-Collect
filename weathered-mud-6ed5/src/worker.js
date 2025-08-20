@@ -112,7 +112,7 @@ async function handleProductsRequest(url, env) {
   try {
     // Step 1: Get rich product data from GraphQL API
     const gqlQuery = `
-      query products($companyId: ID!, $keywords: [String!], $limit: Int!) {
+      query products($companyId: ID!, $keywords: [String!], $limit: Int!, $websiteId: String!) {
         products(companyId: $companyId, keywords: $keywords, limit: $limit) {
           resultList {
             id
@@ -125,6 +125,9 @@ async function handleProductsRequest(url, env) {
             imageLink
             advertiserId
             advertiserName
+            linkCode(pid: $websiteId) {
+              clickUrl
+            }
           }
         }
       }
@@ -133,7 +136,8 @@ async function handleProductsRequest(url, env) {
     const gqlVariables = {
       companyId: env.CJ_COMPANY_ID,
       keywords: query.split(/\s+/).filter(k => k.length > 0),
-      limit: 100 // Fetch a larger batch to increase chances of finding matches
+      limit: 100, // Fetch a larger batch to increase chances of finding matches
+      websiteId: env.CJ_WEBSITE_ID
     };
 
     const gqlRes = await fetch('https://ads.api.cj.com/query', {
@@ -155,39 +159,10 @@ async function handleProductsRequest(url, env) {
     const productList = gqlData.data?.products?.resultList || [];
     console.log(`Found ${productList.length} products from GraphQL API`);
 
-    // Step 2: Get monetizable links from link-search API
-    const linkSearchParams = new URLSearchParams({
-      'website-id': env.CJ_WEBSITE_ID,
-      'keywords': query,
-      'advertiser-ids': 'joined',
-      'records-per-page': '100'
-    });
-
-    const linkSearchUrl = `https://link-search.api.cj.com/v2/link-search?${linkSearchParams}`;
-    const linkRes = await fetch(linkSearchUrl, {
-      headers: { 'Authorization': `Bearer ${env.CJ_DEV_KEY}`, 'Accept': 'application/json, */*' }
-    });
-
-    if (!linkRes.ok) {
-      const errorText = await linkRes.text();
-      return json({ error: 'CJ link-search API request failed', status: linkRes.status, details: errorText }, env, linkRes.status);
-    }
-    
-    const responseText = await linkRes.text();
-    let linkData;
-    try {
-      linkData = JSON.parse(responseText);
-    } catch (e) {
-      linkData = parseCJXML(responseText);
-    }
-    
-    const monetizableLinks = new Map((linkData.links || []).map(link => [link.advertiserId, link.clickUrl]));
-    console.log(`Found ${monetizableLinks.size} unique monetizable links`);
-
-    // Step 3: Combine and filter
+    // Step 2: Process the product list to extract the correct link
     const products = productList
       .map(p => {
-        const cjLink = monetizableLinks.get(p.advertiserId);
+        const cjLink = p.linkCode?.clickUrl;
         if (!cjLink) {
           return null; // Discard product if no monetizable link is found
         }
@@ -198,32 +173,32 @@ async function handleProductsRequest(url, env) {
           price: parseFloat(p.price?.amount || 0),
           image: p.imageLink,
           description: p.description,
-          cjLink: cjLink, // Use the real, monetizable link
+          cjLink: cjLink, // Use the real, monetizable link from GraphQL
           advertiser: p.advertiserName,
           currency: p.price?.currency || 'USD',
           debug: {
-            source: 'GraphQL + Link Search Hybrid'
+            source: 'GraphQL with linkCode'
           }
         };
       })
       .filter(Boolean) // Remove null entries
       .slice(0, limit); // Apply limit after filtering
 
-    console.log(`Returning ${products.length} combined and filtered products`);
+    console.log(`Returning ${products.length} processed products`);
 
     return json({
       products: products,
       total: products.length,
       originalTotal: productList.length,
       debug: {
-        note: "Using hybrid GraphQL and link-search approach for rich data and monetizable links.",
+        note: "Using GraphQL with linkCode to get direct affiliate links.",
         rawFirstProduct: productList.length > 0 ? productList[0] : null
       }
     }, env);
 
   } catch (error) {
-    console.error('Hybrid product fetch error:', error);
-    return json({ error: 'Failed to fetch products using hybrid approach', details: error.message }, env, 500);
+    console.error('Product fetch error:', error);
+    return json({ error: 'Failed to fetch products', details: error.message }, env, 500);
   }
 }
 
