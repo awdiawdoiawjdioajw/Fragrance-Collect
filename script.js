@@ -74,6 +74,8 @@ let currentFilters = {
 let cjProducts = [];
 let filteredPerfumes = [];
 let availableFeeds = [];
+let currentPage = 1;
+let totalPages = 1;
 
 // Configuration
 const config = {
@@ -169,7 +171,7 @@ function mapProductsDataToItems(data) {
 }
 
 // SIMPLIFIED: Fetch logic is much cleaner now.
-async function fetchCJProducts(query = '') {
+async function fetchCJProducts(query = '', page = 1) {
     const base = `${config.API_ENDPOINT}/products`;
     const sp = new URLSearchParams();
     
@@ -177,6 +179,7 @@ async function fetchCJProducts(query = '') {
     if (sanitizedQuery) sp.set('q', sanitizedQuery);
     
     sp.set('limit', config.RESULTS_PER_PAGE.toString());
+    sp.set('page', page.toString());
     
     const url = `${base}?${sp.toString()}`;
     
@@ -203,6 +206,7 @@ async function fetchCJProducts(query = '') {
             throw new Error(data.error + (data.details ? `: ${SecurityUtils.escapeHtml(data.details)}` : ''));
         }
         
+        totalPages = Math.ceil(data.total / config.RESULTS_PER_PAGE);
         return mapProductsDataToItems(data);
 
     } catch (error) {
@@ -223,9 +227,9 @@ function sortWithFreeShippingPriority(list) {
     });
 }
 
-async function loadCJProducts(query = '') {
+async function loadCJProducts(query = '', page = 1) {
     try {
-        const items = await fetchCJProducts(query);
+        const items = await fetchCJProducts(query, page);
         // If nothing returned and we know some joined advertisers exist,
         // try some brand-focused queries to increase hit rate
         if (!items.length) {
@@ -268,7 +272,7 @@ async function initializeApp() {
     }
     // Set a default rating filter and load initial products
     currentFilters.rating = '5'; // Set default filter state
-    await loadCJProducts('fragrance'); // Load top 50 fragrances by default
+    await loadCJProducts('fragrance', currentPage); // Load top 50 fragrances by default
     
     // The API doesn't support rating filters, so we perform a client-side sort
     // as a substitute. Here we'll sort by price as the default.
@@ -319,6 +323,7 @@ function displayProducts(perfumes) {
     }
     
     productsGrid.innerHTML = perfumes.map(perfume => createProductCard(perfume)).join('');
+    displayPagination();
 }
 
 // Display top rated products
@@ -331,6 +336,32 @@ function displayTopRated() {
         .slice(0, 4);
     
     topRatedGrid.innerHTML = topRated.map(perfume => createProductCard(perfume)).join('');
+}
+
+function displayPagination() {
+    const paginationContainer = document.getElementById('pagination-container');
+    if (!paginationContainer) return;
+
+    paginationContainer.innerHTML = `
+        <button id="prev-page" class="pagination-btn" ${currentPage === 1 ? 'disabled' : ''}>Previous</button>
+        <span class="page-info">Page ${currentPage} of ${totalPages}</span>
+        <button id="next-page" class="pagination-btn" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>
+    `;
+
+    document.getElementById('prev-page').addEventListener('click', () => changePage(currentPage - 1));
+    document.getElementById('next-page').addEventListener('click', () => changePage(currentPage + 1));
+}
+
+function changePage(page) {
+    if (page < 1 || page > totalPages) return;
+    currentPage = page;
+    const searchTerm = document.getElementById('main-search')?.value || '';
+    showLoading();
+    loadCJProducts(searchTerm, currentPage).then(() => {
+        filterPerfumes();
+        hideLoading();
+        document.getElementById('shop').scrollIntoView({ behavior: 'smooth' });
+    });
 }
 
 // Create product card HTML with XSS protection
@@ -535,7 +566,7 @@ function applyFilters() {
     const searchTerm = document.getElementById('main-search')?.value || '';
     
     showLoading();
-    loadCJProducts(searchTerm).then(() => {
+    loadCJProducts(searchTerm, currentPage).then(() => {
         filterPerfumes(); // This will apply client-side filters like brand/price
         hideLoading();
     });
@@ -696,7 +727,7 @@ function clearFilters() {
 
     // Show loading indicator and reload the default set of products
     showLoading();
-    loadCJProducts('fragrance').then(() => { // Reload with default query
+    loadCJProducts('fragrance', currentPage).then(() => { // Reload with default query
         filteredPerfumes = [...cjProducts];
         // As the API doesn't support rating filters, sort by price as the default criteria.
         filteredPerfumes.sort((a, b) => a.price - b.price);
@@ -716,7 +747,7 @@ function performSearch() {
     currentFilters.search = validatedSearchTerm;
     
     // Always reload from CJ with query
-    loadCJProducts(validatedSearchTerm).then(() => {
+    loadCJProducts(validatedSearchTerm, currentPage).then(() => {
         filterPerfumes();
     });
     

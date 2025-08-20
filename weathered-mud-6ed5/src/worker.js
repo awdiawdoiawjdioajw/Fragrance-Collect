@@ -106,14 +106,29 @@ async function handleProductsRequest(url, env) {
   const searchParams = url.searchParams;
   const query = searchParams.get('q') || 'fragrance';
   const limit = parseInt(searchParams.get('limit') || '50');
+  const page = parseInt(searchParams.get('page') || '1');
+  const offset = (page - 1) * limit;
 
-  console.log(`Products request: query="${query}", limit=${limit}`);
+  console.log(`Products request: query="${query}", limit=${limit}, page=${page}, offset=${offset}`);
+
+  // Implement caching
+  const cache = caches.default;
+  const cacheKey = new Request(url.toString(), req);
+  let response = await cache.match(cacheKey);
+
+  if (response) {
+    console.log('Cache hit');
+    return response;
+  }
+
+  console.log('Cache miss');
 
   try {
     // Step 1: Get rich product data from GraphQL API
     const gqlQuery = `
-      query products($companyId: ID!, $keywords: [String!], $limit: Int!, $websiteId: ID!) {
-        products(companyId: $companyId, keywords: $keywords, limit: $limit) {
+      query products($companyId: ID!, $keywords: [String!], $limit: Int!, $offset: Int!, $websiteId: ID!) {
+        products(companyId: $companyId, keywords: $keywords, limit: $limit, offset: $offset) {
+          totalCount
           resultList {
             id
             title
@@ -136,7 +151,8 @@ async function handleProductsRequest(url, env) {
     const gqlVariables = {
       companyId: env.CJ_COMPANY_ID,
       keywords: query.split(/\s+/).filter(k => k.length > 0),
-      limit: 100, // Fetch a larger batch to increase chances of finding matches
+      limit: limit, // Use the limit from the request
+      offset: offset,
       websiteId: env.CJ_WEBSITE_ID
     };
 
@@ -157,6 +173,7 @@ async function handleProductsRequest(url, env) {
     }
 
     const productList = gqlData.data?.products?.resultList || [];
+    const totalCount = gqlData.data?.products?.totalCount || 0;
     console.log(`Found ${productList.length} products from GraphQL API`);
 
     // Step 2: Process the product list to extract the correct link
@@ -186,15 +203,23 @@ async function handleProductsRequest(url, env) {
 
     console.log(`Returning ${products.length} processed products`);
 
-    return json({
+    const jsonResponse = {
       products: products,
-      total: products.length,
+      total: totalCount,
+      page: page,
+      limit: limit,
       originalTotal: productList.length,
       debug: {
         note: "Using GraphQL with linkCode to get direct affiliate links.",
         rawFirstProduct: productList.length > 0 ? productList[0] : null
       }
-    }, env);
+    };
+
+    response = json(jsonResponse, env);
+    response.headers.set('Cache-Control', 's-maxage=3600'); // Cache for 1 hour
+    await cache.put(cacheKey, response.clone());
+
+    return response;
 
   } catch (error) {
     console.error('Product fetch error:', error);
