@@ -324,6 +324,16 @@ function displayProducts(perfumes) {
     
     productsGrid.innerHTML = perfumes.map(perfume => createProductCard(perfume)).join('');
     displayPagination();
+    
+    // Hide pagination if not needed
+    const paginationContainer = document.getElementById('pagination-container');
+    if (paginationContainer) {
+        if (totalPages <= 1) {
+            paginationContainer.style.display = 'none';
+        } else {
+            paginationContainer.style.display = 'flex';
+        }
+    }
 }
 
 // Display top rated products
@@ -342,10 +352,11 @@ function displayPagination() {
     const paginationContainer = document.getElementById('pagination-container');
     if (!paginationContainer) return;
 
+    // Don't show total pages to avoid confusion with client-side filtering.
     paginationContainer.innerHTML = `
         <button id="prev-page" class="pagination-btn" ${currentPage === 1 ? 'disabled' : ''}>Previous</button>
-        <span class="page-info">Page ${currentPage} of ${totalPages}</span>
-        <button id="next-page" class="pagination-btn" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>
+        <span class="page-info">Page ${currentPage}</span>
+        <button id="next-page" class="pagination-btn" ${currentPage >= totalPages ? 'disabled' : ''}>Next</button>
     `;
 
     document.getElementById('prev-page').addEventListener('click', () => changePage(currentPage - 1));
