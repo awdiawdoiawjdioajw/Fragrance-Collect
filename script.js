@@ -364,16 +364,14 @@ function displayPagination() {
     document.getElementById('next-page').addEventListener('click', () => changePage(currentPage + 1));
 }
 
+// Change page
 function changePage(page) {
     if (page < 1 || page > totalPages) return;
+    
     currentPage = page;
     const searchTerm = document.getElementById('main-search')?.value || '';
-    const brand = currentFilters.brand || '';
-    showLoading();
-    loadCJProducts(searchTerm, currentPage, brand).then(() => {
+    loadCJProducts(searchTerm, currentPage).then(() => {
         filterPerfumes();
-        hideLoading();
-        document.getElementById('shop').scrollIntoView({ behavior: 'smooth' });
     });
 }
 
@@ -557,11 +555,10 @@ function applyFilters() {
     currentFilters.brand = brandFilter ? brandFilter.value : '';
 
     const searchTerm = document.getElementById('main-search')?.value || '';
-    const brand = currentFilters.brand || '';
     
     showLoading();
-    loadCJProducts(searchTerm, 1, brand).then(() => {
-        filterPerfumes(); // This will apply client-side filters like brand/price
+    loadCJProducts(searchTerm, currentPage).then(() => {
+        filterPerfumes(); // This will apply client-side filters like brand
         hideLoading();
     });
 }
@@ -569,6 +566,11 @@ function applyFilters() {
 // Filter perfumes based on current filters
 function filterPerfumes() {
     filteredPerfumes = cjProducts.filter(perfume => {
+        // Brand filter (client-side for current page)
+        if (currentFilters.brand && perfume.brand.toLowerCase().replace(/\s+/g, '-') !== currentFilters.brand) {
+            return false;
+        }
+        
         // Search filter
         if (currentFilters.search) {
             const searchTerm = currentFilters.search.toLowerCase();
