@@ -83,7 +83,7 @@ const config = {
   // PASTE YOUR CLOUDFLARE WORKER URL HERE
   API_ENDPOINT: 'https://weathered-mud-6ed5.joshuablaszczyk.workers.dev', 
   DEFAULT_SEARCH_TERM: 'fragrance',
-  RESULTS_PER_PAGE: 50,
+  RESULTS_PER_PAGE: 20,
 };
 
 function showStatusMessage(message, isError = false) {
