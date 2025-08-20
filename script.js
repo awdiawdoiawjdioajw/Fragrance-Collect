@@ -449,6 +449,9 @@ function populateBrandFilter() {
 function addEventListeners() {
     // Filter event listeners
     const brandFilter = document.getElementById('brand-filter');
+    const priceFilter = document.getElementById('price-filter');
+    const ratingFilter = document.getElementById('rating-filter');
+    const shippingFilter = document.getElementById('shipping-filter');
     const clearFiltersBtn = document.getElementById('clear-filters');
     const mainSearch = document.getElementById('main-search');
     const searchBtn = document.querySelector('.search-btn');
@@ -456,6 +459,18 @@ function addEventListeners() {
     
     if (brandFilter) {
         brandFilter.addEventListener('change', applyFilters);
+    }
+    
+    if (priceFilter) {
+        priceFilter.addEventListener('change', applyFilters);
+    }
+    
+    if (ratingFilter) {
+        ratingFilter.addEventListener('change', applyFilters);
+    }
+    
+    if (shippingFilter) {
+        shippingFilter.addEventListener('change', applyFilters);
     }
     
     if (clearFiltersBtn) {
@@ -551,8 +566,14 @@ function addEventListeners() {
 // Apply filters
 function applyFilters() {
     const brandFilter = document.getElementById('brand-filter');
+    const priceFilter = document.getElementById('price-filter');
+    const ratingFilter = document.getElementById('rating-filter');
+    const shippingFilter = document.getElementById('shipping-filter');
     
     currentFilters.brand = brandFilter ? brandFilter.value : '';
+    currentFilters.priceRange = priceFilter ? priceFilter.value : '';
+    currentFilters.rating = ratingFilter ? ratingFilter.value : '';
+    currentFilters.shipping = shippingFilter ? shippingFilter.value : '';
 
     const searchTerm = document.getElementById('main-search')?.value || '';
     
@@ -569,6 +590,31 @@ function filterPerfumes() {
         // Brand filter (client-side for current page)
         if (currentFilters.brand && perfume.brand.toLowerCase().replace(/\s+/g, '-') !== currentFilters.brand) {
             return false;
+        }
+        
+        // Price range filter
+        if (currentFilters.priceRange) {
+            const [min, max] = currentFilters.priceRange.split('-').map(Number);
+            if (max && (perfume.price < min || perfume.price > max)) {
+                return false;
+            } else if (!max && perfume.price < min) {
+                return false;
+            }
+        }
+        
+        // Rating filter
+        if (currentFilters.rating) {
+            const minRating = parseInt(currentFilters.rating);
+            if (perfume.rating < minRating) {
+                return false;
+            }
+        }
+        
+        // Shipping filter
+        if (currentFilters.shipping) {
+            if (!matchesShipping(perfume, currentFilters.shipping)) {
+                return false;
+            }
         }
         
         // Search filter
@@ -599,6 +645,28 @@ function filterPerfumes() {
     displayProducts(filteredPerfumes);
 }
 
+// Helper function to check if perfume matches shipping filter
+function matchesShipping(perfume, filterVal) {
+    if (!filterVal) return true;
+    const cost = typeof perfume.shippingCost === 'number' ? perfume.shippingCost : null;
+    switch (filterVal) {
+        case 'free':
+            return cost === 0;
+        case 'unknown':
+            return cost === null;
+        case '20+':
+            return cost !== null && cost >= 20;
+        default: {
+            const [minStr, maxStr] = filterVal.split('-');
+            const min = Number(minStr);
+            const max = maxStr ? Number(maxStr) : null;
+            if (cost === null) return false;
+            if (max === null) return cost >= min;
+            return cost >= min && cost <= max;
+        }
+    }
+}
+
 // Filter by collection type
 async function filterByCollection(collectionTitle) {
     // Clear existing filters
@@ -606,8 +674,15 @@ async function filterByCollection(collectionTitle) {
 
     // Reset filter dropdowns
     const brandFilter = document.getElementById('brand-filter');
+    const priceFilter = document.getElementById('price-filter');
+    const ratingFilter = document.getElementById('rating-filter');
+    const shippingFilter = document.getElementById('shipping-filter');
     const mainSearch = document.getElementById('main-search');
+    
     if (brandFilter) brandFilter.value = '';
+    if (priceFilter) priceFilter.value = '';
+    if (ratingFilter) ratingFilter.value = '';
+    if (shippingFilter) shippingFilter.value = '';
     if (mainSearch) mainSearch.value = '';
 
     // Live themed fetch
@@ -642,15 +717,16 @@ async function filterByCollection(collectionTitle) {
 function clearFilters() {
     // Reset all filter select elements to their default value
     const brandFilter = document.getElementById('brand-filter');
-    if (brandFilter) {
-        brandFilter.value = '';
-    }
-
-    // Clear the main search input
+    const priceFilter = document.getElementById('price-filter');
+    const ratingFilter = document.getElementById('rating-filter');
+    const shippingFilter = document.getElementById('shipping-filter');
     const mainSearch = document.getElementById('main-search');
-    if (mainSearch) {
-        mainSearch.value = '';
-    }
+    
+    if (brandFilter) brandFilter.value = '';
+    if (priceFilter) priceFilter.value = '';
+    if (ratingFilter) ratingFilter.value = '';
+    if (shippingFilter) shippingFilter.value = '';
+    if (mainSearch) mainSearch.value = '';
     
     // Hide the clear search button
     const clearSearchBtn = document.getElementById('clear-search');
