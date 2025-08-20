@@ -112,7 +112,7 @@ async function handleProductsRequest(url, env) {
   try {
     // Step 1: Get rich product data from GraphQL API
     const gqlQuery = `
-      query products($companyId: ID!, $keywords: [String!], $limit: Int!, $websiteId: String!) {
+      query products($companyId: ID!, $keywords: [String!], $limit: Int!, $websiteId: ID!) {
         products(companyId: $companyId, keywords: $keywords, limit: $limit) {
           resultList {
             id
