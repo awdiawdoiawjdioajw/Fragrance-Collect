@@ -98,139 +98,132 @@ async function handleFeedsRequest(env) {
  * Since the API doesn't provide affiliate links directly, we construct them manually.
  */
 async function handleProductsRequest(url, env) {
-  // Check for the required credentials
-  if (!env.CJ_DEV_KEY || !env.CJ_WEBSITE_ID) {
-    return json({ error: 'Missing required credentials: CJ_DEV_KEY, CJ_WEBSITE_ID' }, env, 500);
+  // Check for all required credentials
+  if (!env.CJ_DEV_KEY || !env.CJ_COMPANY_ID || !env.CJ_WEBSITE_ID) {
+    return json({ error: 'Missing required credentials: CJ_DEV_KEY, CJ_COMPANY_ID, CJ_WEBSITE_ID' }, env, 500);
   }
 
   const searchParams = url.searchParams;
   const query = searchParams.get('q') || 'fragrance';
   const limit = parseInt(searchParams.get('limit') || '50');
-  const advertiserIds = searchParams.get('advertiserIds') || '';
 
-  console.log(`Products request: query="${query}", limit=${limit}, advertiserIds="${advertiserIds}"`);
+  console.log(`Products request: query="${query}", limit=${limit}`);
 
   try {
-    // Use the link-search API to get real affiliate links
+    // Step 1: Get rich product data from GraphQL API
+    const gqlQuery = `
+      query products($companyId: ID!, $keywords: [String!], $limit: Int!) {
+        products(companyId: $companyId, keywords: $keywords, limit: $limit) {
+          resultList {
+            id
+            title
+            description
+            price {
+              amount
+              currency
+            }
+            imageLink
+            advertiserId
+            advertiserName
+          }
+        }
+      }
+    `;
+
+    const gqlVariables = {
+      companyId: env.CJ_COMPANY_ID,
+      keywords: query.split(/\s+/).filter(k => k.length > 0),
+      limit: 100 // Fetch a larger batch to increase chances of finding matches
+    };
+
+    const gqlRes = await fetch('https://ads.api.cj.com/query', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${env.CJ_DEV_KEY}`, 'Content-Type': 'application/json', 'Accept': 'application/json, */*' },
+      body: JSON.stringify({ query: gqlQuery, variables: gqlVariables })
+    });
+
+    if (!gqlRes.ok) {
+      const errorText = await gqlRes.text();
+      return json({ error: 'CJ GraphQL API request failed', status: gqlRes.status, details: errorText }, env, gqlRes.status);
+    }
+
+    const gqlData = await gqlRes.json();
+    if (gqlData.errors) {
+      return json({ error: 'CJ GraphQL API errors', details: gqlData.errors }, env, 500);
+    }
+
+    const productList = gqlData.data?.products?.resultList || [];
+    console.log(`Found ${productList.length} products from GraphQL API`);
+
+    // Step 2: Get monetizable links from link-search API
     const linkSearchParams = new URLSearchParams({
       'website-id': env.CJ_WEBSITE_ID,
       'keywords': query,
-      'records-per-page': limit.toString(),
-      'page-number': '1'
+      'advertiser-ids': 'joined',
+      'records-per-page': '100'
     });
 
-    if (advertiserIds && advertiserIds.trim() !== '') {
-      linkSearchParams.set('advertiser-ids', advertiserIds);
-    }
-
     const linkSearchUrl = `https://link-search.api.cj.com/v2/link-search?${linkSearchParams}`;
-    console.log('Link search URL:', linkSearchUrl);
-
     const linkRes = await fetch(linkSearchUrl, {
-      headers: {
-        'Authorization': `Bearer ${env.CJ_DEV_KEY}`,
-        'Accept': 'application/json, */*'
-      }
+      headers: { 'Authorization': `Bearer ${env.CJ_DEV_KEY}`, 'Accept': 'application/json, */*' }
     });
 
     if (!linkRes.ok) {
       const errorText = await linkRes.text();
-      console.error('Link search API error:', linkRes.status, errorText);
       return json({ error: 'CJ link-search API request failed', status: linkRes.status, details: errorText }, env, linkRes.status);
     }
-
-    // Read the response body as text ONCE to avoid "body already used" error
+    
     const responseText = await linkRes.text();
-
-    // Try to parse as JSON first, fallback to XML
     let linkData;
     try {
       linkData = JSON.parse(responseText);
-      console.log('Link search response parsed as JSON.');
-    } catch (jsonError) {
-      console.log('JSON parsing failed, trying XML...');
+    } catch (e) {
       linkData = parseCJXML(responseText);
-      console.log('Link search response parsed as XML.');
     }
-
-    if (linkData.errorMessage) {
-      console.error('Link search error:', linkData.errorMessage);
-      return json({ error: 'CJ link-search API error', details: linkData.errorMessage }, env, 500);
-    }
-
-    const linkList = linkData.links || [];
-    console.log(`Found ${linkList.length} affiliate links from link-search API`);
-
-    // Revert to the relaxed filter to ensure all products with links are displayed
-    const productLinks = linkList.filter(link => link.clickUrl && link.clickUrl.trim() !== '');
-
-    console.log(`Filtered to ${productLinks.length} product links`);
-
-    // Map the link data to our product format
-    const products = productLinks.map((link, index) => {
-      console.log(`Product link ${index + 1}:`, {
-        linkId: link.linkId,
-        linkName: link.linkName,
-        hasImage: !!link.imageUrl,
-        hasClickUrl: !!link.clickUrl,
-        advertiserName: link.advertiserName
-      });
-
-      return {
-        id: link.linkId || `link_${Date.now()}_${index}`,
-        name: link.linkName || 'Unknown Product',
-        brand: link.advertiserName || 'Unknown Brand',
-        price: 0, // Price not available in link-search API
-        rating: 0, // Rating not available in link-search API
-        image: link.imageUrl || null,
-        description: link.description || '',
-        cjLink: link.clickUrl || '', // Use the real affiliate link
-        advertiser: link.advertiserName || 'Unknown',
-        shippingCost: null, // Shipping cost not available in link-search API
-        currency: 'USD',
-        // Add debug info
-        debug: {
-          hasImage: !!link.imageUrl,
-          hasPrice: false,
-          hasLink: !!link.clickUrl,
-          advertiserId: link.advertiserId,
-          linkId: link.linkId,
-          realAffiliateLink: link.clickUrl
-        }
-      };
-    });
-
-    // Apply advertiser filtering if specified
-    let filteredProducts = products;
-    if (advertiserIds && advertiserIds.trim() !== '') {
-      const advertiserArray = advertiserIds.split(',').map(id => id.trim());
-      filteredProducts = products.filter(p => 
-        p.advertiser && advertiserArray.includes(p.advertiser)
-      );
-      console.log(`Advertiser filtered: ${products.length} total, ${filteredProducts.length} after advertiser filter`);
-    }
-
-    // Filter out products without affiliate links
-    const productsWithLinks = filteredProducts.filter(p => p.cjLink && p.cjLink.trim() !== '');
     
-    console.log(`Final filtered products: ${filteredProducts.length} total, ${productsWithLinks.length} with affiliate links`);
+    const monetizableLinks = new Map((linkData.links || []).map(link => [link.advertiserId, link.clickUrl]));
+    console.log(`Found ${monetizableLinks.size} unique monetizable links`);
 
-    return json({ 
-      products: productsWithLinks, 
-      total: productsWithLinks.length,
-      originalTotal: linkList.length,
+    // Step 3: Combine and filter
+    const products = productList
+      .map(p => {
+        const cjLink = monetizableLinks.get(p.advertiserId);
+        if (!cjLink) {
+          return null; // Discard product if no monetizable link is found
+        }
+        return {
+          id: p.id,
+          name: p.title,
+          brand: p.advertiserName,
+          price: parseFloat(p.price?.amount || 0),
+          image: p.imageLink,
+          description: p.description,
+          cjLink: cjLink, // Use the real, monetizable link
+          advertiser: p.advertiserName,
+          currency: p.price?.currency || 'USD',
+          debug: {
+            source: 'GraphQL + Link Search Hybrid'
+          }
+        };
+      })
+      .filter(Boolean) // Remove null entries
+      .slice(0, limit); // Apply limit after filtering
+
+    console.log(`Returning ${products.length} combined and filtered products`);
+
+    return json({
+      products: products,
+      total: products.length,
+      originalTotal: productList.length,
       debug: {
-        totalProducts: linkList.length,
-        productsWithLinks: productsWithLinks.length,
-        productsWithoutLinks: filteredProducts.length - productsWithLinks.length,
-        filteredOut: linkList.length - productsWithLinks.length,
-        note: "Using link-search API with relaxed filtering to display all products.",
-        rawFirstProduct: linkList.length > 0 ? linkList[0] : null
+        note: "Using hybrid GraphQL and link-search approach for rich data and monetizable links.",
+        rawFirstProduct: productList.length > 0 ? productList[0] : null
       }
     }, env);
 
   } catch (error) {
-    return json({ error: 'Failed to fetch from CJ link-search API', details: error.message }, env, 500);
+    console.error('Hybrid product fetch error:', error);
+    return json({ error: 'Failed to fetch products using hybrid approach', details: error.message }, env, 500);
   }
 }
 
