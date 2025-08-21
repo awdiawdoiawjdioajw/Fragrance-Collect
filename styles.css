@@ -1105,6 +1105,51 @@ h1, h2, h3, h4, h5, h6 {
     gap: 0.5rem;
 }
 
+/* New styles for filter dropdowns */
+.filter-group .dropdown-toggle {
+    background-color: var(--medium-gray);
+    border: 1px solid var(--light-gray);
+    color: var(--warm-white);
+    border-radius: 6px;
+    padding: 0.6rem 1.2rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    -webkit-appearance: none; /* Removes default browser styling */
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23C9A646' class='bi bi-chevron-down' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1em;
+}
+
+.filter-group .dropdown-toggle:hover {
+    border-color: var(--antique-gold);
+    background-color: var(--light-gray);
+}
+
+/* Cleaner "Clear Filters" button */
+#clear-filters.btn-secondary {
+    background: transparent;
+    border: 1px solid var(--antique-gold);
+    color: var(--antique-gold);
+    padding: 0.6rem 1.2rem;
+    font-size: 0.9rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+#clear-filters.btn-secondary:hover {
+    background: var(--antique-gold);
+    color: var(--soft-black);
+    box-shadow: 0 4px 12px rgba(201, 166, 70, 0.2);
+}
+
 /* Shipping badges and price block */
 .shipping-badge {
     display: inline-block;
