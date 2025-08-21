@@ -172,27 +172,46 @@ function mapProductsDataToItems(data) {
 
 // Apply filters and sorting from UI controls
 function applyFilters(isServerSide = false) {
-    // Get all filter values from the UI (safely handle missing elements)
-    const priceFilter = document.getElementById('price-filter');
-    const brandFilter = document.getElementById('brand-filter');
-    const shippingFilter = document.getElementById('shipping-filter');
-    const ratingFilter = document.getElementById('rating-filter');
-    
-    currentFilters.priceRange = priceFilter ? priceFilter.value : '';
-    currentFilters.brand = brandFilter ? brandFilter.value : '';
-    currentFilters.shipping = shippingFilter ? shippingFilter.value : '';
-    currentFilters.rating = ratingFilter ? ratingFilter.value : '';
-    
-    // Server-side filters trigger a new data fetch from the worker
-    if (isServerSide) {
-        showLoading();
-        // Always fetch from page 1 when a major filter changes
-        loadCJProducts(currentFilters.search, 1).then(() => {
-            hideLoading();
+    try {
+        // Get all filter values from the UI (safely handle missing elements)
+        const priceFilter = document.getElementById('price-filter');
+        const brandFilter = document.getElementById('brand-filter');
+        const shippingFilter = document.getElementById('shipping-filter');
+        const ratingFilter = document.getElementById('rating-filter');
+        
+        // Debug logging
+        console.log('Filter elements found:', {
+            priceFilter: !!priceFilter,
+            brandFilter: !!brandFilter,
+            shippingFilter: !!shippingFilter,
+            ratingFilter: !!ratingFilter
         });
-    } else {
-        // Client-side filters just refine the currently displayed products
-        filterPerfumes();
+        
+        currentFilters.priceRange = priceFilter ? priceFilter.value : '';
+        currentFilters.brand = brandFilter ? brandFilter.value : '';
+        currentFilters.shipping = shippingFilter ? shippingFilter.value : '';
+        currentFilters.rating = ratingFilter ? ratingFilter.value : '';
+        
+        // Server-side filters trigger a new data fetch from the worker
+        if (isServerSide) {
+            showLoading();
+            // Always fetch from page 1 when a major filter changes
+            loadCJProducts(currentFilters.search, 1).then(() => {
+                hideLoading();
+            });
+        } else {
+            // Client-side filters just refine the currently displayed products
+            filterPerfumes();
+        }
+    } catch (error) {
+        console.error('Error in applyFilters:', error);
+        // Fallback: just try to load products without filters
+        if (isServerSide) {
+            showLoading();
+            loadCJProducts(currentFilters.search, 1).then(() => {
+                hideLoading();
+            });
+        }
     }
 }
 
@@ -573,7 +592,7 @@ function generateStars(rating) {
 // Populate brand filter options
 function populateBrandFilter() {
     const brandFilter = document.getElementById('brand-filter');
-    if (!brandFilter) return;
+    if (!brandFilter) return; // Brand filter doesn't exist in this HTML
     
     brandFilter.innerHTML = '<option value="">All Brands</option>';
     const brands = [...new Set(cjProducts.map(perfume => perfume.brand))].filter(Boolean).sort();
@@ -600,10 +619,12 @@ function addEventListeners() {
     if (priceFilter) {
         priceFilter.addEventListener('change', () => applyFilters(true));
     }
-    const brandFilter = document.getElementById('brand-filter');
-    if (brandFilter) {
-        brandFilter.addEventListener('change', () => applyFilters(true));
-    }
+    
+    // Brand filter doesn't exist in this HTML, so skip it
+    // const brandFilter = document.getElementById('brand-filter');
+    // if (brandFilter) {
+    //     brandFilter.addEventListener('change', () => applyFilters(true));
+    // }
     
     if (ratingFilter) {
         ratingFilter.addEventListener('change', () => applyFilters(false));
