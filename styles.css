@@ -1133,6 +1133,12 @@ h1, h2, h3, h4, h5, h6 {
     box-shadow: 0 4px 12px rgba(201, 166, 70, 0.2);
 }
 
+/* Style for the options within the dropdown */
+select.dropdown-toggle option {
+    background: var(--soft-black);
+    color: var(--warm-white);
+}
+
 /* Cleaner "Clear Filters" button */
 #clear-filters.btn-secondary {
     background: transparent;
@@ -1180,51 +1186,6 @@ h1, h2, h3, h4, h5, h6 {
     font-size: 0.9rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-}
-
-.filter-select {
-    background: rgba(75, 46, 57, 0.3);
-    border: 2px solid var(--antique-gold);
-    border-radius: 8px;
-    padding: 0.75rem 1rem;
-    color: var(--warm-white);
-    font-size: 0.9rem;
-    min-width: 150px;
-    cursor: pointer;
-    transition: all 0.3s ease-in-out;
-    backdrop-filter: blur(10px);
-}
-
-.filter-select:focus {
-    outline: none;
-    border-color: #e6c866;
-    box-shadow: 0 0 15px rgba(201, 166, 70, 0.3);
-    background: rgba(75, 46, 57, 0.5);
-}
-
-.filter-select option {
-    background: var(--deep-plum);
-    color: var(--warm-white);
-}
-
-.filter-clear-btn {
-    background: transparent;
-    border: 2px solid var(--antique-gold);
-    border-radius: 8px;
-    padding: 0.75rem 1.5rem;
-    color: var(--antique-gold);
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease-in-out;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    font-size: 0.9rem;
-}
-
-.filter-clear-btn:hover {
-    background: var(--antique-gold);
-    color: var(--soft-black);
-    box-shadow: 0 0 15px rgba(201, 166, 70, 0.3);
 }
 
 /* Section Titles */
@@ -1505,11 +1466,6 @@ h1, h2, h3, h4, h5, h6 {
         font-size: 0.7rem;
     }
     
-    .filter-clear-btn {
-        font-size: 0.7rem;
-        padding: 0.5rem 1rem;
-    }
-
     .modal-body {
         flex-direction: column;
     }
