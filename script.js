@@ -1012,32 +1012,32 @@ function searchWithFuzzyMatching(products, searchTerm) {
 
     const normalizedTerm = searchTerm.toLowerCase().trim();
 
-    return products.filter(product => {
-        // Check exact matches first (highest priority)
-        const nameMatch = product.name && product.name.toLowerCase().includes(normalizedTerm);
-        const brandMatch = product.brand && product.brand.toLowerCase().includes(normalizedTerm);
+    // Define synonyms for special cases to make client-side search smarter
+    const searchSynonyms = {
+        'women': ['women', 'woman', 'female', 'femme'],
+        'men': ['men', 'man', 'male', 'homme']
+    };
 
-        if (nameMatch || brandMatch) {
+    const termsToMatch = searchSynonyms[normalizedTerm] || [normalizedTerm];
+
+    return products.filter(product => {
+        const productNameLower = product.name ? product.name.toLowerCase() : '';
+        const productBrandLower = product.brand ? product.brand.toLowerCase() : '';
+
+        // Check if any of the terms (original or synonyms) are included
+        const synonymMatch = termsToMatch.some(term => 
+            productNameLower.includes(term) || productBrandLower.includes(term)
+        );
+
+        if (synonymMatch) {
             return true;
         }
 
-        // Fuzzy matching for typos and partial matches
-        const nameFuzzy = product.name && fuzzyMatch(product.name, normalizedTerm);
-        const brandFuzzy = product.brand && fuzzyMatch(product.brand, normalizedTerm);
+        // Fuzzy matching for typos as a fallback
+        const nameFuzzy = fuzzyMatch(productNameLower, normalizedTerm);
+        const brandFuzzy = fuzzyMatch(productBrandLower, normalizedTerm);
 
         return nameFuzzy || brandFuzzy;
-    }).sort((a, b) => {
-        // Sort by relevance: exact matches first, then fuzzy matches
-        const aExact = (a.name && a.name.toLowerCase().includes(normalizedTerm)) ||
-                      (a.brand && a.brand.toLowerCase().includes(normalizedTerm));
-        const bExact = (b.name && b.name.toLowerCase().includes(normalizedTerm)) ||
-                      (b.brand && b.brand.toLowerCase().includes(normalizedTerm));
-
-        if (aExact && !bExact) return -1;
-        if (!aExact && bExact) return 1;
-
-        // Then sort by price (lower first)
-        return a.price - b.price;
     });
 }
 
