@@ -221,14 +221,6 @@ async function fetchCJProducts(query = '', page = 1, limit = null, filters = {})
     if (filters.lowPrice) sp.set('lowPrice', filters.lowPrice);
     if (filters.highPrice) sp.set('highPrice', filters.highPrice);
     if (filters.partnerId) sp.set('partnerId', filters.partnerId);
-
-    // Expand search query for better results
-    if (query.toLowerCase() === 'women') {
-        query = 'women OR woman OR female OR pour femme';
-    } else if (query.toLowerCase() === 'men') {
-        query = 'men OR man OR male OR pour homme';
-    }
-    
     const url = `${base}?${sp.toString()}`;
 
     try {
@@ -710,6 +702,11 @@ function addEventListeners() {
 // Filter perfumes based on current filters
 function filterPerfumes() {
     let tempProducts = [...cjProducts];
+
+    // Search filter (client-side)
+    if (currentFilters.search) {
+        tempProducts = searchWithFuzzyMatching(tempProducts, currentFilters.search);
+    }
 
     // Rating filter (client-side)
     if (currentFilters.rating) {
