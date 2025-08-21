@@ -112,6 +112,8 @@ async function handleProductsRequest(req, url, env) {
   const lowPrice = parseFloat(searchParams.get('lowPrice') || '0');
   const highPrice = parseFloat(searchParams.get('highPrice') || '0');
   const partnerId = searchParams.get('partnerId') || null;
+  const sortBy = searchParams.get('sortBy') || 'PRICE';
+  const sortOrder = searchParams.get('sortOrder') || 'ASC';
 
   console.log(`Products request: query="${query}", limit=${limit}, page=${page}, offset=${offset}, lowPrice=${lowPrice}, highPrice=${highPrice}, partnerId=${partnerId}`);
 
@@ -188,8 +190,8 @@ async function handleProductsRequest(req, url, env) {
       lowPrice: lowPrice > 0 ? lowPrice : null,
       highPrice: highPrice > 0 ? highPrice : null,
       partnerIds: partnerId ? [partnerId] : null,
-      sortBy: "PRICE",
-      sortOrder: "ASC"
+      sortBy: sortBy,
+      sortOrder: sortOrder
     };
 
     const gqlRes = await fetch('https://ads.api.cj.com/query', {

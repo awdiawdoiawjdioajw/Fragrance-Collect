@@ -188,6 +188,19 @@ async function fetchCJProducts(query = '', page = 1, limit = null, filters = {})
     if (filters.highPrice) sp.set('highPrice', filters.highPrice);
     if (filters.partnerId) sp.set('partnerId', filters.partnerId);
 
+    const sortByFilter = document.getElementById('sort-by-filter').value;
+    const [sortBy, sortOrder] = sortByFilter.split('-');
+
+    sp.set('sortBy', sortBy.toUpperCase());
+    sp.set('sortOrder', sortOrder.toUpperCase());
+
+    // Expand search query for better results
+    if (query.toLowerCase() === 'women') {
+        query = 'women OR woman OR female OR pour femme';
+    } else if (query.toLowerCase() === 'men') {
+        query = 'men OR man OR male OR pour homme';
+    }
+    
     const url = `${base}?${sp.toString()}`;
 
     try {
@@ -535,6 +548,7 @@ function addEventListeners() {
     const mainSearch = document.getElementById('main-search');
     const searchBtn = document.querySelector('.search-btn');
     const browseFragrancesBtn = document.getElementById('browse-fragrances');
+    const sortByFilter = document.getElementById('sort-by-filter');
 
     if (priceFilter) {
         priceFilter.addEventListener('change', applyFilters);
@@ -546,6 +560,10 @@ function addEventListeners() {
 
     if (shippingFilter) {
         shippingFilter.addEventListener('change', applyFilters);
+    }
+
+    if (sortByFilter) {
+        sortByFilter.addEventListener('change', applyFilters);
     }
 
     if (clearFiltersBtn) {
