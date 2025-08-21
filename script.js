@@ -190,18 +190,18 @@ function applyFilters(isServerSide = false) {
 }
 
 // Sort products on the client-side
-function sortProducts() {
+function sortProducts(products) {
     const sortByFilter = document.getElementById('sort-by-filter').value;
     const [sortBy, sortOrder] = sortByFilter.split('-');
 
-    cjProducts.sort((a, b) => {
+    products.sort((a, b) => {
         if (sortBy === 'price') {
             return sortOrder === 'asc' ? a.price - b.price : b.price - a.price;
         }
         return 0; // Default case
     });
 
-    displayProducts(cjProducts);
+    displayProducts(products);
 }
 
 // Fetch products from the worker
@@ -318,7 +318,7 @@ async function loadCJProducts(query = '', page = 1) {
         totalPages = Math.ceil(data.total / limit);
         currentPage = data.page || 1;
         
-        sortProducts(); // Sort after fetching
+        filterPerfumes(); // Centralized call to filter, which will then sort and display
 
         return data;
     } catch (error) {
@@ -389,22 +389,15 @@ async function initializeApp() {
         showStatusMessage(`Error: ${health.message}`, true);
         return;
     }
-    // Set a default rating filter and load initial products
-    currentFilters.rating = '5'; // Set default filter state
-    await loadCJProducts('fragrance', currentPage); // Load top 50 fragrances by default
     
-    // The API doesn't support rating filters, so we perform a client-side sort
-    // as a substitute. Here we'll sort by price as the default.
-    cjProducts.sort((a, b) => a.price - b.price);
-
-    filteredPerfumes = [...cjProducts].filter(p => p.image && !p.name.toLowerCase().includes('banner') && !p.name.toLowerCase().includes('logo'));
-
-    if (!filteredPerfumes.length) {
-        showStatusMessage('No products found yet. Try a different search.', true);
-        return;
+    try {
+        await loadCJProducts(config.DEFAULT_SEARCH_TERM, 1);
+    } catch (error) {
+        console.error("Initialization failed:", error);
+    } finally {
+        hideLoading();
     }
-    hideLoading();
-    displayProducts(filteredPerfumes);
+    
     displayTopRated();
     populateBrandFilter();
     addEventListeners();
@@ -598,7 +591,7 @@ function addEventListeners() {
     }
 
     if (sortByFilter) {
-        sortByFilter.addEventListener('change', sortProducts);
+        sortByFilter.addEventListener('change', filterPerfumes);
     }
 
     if (clearFiltersBtn) {
@@ -730,7 +723,7 @@ function filterPerfumes() {
     }
 
     filteredPerfumes = tempProducts;
-    sortProducts(); // This will sort and then call displayProducts
+    sortProducts(filteredPerfumes); // Pass the filtered list to be sorted and displayed
 }
 
 // Helper function to check if perfume matches shipping filter
