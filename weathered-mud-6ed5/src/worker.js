@@ -97,6 +97,34 @@ async function handleFeedsRequest(env) {
  * Handles requests to the /products endpoint using the CJ GraphQL API.
  * Since the API doesn't provide affiliate links directly, we construct them manually.
  */
+
+/**
+ * Helper function to execute a GraphQL query against the CJ API.
+ * Throws an error if the request fails or returns GraphQL errors.
+ */
+async function fetchCJProducts(gqlQuery, variables, env) {
+  const gqlRes = await fetch('https://ads.api.cj.com/query', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${env.CJ_DEV_KEY}`, 'Content-Type': 'application/json', 'Accept': 'application/json, */*' },
+    body: JSON.stringify({ query: gqlQuery, variables })
+  });
+
+  if (!gqlRes.ok) {
+    const errorText = await gqlRes.text();
+    // Using console.error for better logging in Cloudflare, but still throwing
+    console.error('CJ API HTTP Error:', errorText);
+    throw new Error(`CJ API Error ${gqlRes.status}: ${errorText}`);
+  }
+
+  const gqlData = await gqlRes.json();
+  if (gqlData.errors) {
+    // Using console.error for better logging in Cloudflare, but still throwing
+    console.error('CJ GraphQL Errors:', gqlData.errors);
+    throw new Error(`CJ GraphQL Error: ${JSON.stringify(gqlData.errors)}`);
+  }
+  return gqlData;
+}
+
 async function handleProductsRequest(req, url, env) {
   const { searchParams } = new URL(url);
   const query = searchParams.get('q') || '';
@@ -106,24 +134,12 @@ async function handleProductsRequest(req, url, env) {
   const lowPrice = parseFloat(searchParams.get('lowPrice')) || null;
   const highPrice = parseFloat(searchParams.get('highPrice')) || null;
   const partnerId = searchParams.get('partnerId') || null;
-  console.log(`Products request: query="${query}", limit=${limit}, page=${page}, lowPrice=${lowPrice}, highPrice=${highPrice}, partnerId=${partnerId}`);
 
-  // Popular searches cache (in-memory for current instance)
-  const popularSearches = new Map([
-    ['perfume', null],
-    ['cologne', null],
-    ['fragrance', null],
-    ['parfum', null],
-    ['eau de parfum', null],
-    ['eau de toilette', null],
-    ['luxury perfume', null],
-    ['designer fragrance', null]
-  ]);
-
-  // Check popular searches cache first
-  if (popularSearches.has(query) && popularSearches.get(query)) {
-    console.log('Popular search cache hit');
-    return popularSearches.get(query);
+  // For multi-query, we log a summary. For single query, we log details.
+  if (!query) {
+    console.log(`Products request: initial load, multi-query initiated.`);
+  } else {
+    console.log(`Products request: query="${query}", limit=${limit}, page=${page}, lowPrice=${lowPrice}, highPrice=${highPrice}, partnerId=${partnerId}`);
   }
 
   // Generate a cache key based on the request parameters
@@ -135,10 +151,6 @@ async function handleProductsRequest(req, url, env) {
 
   if (response) {
     console.log('Cloudflare cache hit');
-    // Also cache in popular searches if it's a popular term
-    if (popularSearches.has(query)) {
-      popularSearches.set(query, response.clone());
-    }
     return response;
   }
 
@@ -174,38 +186,65 @@ async function handleProductsRequest(req, url, env) {
       }
     `;
 
-    const gqlVariables = {
-      companyId: env.CJ_COMPANY_ID,
-      keywords: query ? query.split(/\s+/).filter(k => k.length > 0) : ['fragrance'],
-      limit: limit,
-      offset: offset,
-      websiteId: env.CJ_WEBSITE_ID,
-      lowPrice: lowPrice,
-      highPrice: highPrice,
-      partnerIds: partnerId ? [partnerId] : null
-    };
+    let productList = [];
+    let totalCount = 0;
 
-    const gqlRes = await fetch('https://ads.api.cj.com/query', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${env.CJ_DEV_KEY}`, 'Content-Type': 'application/json', 'Accept': 'application/json, */*' },
-      body: JSON.stringify({ query: gqlQuery, variables: gqlVariables })
-    });
+    if (query) {
+      // Single-query logic for user-provided search terms
+      const gqlVariables = {
+        companyId: env.CJ_COMPANY_ID,
+        keywords: query.split(/\s+/).filter(k => k.length > 0),
+        limit,
+        offset,
+        websiteId: env.CJ_WEBSITE_ID,
+        lowPrice,
+        highPrice,
+        partnerIds: partnerId ? [partnerId] : null
+      };
+      
+      const gqlData = await fetchCJProducts(gqlQuery, gqlVariables, env);
+      productList = gqlData.data?.shoppingProducts?.resultList || [];
+      totalCount = gqlData.data?.shoppingProducts?.totalCount || 0;
+    } else {
+      // Multi-query logic for initial page load to get a wide variety of products
+      const defaultKeywords = ['perfume', 'cologne', 'fragrance', 'parfum', 'eau de parfum', 'eau de toilette', 'luxury perfume', 'designer fragrance'];
+      const limitPerKeyword = Math.ceil(limit / defaultKeywords.length);
+      
+      console.log(`Fetching for ${defaultKeywords.length} keywords, ${limitPerKeyword} products each.`);
 
-    if (!gqlRes.ok) {
-      const errorText = await gqlRes.text();
-      return json({ error: 'CJ GraphQL API request failed', status: gqlRes.status, details: errorText }, env, gqlRes.status);
+      const promises = defaultKeywords.map(keyword => {
+        const gqlVariables = {
+          companyId: env.CJ_COMPANY_ID,
+          keywords: [keyword],
+          limit: limitPerKeyword,
+          offset: 0, // Always get the first page for each keyword
+          websiteId: env.CJ_WEBSITE_ID,
+          lowPrice,
+          highPrice,
+          partnerIds: partnerId ? [partnerId] : null
+        };
+        return fetchCJProducts(gqlQuery, gqlVariables, env);
+      });
+
+      const results = await Promise.allSettled(promises);
+      const productMap = new Map();
+
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          const products = result.value.data?.shoppingProducts?.resultList || [];
+          console.log(`Keyword "${defaultKeywords[index]}" fetched ${products.length} products.`);
+          products.forEach(p => productMap.set(p.id, p));
+        } else {
+          console.error(`Failed to fetch for keyword "${defaultKeywords[index]}":`, result.reason.message);
+        }
+      });
+      
+      productList = Array.from(productMap.values());
+      totalCount = productList.length; // Total unique products found
+      console.log(`Total unique products from multi-query: ${totalCount}`);
     }
 
-    const gqlData = await gqlRes.json();
-    if (gqlData.errors) {
-      return json({ error: 'CJ GraphQL API errors', details: gqlData.errors }, env, 500);
-    }
-
-    const productList = gqlData.data?.shoppingProducts?.resultList || [];
-    const totalCount = gqlData.data?.shoppingProducts?.totalCount || 0;
-    console.log(`Found ${productList.length} products from GraphQL API`);
-
-    // Step 2: Process the product list to extract the correct link
+    // Step 2: Process the product list to extract the correct link and format the data
     const products = productList
       .map(p => {
         const cjLink = p.linkCode?.clickUrl;
@@ -228,15 +267,15 @@ async function handleProductsRequest(req, url, env) {
           }
         };
       })
-      .filter(Boolean); // Remove null entries only
+      .filter(Boolean); // Remove null entries
 
     console.log(`Returning ${products.length} processed products`);
 
     const jsonResponse = {
-      products: products,
+      products,
       total: totalCount,
-      page: page,
-      limit: limit,
+      page, // This is less meaningful for multi-query, but we keep it for consistency
+      limit,
       originalTotal: productList.length,
       debug: {
         note: "Using GraphQL with linkCode to get direct affiliate links.",
@@ -244,23 +283,10 @@ async function handleProductsRequest(req, url, env) {
       }
     };
 
-    // Compress the response data for better performance
-    const compressedData = jsonResponse;
-    const originalSize = JSON.stringify(compressedData).length;
-
-    response = json(compressedData, env);
+    response = json(jsonResponse, env);
     response.headers.set('Cache-Control', 's-maxage=3600'); // Cache for 1 hour
-    response.headers.set('X-Original-Size', originalSize.toString()); // For monitoring
-
-    // Log performance metrics
-    console.log(`Response: ${products.length} products, ${originalSize} bytes`);
 
     await cache.put(cacheKey, response.clone());
-
-    // Also cache in popular searches if it's a popular term
-    if (popularSearches.has(query)) {
-      popularSearches.set(query, response.clone());
-    }
 
     return response;
 
