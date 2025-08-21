@@ -171,19 +171,22 @@ function mapProductsDataToItems(data) {
 }
 
 // Apply filters and sorting from UI controls
-function applyFilters() {
-    const priceFilter = document.getElementById('price-filter').value;
-    const brandFilter = document.getElementById('brand-filter').value;
-    const shippingFilter = document.getElementById('shipping-filter').value;
+function applyFilters(isServerSide = false) {
+    // Get all filter values
+    currentFilters.priceRange = document.getElementById('price-filter').value;
+    currentFilters.brand = document.getElementById('brand-filter').value;
+    currentFilters.shipping = document.getElementById('shipping-filter').value;
+    currentFilters.rating = document.getElementById('rating-filter').value;
 
-    currentFilters.priceRange = priceFilter;
-    currentFilters.brand = brandFilter;
-    currentFilters.shipping = shippingFilter;
-    
-    showLoading();
-    loadCJProducts(currentFilters.search, 1).then(() => {
-        hideLoading();
-    });
+    if (isServerSide) {
+        showLoading();
+        loadCJProducts(currentFilters.search, 1).then(() => {
+            hideLoading();
+        });
+    } else {
+        // For client-side filters, just re-filter and display
+        filterPerfumes();
+    }
 }
 
 // Sort products on the client-side
@@ -579,15 +582,19 @@ function addEventListeners() {
     const sortByFilter = document.getElementById('sort-by-filter');
 
     if (priceFilter) {
-        priceFilter.addEventListener('change', applyFilters);
+        priceFilter.addEventListener('change', () => applyFilters(true));
+    }
+    const brandFilter = document.getElementById('brand-filter');
+    if (brandFilter) {
+        brandFilter.addEventListener('change', () => applyFilters(true));
     }
 
     if (ratingFilter) {
-        ratingFilter.addEventListener('change', applyFilters);
+        ratingFilter.addEventListener('change', () => applyFilters(false));
     }
 
     if (shippingFilter) {
-        shippingFilter.addEventListener('change', applyFilters);
+        shippingFilter.addEventListener('change', () => applyFilters(false));
     }
 
     if (sortByFilter) {
@@ -611,9 +618,11 @@ function addEventListeners() {
     }
 
     if (mainSearch) {
-        mainSearch.addEventListener('input', (e) => {
-            debouncedSearch(e.target.value);
-        });
+        // Remove input event listener to disable search-as-you-type
+        // mainSearch.addEventListener('input', (e) => {
+        //     debouncedSearch(e.target.value);
+        // });
+
         // Add Enter key support for search
         mainSearch.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
@@ -707,10 +716,21 @@ function addEventListeners() {
 
 // Filter perfumes based on current filters
 function filterPerfumes() {
-    // This function is no longer needed as all filtering is server-side.
-    // The products are fetched directly from the worker.
-    // We just need to ensure the pagination and display are correct.
-    displayProducts(cjProducts); // Display all products from the current page
+    let tempProducts = [...cjProducts];
+
+    // Rating filter (client-side)
+    if (currentFilters.rating) {
+        const minRating = Number(currentFilters.rating);
+        tempProducts = tempProducts.filter(p => p.rating >= minRating);
+    }
+    
+    // Shipping filter (client-side)
+    if (currentFilters.shipping) {
+        tempProducts = tempProducts.filter(p => matchesShipping(p, currentFilters.shipping));
+    }
+
+    filteredPerfumes = tempProducts;
+    sortProducts(); // This will sort and then call displayProducts
 }
 
 // Helper function to check if perfume matches shipping filter
@@ -1109,8 +1129,14 @@ function debouncedSearch(searchTerm) {
 function performSearch(searchTerm) {
     if (isSearching) return; // Prevent multiple simultaneous searches
 
-    isSearching = true;
     const validatedSearchTerm = SecurityUtils.validateSearchQuery(searchTerm);
+    if (!validateSearchTerm(validatedSearchTerm)) {
+        // If search term is invalid (e.g., too short), do nothing.
+        // Or you might want to show a message to the user.
+        return; 
+    }
+    
+    isSearching = true;
 
     // Track search analytics
     if (validatedSearchTerm) {
