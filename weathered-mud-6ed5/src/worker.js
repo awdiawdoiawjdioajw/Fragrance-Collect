@@ -52,7 +52,7 @@ async function handleFeedsRequest(env) {
   }
 
   const query = `
-    query productFeeds($companyId: Int!) {
+    query productFeeds($companyId: ID!) {
       productFeeds(companyId: $companyId) {
         resultList {
           adId
@@ -67,7 +67,7 @@ async function handleFeedsRequest(env) {
   `;
 
   const variables = {
-    companyId: parseInt(env.CJ_COMPANY_ID)
+    companyId: env.CJ_COMPANY_ID
   };
 
   const gqlRes = await fetch('https://ads.api.cj.com/query', {
@@ -293,7 +293,7 @@ async function handleTestCJRequest(env) {
 
   // Simple test query to check API connectivity
   const query = `
-    query testQuery($companyId: Int!) {
+    query testQuery($companyId: ID!) {
       productFeeds(companyId: $companyId) {
         totalCount
         resultList {
@@ -305,7 +305,7 @@ async function handleTestCJRequest(env) {
   `;
 
   const variables = {
-    companyId: parseInt(env.CJ_COMPANY_ID)
+    companyId: env.CJ_COMPANY_ID
   };
 
   try {
