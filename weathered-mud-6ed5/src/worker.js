@@ -105,7 +105,7 @@ async function handleProductsRequest(req, url, env) {
 
   const searchParams = url.searchParams;
   const query = searchParams.get('q') || 'fragrance';
-  const limit = parseInt(searchParams.get('limit') || '20');
+  const limit = parseInt(searchParams.get('limit') || '50'); // Default to 50
   const page = parseInt(searchParams.get('page') || '1');
   const offset = (page - 1) * limit;
 
@@ -152,18 +152,25 @@ async function handleProductsRequest(req, url, env) {
   try {
     // Step 1: Get rich product data from GraphQL API
     const gqlQuery = `
-      query products($companyId: ID!, $keywords: [String!], $limit: Int!, $offset: Int!, $websiteId: ID!, $lowPrice: Float, $highPrice: Float, $partnerIds: [ID!]) {
-        products(companyId: $companyId, keywords: $keywords, limit: $limit, offset: $offset, lowPrice: $lowPrice, highPrice: $highPrice, partnerIds: $partnerIds) {
+      query shoppingProducts($companyId: ID!, $keywords: [String!], $limit: Int!, $offset: Int!, $websiteId: ID!, $lowPrice: Float, $highPrice: Float, $partnerIds: [ID!], $sortBy: SortBy, $sortOrder: SortOrder) {
+        shoppingProducts(companyId: $companyId, keywords: $keywords, limit: $limit, offset: $offset, lowPrice: $lowPrice, highPrice: $highPrice, partnerIds: $partnerIds, sortBy: $sortBy, sortOrder: $sortOrder) {
           totalCount
           resultList {
             id
             title
+            brand
             price {
               amount
               currency
             }
             imageLink
             advertiserName
+            shipping {
+              price {
+                amount
+                currency
+              }
+            }
             linkCode(pid: $websiteId) {
               clickUrl
             }
@@ -175,12 +182,14 @@ async function handleProductsRequest(req, url, env) {
     const gqlVariables = {
       companyId: env.CJ_COMPANY_ID,
       keywords: query.split(/\s+/).filter(k => k.length > 0),
-      limit: limit, // Use the limit from the request
+      limit: limit,
       offset: offset,
       websiteId: env.CJ_WEBSITE_ID,
       lowPrice: lowPrice > 0 ? lowPrice : null,
       highPrice: highPrice > 0 ? highPrice : null,
-      partnerIds: partnerId ? [partnerId] : null
+      partnerIds: partnerId ? [partnerId] : null,
+      sortBy: "PRICE",
+      sortOrder: "ASC"
     };
 
     const gqlRes = await fetch('https://ads.api.cj.com/query', {
@@ -199,8 +208,8 @@ async function handleProductsRequest(req, url, env) {
       return json({ error: 'CJ GraphQL API errors', details: gqlData.errors }, env, 500);
     }
 
-    const productList = gqlData.data?.products?.resultList || [];
-    const totalCount = gqlData.data?.products?.totalCount || 0;
+    const productList = gqlData.data?.shoppingProducts?.resultList || [];
+    const totalCount = gqlData.data?.shoppingProducts?.totalCount || 0;
     console.log(`Found ${productList.length} products from GraphQL API`);
 
     // Step 2: Process the product list to extract the correct link
@@ -213,10 +222,11 @@ async function handleProductsRequest(req, url, env) {
         return {
           id: p.id,
           name: p.title,
-          brand: p.advertiserName,
+          brand: p.brand || p.advertiserName, // Fallback to advertiserName if brand is null
           price: parseFloat(p.price?.amount || 0),
           image: p.imageLink,
           description: '', // Removed from query for performance
+          shippingCost: parseFloat(p.shipping?.price?.amount || 0),
           cjLink: cjLink, // Use the real, monetizable link from GraphQL
           advertiser: p.advertiserName,
           currency: p.price?.currency || 'USD',

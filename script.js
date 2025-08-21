@@ -83,7 +83,7 @@ const config = {
   // PASTE YOUR CLOUDFLARE WORKER URL HERE
   API_ENDPOINT: 'https://weathered-mud-6ed5.joshuablaszczyk.workers.dev', 
   DEFAULT_SEARCH_TERM: 'fragrance',
-  RESULTS_PER_PAGE: 20,
+  RESULTS_PER_PAGE: 50,
 };
 
 function showStatusMessage(message, isError = false) {
@@ -420,12 +420,15 @@ function displayProducts(perfumes) {
 function displayTopRated() {
     const topRatedGrid = document.getElementById('top-rated-grid');
     if (!topRatedGrid) return;
-    
-    const topRated = [...cjProducts]
-        .sort((a, b) => b.rating - a.rating)
-        .slice(0, 4);
-    
-    topRatedGrid.innerHTML = topRated.map(perfume => createProductCard(perfume)).join('');
+
+    // Fetch a curated list of popular products
+    fetchCJProducts('popular fragrance', 1, 10).then(data => {
+        const popularProducts = data.products || [];
+        topRatedGrid.innerHTML = popularProducts.map(perfume => createProductCard(perfume)).join('');
+    }).catch(error => {
+        console.error('Failed to load popular products:', error);
+        topRatedGrid.innerHTML = '<p>Could not load popular products at this time.</p>';
+    });
 }
 
 function displayPagination() {
@@ -461,10 +464,9 @@ function formatShipping(perfume) {
 }
 
 function createProductCard(perfume) {
-    const stars = generateStars(perfume.rating);
+    const stars = generateStars(perfume.rating); // This will now be decorative
     const shipping = formatShipping(perfume);
     
-    // All data is already sanitized in mapProductsDataToItems
     return `
         <div class="product-card" data-id="${perfume.id}" data-brand="${perfume.brand.toLowerCase().replace(/\s+/g, '-')}" data-price="${perfume.price}" data-rating="${perfume.rating}">
             <div class="product-image-container">
@@ -661,19 +663,12 @@ function addEventListeners() {
 function applyFilters() {
     const priceFilter = document.getElementById('price-filter').value;
     const brandFilter = document.getElementById('brand-filter').value;
-    
-    let lowPrice = 0;
-    let highPrice = 0;
+    const shippingFilter = document.getElementById('shipping-filter').value;
 
-    if (priceFilter) {
-        const [min, max] = priceFilter.split('-').map(Number);
-        lowPrice = min;
-        highPrice = max || 0;
-    }
-    
     currentFilters.priceRange = priceFilter;
     currentFilters.brand = brandFilter;
-
+    currentFilters.shipping = shippingFilter;
+    
     showLoading();
     loadCJProducts(currentFilters.search, 1).then(() => {
         hideLoading();
@@ -713,7 +708,7 @@ function matchesShipping(perfume, filterVal) {
 // Filter by collection type
 async function filterByCollection(collectionTitle) {
     // Clear existing filters
-    currentFilters = { priceRange: '', rating: '', shipping: '', search: '' };
+    currentFilters = { brand: '', priceRange: '', rating: '', shipping: '', search: '' };
 
     // Reset filter dropdowns
     const priceFilter = document.getElementById('price-filter');
@@ -728,17 +723,18 @@ async function filterByCollection(collectionTitle) {
 
     // Live themed fetch
     const themedQueries = {
-        'Evening Luxury': ['luxury perfume', 'amber oud night', 'evening cologne'],
-        'Fresh & Floral': ['fresh floral perfume', 'jasmine rose citrus', 'spring fragrance'],
-        'Rare Finds': ['exclusive limited niche perfume', 'rare niche fragrance'],
-        'Artisan Creations': ['artisan handcrafted indie perfume', 'small batch fragrance']
+        'Evening Luxury': 'oud OR luxury',
+        'Fresh & Floral': 'citrus OR floral',
+        'Rare Finds': 'niche OR rare',
+        'Artisan Creations': 'artisan OR handcrafted'
     };
-    const q = themedQueries[collectionTitle];
-    if (q) {
-        await loadCJProductsMulti(q);
-    } else {
-        await loadCJProducts('perfume fragrance cologne');
-    }
+    const q = themedQueries[collectionTitle] || 'fragrance';
+    
+    showLoading();
+    loadCJProducts(q, 1).then(() => {
+        hideLoading();
+    });
+    
     const filteredResults = [...cjProducts];
 
     filteredPerfumes = filteredResults;
@@ -774,7 +770,7 @@ function clearFilters() {
     }
 
     // Reset the internal filters state object
-    currentFilters = { priceRange: '', rating: '', shipping: '', search: '' };
+    currentFilters = { brand: '', priceRange: '', rating: '', shipping: '', search: '' };
 
     // Hide the search results informational text
     const searchResultsInfo = document.getElementById('search-results-info');
