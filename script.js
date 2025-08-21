@@ -107,7 +107,7 @@ function hideLoading() {
 async function checkApiHealth() {
     try {
         const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 6000);
+        const timer = setTimeout(() => controller.abort(), 30000); // 30s timeout for health check
         const res = await fetch(`${config.API_ENDPOINT}/health`, { signal: controller.signal });
         clearTimeout(timer);
         if (!res.ok) {
