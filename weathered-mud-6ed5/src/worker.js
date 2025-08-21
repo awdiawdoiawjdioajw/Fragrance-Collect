@@ -106,10 +106,7 @@ async function handleProductsRequest(req, url, env) {
   const lowPrice = parseFloat(searchParams.get('lowPrice')) || null;
   const highPrice = parseFloat(searchParams.get('highPrice')) || null;
   const partnerId = searchParams.get('partnerId') || null;
-  const sortBy = searchParams.get('sortBy')?.toUpperCase() || 'PRICE';
-  const sortOrder = searchParams.get('sortOrder')?.toUpperCase() || 'ASC';
-
-  console.log(`Products request: query="${query}", limit=${limit}, page=${page}, lowPrice=${lowPrice}, highPrice=${highPrice}, partnerId=${partnerId}, sortBy=${sortBy}, sortOrder=${sortOrder}`);
+  console.log(`Products request: query="${query}", limit=${limit}, page=${page}, lowPrice=${lowPrice}, highPrice=${highPrice}, partnerId=${partnerId}`);
 
   // Popular searches cache (in-memory for current instance)
   const popularSearches = new Map([
@@ -150,8 +147,8 @@ async function handleProductsRequest(req, url, env) {
   try {
     // Step 1: Get rich product data from GraphQL API
     const gqlQuery = `
-      query shoppingProducts($companyId: ID!, $keywords: [String!], $limit: Int!, $offset: Int!, $websiteId: ID!, $lowPrice: Float, $highPrice: Float, $partnerIds: [ID!], $sortBy: SortBy, $sortOrder: SortOrder) {
-        shoppingProducts(companyId: $companyId, keywords: $keywords, limit: $limit, offset: $offset, lowPrice: $lowPrice, highPrice: $highPrice, partnerIds: $partnerIds, sortBy: $sortBy, sortOrder: $sortOrder) {
+      query shoppingProducts($companyId: ID!, $keywords: [String!], $limit: Int!, $offset: Int!, $websiteId: ID!, $lowPrice: Float, $highPrice: Float, $partnerIds: [ID!]) {
+        shoppingProducts(companyId: $companyId, keywords: $keywords, limit: $limit, offset: $offset, lowPrice: $lowPrice, highPrice: $highPrice, partnerIds: $partnerIds) {
           totalCount
           resultList {
             id
@@ -185,9 +182,7 @@ async function handleProductsRequest(req, url, env) {
       websiteId: env.CJ_WEBSITE_ID,
       lowPrice: lowPrice,
       highPrice: highPrice,
-      partnerIds: partnerId ? [partnerId] : null,
-      sortBy: sortBy,
-      sortOrder: sortOrder
+      partnerIds: partnerId ? [partnerId] : null
     };
 
     const gqlRes = await fetch('https://ads.api.cj.com/query', {
