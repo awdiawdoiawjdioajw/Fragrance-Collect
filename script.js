@@ -170,7 +170,38 @@ function mapProductsDataToItems(data) {
     }));
 }
 
-// SIMPLIFIED: Fetch logic is much cleaner now.
+// Apply filters and sorting from UI controls
+function applyFilters() {
+    const priceFilter = document.getElementById('price-filter').value;
+    const brandFilter = document.getElementById('brand-filter').value;
+    const shippingFilter = document.getElementById('shipping-filter').value;
+
+    currentFilters.priceRange = priceFilter;
+    currentFilters.brand = brandFilter;
+    currentFilters.shipping = shippingFilter;
+    
+    showLoading();
+    loadCJProducts(currentFilters.search, 1).then(() => {
+        hideLoading();
+    });
+}
+
+// Sort products on the client-side
+function sortProducts() {
+    const sortByFilter = document.getElementById('sort-by-filter').value;
+    const [sortBy, sortOrder] = sortByFilter.split('-');
+
+    cjProducts.sort((a, b) => {
+        if (sortBy === 'price') {
+            return sortOrder === 'asc' ? a.price - b.price : b.price - a.price;
+        }
+        return 0; // Default case
+    });
+
+    displayProducts(cjProducts);
+}
+
+// Fetch products from the worker
 async function fetchCJProducts(query = '', page = 1, limit = null, filters = {}) {
     const base = `${config.API_ENDPOINT}/products`;
     const sp = new URLSearchParams();
@@ -261,6 +292,7 @@ function sortWithFreeShippingPriority(list) {
     });
 }
 
+// Load products and update UI
 async function loadCJProducts(query = '', page = 1) {
     try {
         // Use smart pagination based on connection speed
@@ -288,6 +320,8 @@ async function loadCJProducts(query = '', page = 1) {
         cjProducts = data.products || [];
         totalPages = Math.ceil(data.total / limit);
         currentPage = data.page || 1;
+        
+        sortProducts(); // Sort after fetching
 
         return data;
     } catch (error) {
@@ -563,7 +597,7 @@ function addEventListeners() {
     }
 
     if (sortByFilter) {
-        sortByFilter.addEventListener('change', applyFilters);
+        sortByFilter.addEventListener('change', sortProducts);
     }
 
     if (clearFiltersBtn) {
@@ -674,22 +708,6 @@ function addEventListeners() {
             }
             // If no data-perfume-id, this is a Buy Now link; allow default navigation
         }
-    });
-}
-
-// Apply filters
-function applyFilters() {
-    const priceFilter = document.getElementById('price-filter').value;
-    const brandFilter = document.getElementById('brand-filter').value;
-    const shippingFilter = document.getElementById('shipping-filter').value;
-
-    currentFilters.priceRange = priceFilter;
-    currentFilters.brand = brandFilter;
-    currentFilters.shipping = shippingFilter;
-    
-    showLoading();
-    loadCJProducts(currentFilters.search, 1).then(() => {
-        hideLoading();
     });
 }
 
