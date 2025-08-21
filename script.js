@@ -496,6 +496,21 @@ function displayProducts(perfumes) {
     }
 }
 
+// Display top rated products
+function displayTopRated() {
+    const topRatedGrid = document.getElementById('top-rated-grid');
+    if (!topRatedGrid) return;
+    
+    // Fetch a curated list of popular products
+    fetchCJProducts('popular fragrance', 1, 10).then(data => {
+        const popularProducts = data.products || [];
+        topRatedGrid.innerHTML = popularProducts.map(perfume => createProductCard(perfume)).join('');
+    }).catch(error => {
+        console.error('Failed to load popular products:', error);
+        topRatedGrid.innerHTML = '<p>Could not load popular products at this time.</p>';
+    });
+}
+
 /**
  * Fetches and displays products from TikTok Shop.
  */
