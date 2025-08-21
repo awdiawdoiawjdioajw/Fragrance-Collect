@@ -1338,34 +1338,27 @@ function initHamburgerMenu() {
 }
 
 // Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', () => {
+    // Polyfill for Element.closest()
+    if (!Element.prototype.closest) {
+        Element.prototype.closest = function (s) {
+            var el = this;
+            do {
+                if (Element.prototype.matches.call(el, s)) return el;
+                el = el.parentElement || el.parentNode;
+            } while (el !== null && el.nodeType === 1);
+            return null;
+        };
+    }
+
+    // Polyfill for Element.matches()
+    if (!Element.prototype.matches) {
+        Element.prototype.matches =
+            Element.prototype.msMatchesSelector ||
+            Element.prototype.webkitMatchesSelector;
+    }
+    
     initializeApp();
-    
-    // Always ensure navigation is visible (desktop-like on all devices)
-    const navMenu = document.querySelector('.nav-menu');
-    const hamburger = document.querySelector('.hamburger');
-    
-    if (navMenu) {
-        navMenu.style.display = 'flex';
-        navMenu.style.flexDirection = 'row';
-        navMenu.style.position = 'static';
-        navMenu.style.background = 'none';
-        navMenu.style.boxShadow = 'none';
-        navMenu.style.border = 'none';
-        navMenu.style.zIndex = 'auto';
-        navMenu.style.left = '0';
-        navMenu.style.top = 'auto';
-        navMenu.style.width = 'auto';
-        navMenu.style.height = 'auto';
-    }
-    
-    // Always hide hamburger since we're keeping desktop navigation
-    if (hamburger) {
-        hamburger.style.display = 'none';
-        hamburger.classList.remove('active');
-    }
-    
-    checkMobileMenu();
 });
 
 // Check mobile menu on window resize
