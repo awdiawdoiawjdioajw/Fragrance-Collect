@@ -499,8 +499,8 @@ function corsHeaders(env) {
   const allow = env.ALLOW_ORIGIN || '*';
   return {
     'Access-Control-Allow-Origin': allow,
-    'Access-Control-Allow-Methods': 'GET, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Methods': 'GET, HEAD, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Cache-Control',
   };
 }
 

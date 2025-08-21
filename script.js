@@ -194,8 +194,7 @@ async function fetchCJProducts(query = '', page = 1, limit = null) {
             signal: controller.signal,
             // Add headers to help with GitHub Pages CORS
             headers: {
-                'Accept': 'application/json',
-                'Cache-Control': 'public, max-age=300'
+                'Accept': 'application/json'
             }
         });
         clearTimeout(timer);
