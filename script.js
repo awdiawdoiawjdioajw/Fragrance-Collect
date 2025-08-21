@@ -699,28 +699,77 @@ function addEventListeners() {
     });
 }
 
+// Loading bar control functions
+function showSearchLoading() {
+    const loadingBar = document.getElementById('search-loading-bar');
+    const progressBar = loadingBar?.querySelector('.loading-progress');
+    if (loadingBar) {
+        loadingBar.style.display = 'block';
+        if (progressBar) {
+            progressBar.style.width = '0%';
+            setTimeout(() => {
+                progressBar.style.width = '70%'; // Show initial progress
+            }, 100);
+        }
+    }
+}
+
+function hideSearchLoading() {
+    const loadingBar = document.getElementById('search-loading-bar');
+    const progressBar = loadingBar?.querySelector('.loading-progress');
+    if (loadingBar && progressBar) {
+        progressBar.style.width = '100%'; // Complete the progress
+        setTimeout(() => {
+            loadingBar.style.display = 'none';
+            progressBar.style.width = '0%'; // Reset for next use
+        }, 300);
+    }
+}
+
+
 // Filter perfumes based on current filters
 function filterPerfumes() {
+    SearchDebugger.logStep('Filtering products', {
+        totalProducts: cjProducts.length,
+        currentFilters: currentFilters
+    });
     let tempProducts = [...cjProducts];
-
-    // Search filter (client-side)
-    if (currentFilters.search) {
-        tempProducts = searchWithFuzzyMatching(tempProducts, currentFilters.search);
-    }
-
+    SearchDebugger.logStep('Initial products', { count: tempProducts.length });
+    
     // Rating filter (client-side)
     if (currentFilters.rating) {
         const minRating = Number(currentFilters.rating);
+        const beforeCount = tempProducts.length;
         tempProducts = tempProducts.filter(p => p.rating >= minRating);
+        SearchDebugger.logStep('Rating filter applied', {
+            minRating: minRating,
+            beforeCount: beforeCount,
+            afterCount: tempProducts.length
+        });
     }
-    
     // Shipping filter (client-side)
     if (currentFilters.shipping) {
+        const beforeCount = tempProducts.length;
         tempProducts = tempProducts.filter(p => matchesShipping(p, currentFilters.shipping));
+        SearchDebugger.logStep('Shipping filter applied', {
+            filter: currentFilters.shipping,
+            beforeCount: beforeCount,
+            afterCount: tempProducts.length
+        });
     }
-
+    // Search filter (client-side)
+    if (currentFilters.search && currentFilters.search.trim()) {
+        const beforeCount = tempProducts.length;
+        tempProducts = searchWithFuzzyMatching(tempProducts, currentFilters.search.trim());
+        SearchDebugger.logStep('Search filter applied', {
+            searchTerm: currentFilters.search,
+            beforeCount: beforeCount,
+            afterCount: tempProducts.length
+        });
+    }
     filteredPerfumes = tempProducts;
-    sortProducts(filteredPerfumes); // Pass the filtered list to be sorted and displayed
+    SearchDebugger.logStep('Final filtered products', { count: filteredPerfumes.length });
+    sortProducts(filteredPerfumes);
 }
 
 // Helper function to check if perfume matches shipping filter
@@ -841,6 +890,72 @@ const searchAnalytics = new Map();
 // Search result prefetching
 const prefetchCache = new Map();
 const prefetchQueue = new Set();
+
+// Debug search functionality
+const SearchDebugger = {
+    enabled: true,
+    log: function(message, data) {
+        if (!this.enabled) return;
+        console.log('[Search Debug] ' + message, data);
+    },
+    startSearch: function(searchTerm) {
+        this.log('Search started', { term: searchTerm, timestamp: Date.now() });
+        this.currentSearch = {
+            term: searchTerm,
+            startTime: Date.now(),
+            steps: []
+        };
+    },
+    logStep: function(step, data) {
+        if (!this.currentSearch) return;
+        this.currentSearch.steps.push({
+            step: step,
+            data: data,
+            timestamp: Date.now()
+        });
+        this.log('Step: ' + step, data);
+    },
+    endSearch: function(results) {
+        if (!this.currentSearch) return;
+        this.currentSearch.endTime = Date.now();
+        this.currentSearch.duration = this.currentSearch.endTime - this.currentSearch.startTime;
+        this.currentSearch.results = results;
+        this.log('Search completed', {
+            term: this.currentSearch.term,
+            duration: this.currentSearch.duration,
+            resultsCount: results?.length || 0,
+            steps: this.currentSearch.steps
+        });
+        // Store for later analysis
+        if (!window.searchHistory) window.searchHistory = [];
+        window.searchHistory.push(this.currentSearch);
+        this.currentSearch = null;
+    },
+    // Monitor state changes
+    monitorState: function() {
+        this.log('Current state', {
+            currentFilters: currentFilters,
+            cjProductsCount: cjProducts.length,
+            filteredPerfumesCount: filteredPerfumes.length,
+            isSearching: isSearching
+        });
+    },
+    // Check if search term is being preserved
+    validateSearchTerm: function() {
+        const searchInput = document.getElementById('main-search');
+        const inputValue = searchInput?.value || '';
+        const filterValue = currentFilters.search || '';
+        const isConsistent = inputValue.trim() === filterValue.trim();
+        if (!isConsistent) {
+            console.warn('[Search Debug] Search term mismatch!', {
+                inputValue: inputValue,
+                filterValue: filterValue,
+                currentFilters: currentFilters
+            });
+        }
+        return isConsistent;
+    }
+};
 
 // Polyfill for Element.closest() method for older browsers
 if (!Element.prototype.closest) {
@@ -1117,64 +1232,66 @@ function debouncedSearch(searchTerm) {
 }
 
 function performSearch(searchTerm) {
-    if (isSearching) return; // Prevent multiple simultaneous searches
+    SearchDebugger.startSearch(searchTerm);
+    SearchDebugger.monitorState();
+    if (isSearching) {
+        SearchDebugger.log('Search blocked - already searching', { isSearching });
+        return;
+    }
 
     const validatedSearchTerm = SecurityUtils.validateSearchQuery(searchTerm);
     if (!validateSearchTerm(validatedSearchTerm)) {
-        // If search term is invalid (e.g., too short), do nothing.
-        // Or you might want to show a message to the user.
-        return; 
+        return;
     }
-    
     isSearching = true;
-
+    showSearchLoading(); // Show loading bar
     // Track search analytics
     if (validatedSearchTerm) {
         trackSearchQuery(validatedSearchTerm);
     }
-
     currentFilters.search = validatedSearchTerm;
     lastSearchTerm = searchTerm;
-
     // Check for prefetched results first
     const prefetchedData = getPrefetchedResults(validatedSearchTerm);
     if (prefetchedData) {
-        console.log('Using prefetched results for:', validatedSearchTerm);
-
-        // Track cache hit
-        if (window.performanceMetrics) {
-            window.performanceMetrics.cacheHits++;
-        }
-
+        SearchDebugger.logStep('Using prefetched results', {
+            term: validatedSearchTerm,
+            productCount: prefetchedData.products?.length || 0
+        });
         cjProducts = prefetchedData.products || [];
         totalPages = Math.ceil(prefetchedData.total / getPaginationSettings().pageSize);
         currentPage = 1;
-
         filterPerfumes(); // This will apply client-side filters like price/rating/shipping
-        hideLoading();
+        hideSearchLoading(); // Hide loading bar
         isSearching = false;
-
         // Start prefetching related queries in background
         prefetchRelatedQueries(validatedSearchTerm);
         return;
     }
-
+    SearchDebugger.logStep('Starting API search', { validatedTerm: validatedSearchTerm });
     // Always reload from CJ with query
-    loadCJProducts(validatedSearchTerm, 1).then(() => {
-        filterPerfumes(); // This will apply client-side filters like price/rating/shipping
-        hideLoading();
+    loadCJProducts(validatedSearchTerm, 1).then((data) => {
+        SearchDebugger.logStep('Products loaded from API', {
+            productCount: cjProducts.length,
+            apiData: data
+        });
+        filterPerfumes();
+        SearchDebugger.logStep('Products filtered', {
+            filteredCount: filteredPerfumes.length
+        });
+        hideSearchLoading(); // Hide loading bar on success
         isSearching = false;
+        SearchDebugger.endSearch(filteredPerfumes);
     }).catch(error => {
-        console.error('Search error:', error);
-        hideLoading();
+        SearchDebugger.log('Search error', { error: error.message });
+        hideSearchLoading(); // Hide loading bar on error
         isSearching = false;
+        SearchDebugger.endSearch([]);
     });
-
     // Scroll to shop section if search is performed and we're not already there
     if (validatedSearchTerm && !isElementInViewport(document.getElementById('shop'))) {
         document.getElementById('shop').scrollIntoView({ behavior: 'smooth' });
     }
-
     // Add visual feedback for search
     if (validatedSearchTerm) {
         const searchBtn = document.querySelector('.search-btn');
