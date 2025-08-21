@@ -219,12 +219,6 @@ async function fetchCJProducts(query = '', page = 1, limit = null, filters = {})
     if (filters.highPrice) sp.set('highPrice', filters.highPrice);
     if (filters.partnerId) sp.set('partnerId', filters.partnerId);
 
-    const sortByFilter = document.getElementById('sort-by-filter').value;
-    const [sortBy, sortOrder] = sortByFilter.split('-');
-
-    sp.set('sortBy', sortBy.toUpperCase());
-    sp.set('sortOrder', sortOrder.toUpperCase());
-
     // Expand search query for better results
     if (query.toLowerCase() === 'women') {
         query = 'women OR woman OR female OR pour femme';
@@ -271,8 +265,8 @@ async function fetchCJProducts(query = '', page = 1, limit = null, filters = {})
             throw new Error(data.error + (data.details ? `: ${SecurityUtils.escapeHtml(data.details)}` : ''));
         }
         
-        totalPages = Math.ceil(data.total / config.RESULTS_PER_PAGE);
-        return mapProductsDataToItems(data);
+        // Return the raw data structure from worker
+        return data;
 
     } catch (error) {
         console.error('CJ API fetch error:', error);
@@ -317,7 +311,7 @@ async function loadCJProducts(query = '', page = 1) {
             throw new Error(data.error);
         }
 
-        cjProducts = data.products || [];
+        cjProducts = mapProductsDataToItems({ products: data.products });
         totalPages = Math.ceil(data.total / limit);
         currentPage = data.page || 1;
         
