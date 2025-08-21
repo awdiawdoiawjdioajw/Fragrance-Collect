@@ -98,24 +98,18 @@ async function handleFeedsRequest(env) {
  * Since the API doesn't provide affiliate links directly, we construct them manually.
  */
 async function handleProductsRequest(req, url, env) {
-  // Check for all required credentials
-  if (!env.CJ_DEV_KEY || !env.CJ_COMPANY_ID || !env.CJ_WEBSITE_ID) {
-    return json({ error: 'Missing required credentials: CJ_DEV_KEY, CJ_COMPANY_ID, CJ_WEBSITE_ID' }, env, 500);
-  }
-
-  const searchParams = url.searchParams;
-  const query = searchParams.get('q') || 'fragrance';
-  const limit = parseInt(searchParams.get('limit') || '50'); // Default to 50
-  const page = parseInt(searchParams.get('page') || '1');
+  const { searchParams } = new URL(url);
+  const query = searchParams.get('q') || '';
+  const limit = parseInt(searchParams.get('limit') || '50', 10);
+  const page = parseInt(searchParams.get('page') || '1', 10);
   const offset = (page - 1) * limit;
-
-  const lowPrice = parseFloat(searchParams.get('lowPrice') || '0');
-  const highPrice = parseFloat(searchParams.get('highPrice') || '0');
+  const lowPrice = parseFloat(searchParams.get('lowPrice')) || null;
+  const highPrice = parseFloat(searchParams.get('highPrice')) || null;
   const partnerId = searchParams.get('partnerId') || null;
-  const sortBy = searchParams.get('sortBy') || 'PRICE';
-  const sortOrder = searchParams.get('sortOrder') || 'ASC';
+  const sortBy = searchParams.get('sortBy')?.toUpperCase() || 'PRICE';
+  const sortOrder = searchParams.get('sortOrder')?.toUpperCase() || 'ASC';
 
-  console.log(`Products request: query="${query}", limit=${limit}, page=${page}, offset=${offset}, lowPrice=${lowPrice}, highPrice=${highPrice}, partnerId=${partnerId}`);
+  console.log(`Products request: query="${query}", limit=${limit}, page=${page}, lowPrice=${lowPrice}, highPrice=${highPrice}, partnerId=${partnerId}, sortBy=${sortBy}, sortOrder=${sortOrder}`);
 
   // Popular searches cache (in-memory for current instance)
   const popularSearches = new Map([
@@ -135,9 +129,11 @@ async function handleProductsRequest(req, url, env) {
     return popularSearches.get(query);
   }
 
-  // Implement Cloudflare caching
+  // Generate a cache key based on the request parameters
+  const cacheKey = new Request(new URL(url.toString()), req);
   const cache = caches.default;
-  const cacheKey = new Request(url.toString(), req);
+
+  // Try to get the response from cache first
   let response = await cache.match(cacheKey);
 
   if (response) {
@@ -154,8 +150,8 @@ async function handleProductsRequest(req, url, env) {
   try {
     // Step 1: Get rich product data from GraphQL API
     const gqlQuery = `
-      query shoppingProducts($companyId: ID!, $keywords: [String!], $limit: Int!, $offset: Int!, $websiteId: ID!, $lowPrice: Float, $highPrice: Float, $partnerIds: [ID!]) {
-        shoppingProducts(companyId: $companyId, keywords: $keywords, limit: $limit, offset: $offset, lowPrice: $lowPrice, highPrice: $highPrice, partnerIds: $partnerIds) {
+      query shoppingProducts($companyId: ID!, $keywords: [String!], $limit: Int!, $offset: Int!, $websiteId: ID!, $lowPrice: Float, $highPrice: Float, $partnerIds: [ID!], $sortBy: SortBy, $sortOrder: SortOrder) {
+        shoppingProducts(companyId: $companyId, keywords: $keywords, limit: $limit, offset: $offset, lowPrice: $lowPrice, highPrice: $highPrice, partnerIds: $partnerIds, sortBy: $sortBy, sortOrder: $sortOrder) {
           totalCount
           resultList {
             id
@@ -183,13 +179,15 @@ async function handleProductsRequest(req, url, env) {
 
     const gqlVariables = {
       companyId: env.CJ_COMPANY_ID,
-      keywords: query.split(/\s+/).filter(k => k.length > 0),
+      keywords: query ? query.split(/\s+/).filter(k => k.length > 0) : ['fragrance'],
       limit: limit,
       offset: offset,
       websiteId: env.CJ_WEBSITE_ID,
-      lowPrice: lowPrice > 0 ? lowPrice : null,
-      highPrice: highPrice > 0 ? highPrice : null,
-      partnerIds: partnerId ? [partnerId] : null
+      lowPrice: lowPrice,
+      highPrice: highPrice,
+      partnerIds: partnerId ? [partnerId] : null,
+      sortBy: sortBy,
+      sortOrder: sortOrder
     };
 
     const gqlRes = await fetch('https://ads.api.cj.com/query', {
