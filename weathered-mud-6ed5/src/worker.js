@@ -100,7 +100,7 @@ async function handleFeedsRequest(env) {
 async function handleProductsRequest(req, url, env) {
   const { searchParams } = new URL(url);
   const query = searchParams.get('q') || '';
-  const limit = parseInt(searchParams.get('limit') || '100', 10);
+  const limit = parseInt(searchParams.get('limit') || '1000', 10); // High limit to get more products
   const page = parseInt(searchParams.get('page') || '1', 10);
   const offset = (page - 1) * limit;
   const lowPrice = parseFloat(searchParams.get('lowPrice')) || null;
@@ -228,8 +228,7 @@ async function handleProductsRequest(req, url, env) {
           }
         };
       })
-      .filter(Boolean) // Remove null entries
-      .slice(0, limit); // Apply limit after filtering
+      .filter(Boolean); // Remove null entries only
 
     console.log(`Returning ${products.length} processed products`);
 
