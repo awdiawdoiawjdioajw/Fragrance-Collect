@@ -172,11 +172,16 @@ function mapProductsDataToItems(data) {
 
 // Apply filters and sorting from UI controls
 function applyFilters(isServerSide = false) {
-    // Get all filter values from the UI
-    currentFilters.priceRange = document.getElementById('price-filter').value;
-    currentFilters.brand = document.getElementById('brand-filter').value;
-    currentFilters.shipping = document.getElementById('shipping-filter').value;
-    currentFilters.rating = document.getElementById('rating-filter').value;
+    // Get all filter values from the UI (safely handle missing elements)
+    const priceFilter = document.getElementById('price-filter');
+    const brandFilter = document.getElementById('brand-filter');
+    const shippingFilter = document.getElementById('shipping-filter');
+    const ratingFilter = document.getElementById('rating-filter');
+    
+    currentFilters.priceRange = priceFilter ? priceFilter.value : '';
+    currentFilters.brand = brandFilter ? brandFilter.value : '';
+    currentFilters.shipping = shippingFilter ? shippingFilter.value : '';
+    currentFilters.rating = ratingFilter ? ratingFilter.value : '';
     
     // Server-side filters trigger a new data fetch from the worker
     if (isServerSide) {
@@ -193,8 +198,14 @@ function applyFilters(isServerSide = false) {
 
 // Sort products on the client-side
 function sortProducts(products) {
-    const sortByFilter = document.getElementById('sort-by-filter').value;
-    const [sortBy, sortOrder] = sortByFilter.split('-');
+    const sortByFilter = document.getElementById('sort-by-filter');
+    if (!sortByFilter) {
+        // If no sort filter exists, just display products without sorting
+        displayProducts(products);
+        return;
+    }
+    
+    const [sortBy, sortOrder] = sortByFilter.value.split('-');
 
     products.sort((a, b) => {
         if (sortBy === 'price') {
@@ -234,11 +245,13 @@ async function fetchCJProducts(query = '', page = 1, limit = null, filters = {})
     if (filters.highPrice) sp.set('highPrice', filters.highPrice);
     if (filters.partnerId) sp.set('partnerId', filters.partnerId);
 
-    // Add sorting parameters
-    const sortByFilter = document.getElementById('sort-by-filter').value;
-    const [sortBy, sortOrder] = sortByFilter.split('-');
-    if (sortBy) sp.set('sortBy', sortBy);
-    if (sortOrder) sp.set('sortOrder', sortOrder);
+    // Add sorting parameters (safely handle missing element)
+    const sortByFilter = document.getElementById('sort-by-filter');
+    if (sortByFilter) {
+        const [sortBy, sortOrder] = sortByFilter.value.split('-');
+        if (sortBy) sp.set('sortBy', sortBy);
+        if (sortOrder) sp.set('sortOrder', sortOrder);
+    }
 
     const url = `${base}?${sp.toString()}`;
 
