@@ -171,23 +171,40 @@ function mapProductsDataToItems(data) {
 }
 
 // SIMPLIFIED: Fetch logic is much cleaner now.
-async function fetchCJProducts(query = '', page = 1) {
+async function fetchCJProducts(query = '', page = 1, limit = null) {
     const base = `${config.API_ENDPOINT}/products`;
     const sp = new URLSearchParams();
 
     const sanitizedQuery = SecurityUtils.validateSearchQuery(query);
     if (sanitizedQuery) sp.set('q', sanitizedQuery);
 
-    sp.set('limit', config.RESULTS_PER_PAGE.toString());
+    // Use smart limit or fallback to config
+    const finalLimit = limit || config.RESULTS_PER_PAGE;
+    sp.set('limit', finalLimit.toString());
     sp.set('page', page.toString());
 
     const url = `${base}?${sp.toString()}`;
-    
+
     try {
+        const startTime = Date.now();
         const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 20000); // 20s timeout
-        const res = await fetch(url, { signal: controller.signal });
+        // Shorter timeout for GitHub Pages (15s instead of 20s)
+        const timer = setTimeout(() => controller.abort(), 15000);
+        const res = await fetch(url, {
+            signal: controller.signal,
+            // Add headers to help with GitHub Pages CORS
+            headers: {
+                'Accept': 'application/json',
+                'Cache-Control': 'public, max-age=300'
+            }
+        });
         clearTimeout(timer);
+
+        // Track performance metrics
+        if (window.performanceMetrics) {
+            window.performanceMetrics.apiCalls++;
+            window.performanceMetrics.totalLoadTime += (Date.now() - startTime);
+        }
 
         if (!res.ok) {
             const errorText = await res.text();
@@ -229,7 +246,11 @@ function sortWithFreeShippingPriority(list) {
 
 async function loadCJProducts(query = '', page = 1) {
     try {
-        const items = await fetchCJProducts(query, page);
+        // Use smart pagination based on connection speed
+        const settings = getPaginationSettings();
+        const limit = settings.pageSize;
+
+        const items = await fetchCJProducts(query, page, limit);
         // If nothing returned and we know some joined advertisers exist,
         // try some brand-focused queries to increase hit rate
         if (!items.length) {
@@ -262,8 +283,48 @@ async function loadCJProductsMulti(queries) {
     cjProducts = sortWithFreeShippingPriority(Array.from(map.values()));
 }
 
+// Performance optimization for GitHub Pages
+function optimizeForGitHubPages() {
+    // Detect if we're on GitHub Pages
+    const isGitHubPages = location.hostname.includes('github.io');
+
+    if (isGitHubPages) {
+        console.log('Optimizing for GitHub Pages performance...');
+
+        // Performance monitoring
+        window.performanceMetrics = {
+            apiCalls: 0,
+            cacheHits: 0,
+            totalLoadTime: 0,
+            startTime: Date.now()
+        };
+
+        // Reduce prefetch cache size for GitHub Pages
+        setInterval(() => {
+            if (prefetchCache.size > 3) { // Even smaller cache for GitHub Pages
+                const oldestKey = Array.from(prefetchCache.keys())[0];
+                prefetchCache.delete(oldestKey);
+            }
+        }, 20000); // More frequent cleanup
+
+        // Monitor performance
+        setInterval(() => {
+            const metrics = window.performanceMetrics;
+            console.log('Performance Metrics:', {
+                apiCalls: metrics.apiCalls,
+                cacheHits: metrics.cacheHits,
+                hitRate: metrics.apiCalls > 0 ? (metrics.cacheHits / metrics.apiCalls * 100).toFixed(1) + '%' : '0%',
+                runtime: Date.now() - metrics.startTime + 'ms'
+            });
+        }, 30000);
+    }
+}
+
 // Initialize the application
 async function initializeApp() {
+    // Apply GitHub Pages optimizations
+    optimizeForGitHubPages();
+
     showLoading();
     const health = await checkApiHealth();
     if (!health.healthy) {
@@ -292,6 +353,11 @@ async function initializeApp() {
     initializeExistingFeatures();
     initHamburgerMenu();
     initModal();
+
+    // Start prefetching popular search results
+    setTimeout(() => {
+        startPrefetching();
+    }, 2000); // Start after 2 seconds to not interfere with initial load
 }
 
 // Display products in the grid
@@ -389,7 +455,7 @@ function createProductCard(perfume) {
     return `
         <div class="product-card" data-id="${perfume.id}" data-brand="${perfume.brand.toLowerCase().replace(/\s+/g, '-')}" data-price="${perfume.price}" data-rating="${perfume.rating}">
             <div class="product-image-container">
-                <img src="${perfume.image || ''}" alt="${perfume.name}" class="product-image" onerror="this.onerror=null;this.src='https://via.placeholder.com/600x600?text=No+Image';">
+                <img src="${perfume.image || ''}" alt="${perfume.name}" class="product-image" loading="lazy" onerror="this.onerror=null;this.src='https://via.placeholder.com/600x600?text=No+Image';">
             </div>
             <div class="product-info">
                 <p class="product-brand">${perfume.brand}</p>
@@ -472,16 +538,33 @@ function addEventListeners() {
     }
 
     if (searchBtn) {
-        searchBtn.addEventListener('click', performSearch);
+        searchBtn.addEventListener('click', () => {
+            const searchInput = document.getElementById('main-search');
+            if (searchInput) {
+                const searchTerm = searchInput.value.trim();
+                if (validateSearchTerm(searchTerm)) {
+                    performSearch(searchTerm);
+                }
+            }
+        });
     }
 
     if (mainSearch) {
-        mainSearch.addEventListener('input', performSearch);
+        mainSearch.addEventListener('input', (e) => {
+            debouncedSearch(e.target.value);
+        });
         // Add Enter key support for search
         mainSearch.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                performSearch();
+                const searchTerm = e.target.value.trim();
+                if (validateSearchTerm(searchTerm)) {
+                    // Clear any pending debounced search
+                    if (searchTimeout) {
+                        clearTimeout(searchTimeout);
+                    }
+                    performSearch(searchTerm);
+                }
             }
         });
         // Show/hide clear button based on input
@@ -728,25 +811,345 @@ function clearFilters() {
 }
 
 // Perform search with input validation
-function performSearch() {
-    const searchInput = document.getElementById('main-search');
-    if (!searchInput) return;
-    
-    const searchTerm = searchInput.value.trim();
-    // Validate and sanitize search term
-    const validatedSearchTerm = SecurityUtils.validateSearchQuery(searchTerm);
-    currentFilters.search = validatedSearchTerm;
-    
-    // Always reload from CJ with query
-    loadCJProducts(validatedSearchTerm, currentPage).then(() => {
-        filterPerfumes();
+// Debounced search variables
+let searchTimeout;
+let lastSearchTerm = '';
+let isSearching = false;
+
+// Search analytics
+const searchAnalytics = new Map();
+
+// Search result prefetching
+const prefetchCache = new Map();
+const prefetchQueue = new Set();
+
+// Polyfill for Element.closest() method for older browsers
+if (!Element.prototype.closest) {
+    Element.prototype.closest = function(selector) {
+        let element = this;
+        while (element && element.nodeType === 1) {
+            if (element.matches(selector)) {
+                return element;
+            }
+            element = element.parentNode;
+        }
+        return null;
+    };
+}
+
+// Polyfill for Element.matches() method for older browsers
+if (!Element.prototype.matches) {
+    Element.prototype.matches = Element.prototype.msMatchesSelector ||
+                                Element.prototype.webkitMatchesSelector;
+}
+
+// Fuzzy search functionality
+function fuzzyMatch(str, pattern) {
+    if (!pattern) return true;
+    if (!str) return false;
+
+    const patternLower = pattern.toLowerCase();
+    const strLower = str.toLowerCase();
+
+    // Exact match gets highest priority
+    if (strLower.includes(patternLower)) {
+        return true;
+    }
+
+    // Simple fuzzy matching - check if all pattern characters exist in order
+    let patternIndex = 0;
+    for (let i = 0; i < strLower.length; i++) {
+        if (strLower[i] === patternLower[patternIndex]) {
+            patternIndex++;
+            if (patternIndex === patternLower.length) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+// Enhanced search with fuzzy matching
+function searchWithFuzzyMatching(products, searchTerm) {
+    if (!searchTerm || searchTerm.length < 2) {
+        return products;
+    }
+
+    const normalizedTerm = searchTerm.toLowerCase().trim();
+
+    return products.filter(product => {
+        // Check exact matches first (highest priority)
+        const nameMatch = product.name && product.name.toLowerCase().includes(normalizedTerm);
+        const brandMatch = product.brand && product.brand.toLowerCase().includes(normalizedTerm);
+
+        if (nameMatch || brandMatch) {
+            return true;
+        }
+
+        // Fuzzy matching for typos and partial matches
+        const nameFuzzy = product.name && fuzzyMatch(product.name, normalizedTerm);
+        const brandFuzzy = product.brand && fuzzyMatch(product.brand, normalizedTerm);
+
+        return nameFuzzy || brandFuzzy;
+    }).sort((a, b) => {
+        // Sort by relevance: exact matches first, then fuzzy matches
+        const aExact = (a.name && a.name.toLowerCase().includes(normalizedTerm)) ||
+                      (a.brand && a.brand.toLowerCase().includes(normalizedTerm));
+        const bExact = (b.name && b.name.toLowerCase().includes(normalizedTerm)) ||
+                      (b.brand && b.brand.toLowerCase().includes(normalizedTerm));
+
+        if (aExact && !bExact) return -1;
+        if (!aExact && bExact) return 1;
+
+        // Then sort by price (lower first)
+        return a.price - b.price;
     });
-    
+}
+
+// Track search queries for analytics
+function trackSearchQuery(query) {
+    const normalizedQuery = query.toLowerCase().trim();
+    const count = searchAnalytics.get(normalizedQuery) || 0;
+    searchAnalytics.set(normalizedQuery, count + 1);
+
+    // Log to console for debugging (remove in production)
+    console.log('Search tracked:', normalizedQuery, 'Count:', count + 1);
+
+    // Optionally send to analytics service
+    // sendToAnalytics('search', { query: normalizedQuery, count: count + 1 });
+}
+
+// Get top search queries (for debugging/optimization)
+function getTopSearches(limit = 10) {
+    return Array.from(searchAnalytics.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, limit);
+}
+
+// Search result prefetching functions
+async function prefetchSearchResult(query) {
+    if (prefetchCache.has(query) || prefetchQueue.has(query)) {
+        return; // Already prefetched or in queue
+    }
+
+    prefetchQueue.add(query);
+
+    try {
+        const settings = getPaginationSettings();
+        const data = await fetchCJProducts(query, 1, settings.pageSize);
+
+        if (data.products && data.products.length > 0) {
+            prefetchCache.set(query, data);
+            console.log(`Prefetched results for: "${query}" (${data.products.length} items)`);
+        }
+    } catch (error) {
+        console.warn(`Failed to prefetch results for "${query}":`, error);
+    } finally {
+        prefetchQueue.delete(query);
+    }
+}
+
+// Get prefetched results
+function getPrefetchedResults(query) {
+    return prefetchCache.get(query);
+}
+
+// Clear old prefetch cache to prevent memory leaks
+function cleanupPrefetchCache() {
+    const maxAge = 5 * 60 * 1000; // 5 minutes
+    const now = Date.now();
+
+    for (const [query, data] of prefetchCache.entries()) {
+        if (data.timestamp && (now - data.timestamp) > maxAge) {
+            prefetchCache.delete(query);
+        }
+    }
+}
+
+// Prefetch related queries based on current search
+function prefetchRelatedQueries(currentQuery) {
+    const relatedQueries = getRelatedQueries(currentQuery);
+    relatedQueries.forEach((query, index) => {
+        setTimeout(() => {
+            prefetchSearchResult(query);
+        }, index * 200 + 1000); // Stagger by 200ms, start after 1 second
+    });
+}
+
+// Get related queries based on current search
+function getRelatedQueries(query) {
+    const normalized = query.toLowerCase().trim();
+    const related = [];
+
+    // Add common variations
+    if (normalized.includes('perfume')) {
+        related.push('cologne', 'fragrance', 'luxury perfume');
+    }
+    if (normalized.includes('cologne')) {
+        related.push('perfume', 'fragrance', 'mens cologne');
+    }
+    if (normalized.includes('luxury')) {
+        related.push('designer perfume', 'premium fragrance');
+    }
+    if (normalized.includes('eau de parfum')) {
+        related.push('eau de toilette', 'perfume');
+    }
+
+    return related.slice(0, 3); // Limit to 3 related queries
+}
+
+// Start prefetching popular queries
+function startPrefetching() {
+    const popularQueries = [
+        'perfume',
+        'cologne',
+        'fragrance',
+        'luxury perfume',
+        'designer fragrance',
+        'eau de parfum',
+        'eau de toilette'
+    ];
+
+    // Prefetch popular queries in background
+    popularQueries.forEach((query, index) => {
+        setTimeout(() => {
+            prefetchSearchResult(query);
+        }, index * 100); // Stagger requests by 100ms
+    });
+
+    // Cleanup old cache every 5 minutes
+    setInterval(cleanupPrefetchCache, 5 * 60 * 1000);
+}
+
+// Smart pagination based on connection speed
+function getOptimalPageSize() {
+    if (typeof navigator === 'undefined') return 20; // Default for server-side
+
+    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+
+    if (!connection) return 20; // Default if not supported
+
+    const effectiveType = connection.effectiveType || '4g';
+
+    switch (effectiveType) {
+        case 'slow-2g':
+            return 8;
+        case '2g':
+            return 10;
+        case '3g':
+            return 15;
+        case '4g':
+            return 25;
+        default:
+            return 20;
+    }
+}
+
+// Get optimal pagination settings
+function getPaginationSettings() {
+    const pageSize = getOptimalPageSize();
+    const prefetchThreshold = Math.max(1, Math.floor(pageSize * 0.3)); // Prefetch when 30% through current page
+
+    return {
+        pageSize,
+        prefetchThreshold
+    };
+}
+
+// Validate search term
+function validateSearchTerm(term) {
+    const trimmed = term.trim();
+    return trimmed.length >= 2 && !/^\s*$/.test(trimmed);
+}
+
+// Debounced search function
+function debouncedSearch(searchTerm) {
+    // Clear existing timeout
+    if (searchTimeout) {
+        clearTimeout(searchTimeout);
+    }
+
+    // If search term is the same as last search, don't search again
+    if (searchTerm === lastSearchTerm && searchTerm) {
+        return;
+    }
+
+    // If search is too short or empty, clear results and return
+    if (!validateSearchTerm(searchTerm)) {
+        if (!searchTerm) {
+            // Empty search - load default products
+            currentFilters.search = '';
+            loadCJProducts('', 1).then(() => {
+                filterPerfumes();
+            });
+            lastSearchTerm = '';
+        }
+        return;
+    }
+
+    // Show loading state
+    showLoading();
+
+    // Set timeout for debounced search
+    searchTimeout = setTimeout(() => {
+        performSearch(searchTerm);
+    }, 300); // 300ms debounce delay
+}
+
+function performSearch(searchTerm) {
+    if (isSearching) return; // Prevent multiple simultaneous searches
+
+    isSearching = true;
+    const validatedSearchTerm = SecurityUtils.validateSearchQuery(searchTerm);
+
+    // Track search analytics
+    if (validatedSearchTerm) {
+        trackSearchQuery(validatedSearchTerm);
+    }
+
+    currentFilters.search = validatedSearchTerm;
+    lastSearchTerm = searchTerm;
+
+    // Check for prefetched results first
+    const prefetchedData = getPrefetchedResults(validatedSearchTerm);
+    if (prefetchedData) {
+        console.log('Using prefetched results for:', validatedSearchTerm);
+
+        // Track cache hit
+        if (window.performanceMetrics) {
+            window.performanceMetrics.cacheHits++;
+        }
+
+        cjProducts = prefetchedData.products || [];
+        totalPages = Math.ceil(prefetchedData.total / getPaginationSettings().pageSize);
+        currentPage = 1;
+
+        filterPerfumes();
+        hideLoading();
+        isSearching = false;
+
+        // Start prefetching related queries in background
+        prefetchRelatedQueries(validatedSearchTerm);
+        return;
+    }
+
+    // Always reload from CJ with query
+    loadCJProducts(validatedSearchTerm, 1).then(() => {
+        filterPerfumes();
+        hideLoading();
+        isSearching = false;
+    }).catch(error => {
+        console.error('Search error:', error);
+        hideLoading();
+        isSearching = false;
+    });
+
     // Scroll to shop section if search is performed and we're not already there
     if (validatedSearchTerm && !isElementInViewport(document.getElementById('shop'))) {
         document.getElementById('shop').scrollIntoView({ behavior: 'smooth' });
     }
-    
+
     // Add visual feedback for search
     if (validatedSearchTerm) {
         const searchBtn = document.querySelector('.search-btn');
@@ -805,6 +1208,7 @@ function initializeExistingFeatures() {
 
     // Product card hover effects
     document.addEventListener('mouseenter', function(e) {
+        if (!(e.target instanceof Element)) return;
         if (e.target.closest('.product-card')) {
             const card = e.target.closest('.product-card');
             card.style.transform = 'translateY(-10px)';
@@ -812,6 +1216,7 @@ function initializeExistingFeatures() {
     }, true);
     
     document.addEventListener('mouseleave', function(e) {
+        if (!(e.target instanceof Element)) return;
         if (e.target.closest('.product-card')) {
             const card = e.target.closest('.product-card');
             card.style.transform = 'translateY(0)';
@@ -820,15 +1225,19 @@ function initializeExistingFeatures() {
 
     // Collection card hover effects
     document.addEventListener('mouseenter', function(e) {
+        if (!(e.target instanceof Element)) return;
         if (e.target.closest('.collection-card')) {
             const card = e.target.closest('.collection-card');
-            card.style.transform = 'translateY(-5px)';
+            card.style.boxShadow = '0 15px 35px rgba(0, 0, 0, 0.2)';
+            card.style.transform = 'translateY(-8px)';
         }
     }, true);
-    
+
     document.addEventListener('mouseleave', function(e) {
+        if (!(e.target instanceof Element)) return;
         if (e.target.closest('.collection-card')) {
             const card = e.target.closest('.collection-card');
+            card.style.boxShadow = '0 10px 20px rgba(0, 0, 0, 0.1)';
             card.style.transform = 'translateY(0)';
         }
     }, true);

@@ -111,13 +111,35 @@ async function handleProductsRequest(req, url, env) {
 
   console.log(`Products request: query="${query}", limit=${limit}, page=${page}, offset=${offset}`);
 
-  // Implement caching
+  // Popular searches cache (in-memory for current instance)
+  const popularSearches = new Map([
+    ['perfume', null],
+    ['cologne', null],
+    ['fragrance', null],
+    ['parfum', null],
+    ['eau de parfum', null],
+    ['eau de toilette', null],
+    ['luxury perfume', null],
+    ['designer fragrance', null]
+  ]);
+
+  // Check popular searches cache first
+  if (popularSearches.has(query) && popularSearches.get(query)) {
+    console.log('Popular search cache hit');
+    return popularSearches.get(query);
+  }
+
+  // Implement Cloudflare caching
   const cache = caches.default;
   const cacheKey = new Request(url.toString(), req);
   let response = await cache.match(cacheKey);
 
   if (response) {
-    console.log('Cache hit');
+    console.log('Cloudflare cache hit');
+    // Also cache in popular searches if it's a popular term
+    if (popularSearches.has(query)) {
+      popularSearches.set(query, response.clone());
+    }
     return response;
   }
 
@@ -132,13 +154,11 @@ async function handleProductsRequest(req, url, env) {
           resultList {
             id
             title
-            description
             price {
               amount
               currency
             }
             imageLink
-            advertiserId
             advertiserName
             linkCode(pid: $websiteId) {
               clickUrl
@@ -189,7 +209,7 @@ async function handleProductsRequest(req, url, env) {
           brand: p.advertiserName,
           price: parseFloat(p.price?.amount || 0),
           image: p.imageLink,
-          description: p.description,
+          description: '', // Removed from query for performance
           cjLink: cjLink, // Use the real, monetizable link from GraphQL
           advertiser: p.advertiserName,
           currency: p.price?.currency || 'USD',
@@ -215,9 +235,23 @@ async function handleProductsRequest(req, url, env) {
       }
     };
 
-    response = json(jsonResponse, env);
+    // Compress the response data for better performance
+    const compressedData = jsonResponse;
+    const originalSize = JSON.stringify(compressedData).length;
+
+    response = json(compressedData, env);
     response.headers.set('Cache-Control', 's-maxage=3600'); // Cache for 1 hour
+    response.headers.set('X-Original-Size', originalSize.toString()); // For monitoring
+
+    // Log performance metrics
+    console.log(`Response: ${products.length} products, ${originalSize} bytes`);
+
     await cache.put(cacheKey, response.clone());
+
+    // Also cache in popular searches if it's a popular term
+    if (popularSearches.has(query)) {
+      popularSearches.set(query, response.clone());
+    }
 
     return response;
 
