@@ -441,6 +441,7 @@ async function initializeApp() {
     }
     
     displayTopRated();
+    displayTikTokProducts(); // Fetch and display TikTok Shop products
     populateBrandFilter();
     addEventListeners();
     initializeExistingFeatures();
@@ -495,19 +496,31 @@ function displayProducts(perfumes) {
     }
 }
 
-// Display top rated products
-function displayTopRated() {
-    const topRatedGrid = document.getElementById('top-rated-grid');
-    if (!topRatedGrid) return;
-    
-    // Fetch a curated list of popular products
-    fetchCJProducts('popular fragrance', 1, 10).then(data => {
-        const popularProducts = data.products || [];
-        topRatedGrid.innerHTML = popularProducts.map(perfume => createProductCard(perfume)).join('');
-    }).catch(error => {
-        console.error('Failed to load popular products:', error);
-        topRatedGrid.innerHTML = '<p>Could not load popular products at this time.</p>';
-    });
+/**
+ * Fetches and displays products from TikTok Shop.
+ */
+function displayTikTokProducts() {
+    const TIKTOK_SHOP_PARTNER_ID = '7563286';
+    const tiktokGrid = document.getElementById('tiktok-products-grid');
+    if (!tiktokGrid) return;
+
+    // Show a loading state
+    tiktokGrid.innerHTML = '<p>Loading TikTok Shop finds...</p>';
+
+    fetchCJProducts('', 1, 8, { partnerId: TIKTOK_SHOP_PARTNER_ID })
+        .then(data => {
+            const tiktokProducts = data.products || [];
+            if (tiktokProducts.length > 0) {
+                const productCards = tiktokProducts.map(perfume => createProductCard(perfume)).join('');
+                tiktokGrid.innerHTML = productCards;
+            } else {
+                tiktokGrid.innerHTML = '<p>Could not find any TikTok Shop products at this time.</p>';
+            }
+        })
+        .catch(error => {
+            console.error('Failed to load TikTok Shop products:', error);
+            tiktokGrid.innerHTML = '<p>There was an error loading products from TikTok Shop.</p>';
+        });
 }
 
 function displayPagination() {
