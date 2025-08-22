@@ -142,9 +142,8 @@ async function handleProductsRequest(req, url, env) {
     // Step 5: Apply revenue-optimized sorting and filtering
     const optimizedProducts = optimizeForRevenue(deduplicatedProducts, query, sortBy, brandFilter, ratingFilter);
     
-    // Step 6: Paginate and format results
-    const paginatedProducts = optimizedProducts.slice(offset, offset + limit);
-    const products = paginatedProducts.map(p => formatProductForRevenue(p, query));
+    // Step 6: Format results (pagination is handled by the API call offset)
+    const products = optimizedProducts.map(p => formatProductForRevenue(p, query));
 
     // Step 7: Calculate revenue metrics
     const revenueMetrics = calculateRevenueMetrics(products, cjProducts.length, tiktokProducts.length);
