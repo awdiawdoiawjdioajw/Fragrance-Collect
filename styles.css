@@ -1085,7 +1085,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Enhanced Filter Styles */
 .filter-section {
-    background: rgba(75, 46, 57, 0.3);
+    background: var(--soft-black);
     padding: 2rem 0;
     border-bottom: 1px solid rgba(201, 166, 70, 0.2);
     backdrop-filter: blur(10px);
@@ -1998,7 +1998,7 @@ textarea:focus {
 /* Enhanced Product Info */
 .product-info {
     padding: 1rem;
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    background: var(--soft-black);
     border-radius: 0 0 12px 12px;
 }
 
@@ -2093,11 +2093,11 @@ textarea:focus {
 
 /* Filter Enhancements */
 .filter-section {
-    background: #f8f9fa;
+    background: var(--soft-black);
     padding: 1.5rem;
     border-radius: 12px;
     margin: 1.5rem 0;
-    border: 1px solid #e9ecef;
+    border: 1px solid var(--antique-gold);
 }
 
 .filter-section h3 {
@@ -2274,4 +2274,84 @@ textarea:focus {
         border-color: #2c3e50;
         color: white;
     }
-} 
+}
+
+/* Additional Filter and Sort Styling */
+.filter-select,
+.filter-input,
+.sort-select,
+.price-range-input,
+.brand-filter,
+.rating-filter,
+.sort-option,
+.store-option {
+    background: var(--soft-black) !important;
+    color: var(--warm-white) !important;
+    border: 1px solid var(--antique-gold) !important;
+    border-radius: 6px;
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.filter-select:focus,
+.filter-input:focus,
+.sort-select:focus,
+.price-range-input:focus,
+.brand-filter:focus,
+.rating-filter:focus {
+    background: var(--dark-gray) !important;
+    border-color: var(--antique-gold) !important;
+    outline: none !important;
+    box-shadow: 0 0 0 2px rgba(201, 166, 70, 0.2) !important;
+}
+
+.sort-option:hover,
+.sort-option.active {
+    background: var(--antique-gold) !important;
+    color: var(--soft-black) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(201, 166, 70, 0.3);
+}
+
+.store-option:hover {
+    background: var(--dark-gray) !important;
+    border-color: var(--antique-gold) !important;
+}
+
+/* Ensure all select options have dark backgrounds */
+select option {
+    background: var(--soft-black) !important;
+    color: var(--warm-white) !important;
+}
+
+/* Filter labels */
+.filter-label {
+    color: var(--antique-gold);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.5rem;
+}
+
+/* Clear filters button */
+#clear-filters {
+    background: transparent;
+    border: 1px solid var(--antique-gold);
+    color: var(--antique-gold);
+    padding: 0.6rem 1.2rem;
+    font-size: 0.9rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+#clear-filters:hover {
+    background: var(--antique-gold);
+    color: var(--soft-black);
+    box-shadow: 0 4px 12px rgba(201, 166, 70, 0.2);
+}
