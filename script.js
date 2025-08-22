@@ -462,7 +462,7 @@ function displayProducts(perfumes) {
         return;
     }
 
-    const productCards = perfumes.map(perfume => createRevenueOptimizedProductCard(perfume)).join('');
+    const productCards = perfumes.map(perfume => createProductCard(perfume)).join('');
     productsGrid.innerHTML = productCards;
 
     // Add infinite scroll if enabled
