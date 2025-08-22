@@ -118,48 +118,51 @@
     <section class="filter-section" id="brands">
         <div class="container">
             <div class="filter-container">
+                <!-- Sort By -->
                 <div class="filter-group">
-                    <label for="sort-by-filter" class="filter-label">Sort By</label>
-                    <select id="sort-by-filter" class="filter-select dropdown-toggle">
-                        <option value="price-asc">Price: Low to High</option>
-                        <option value="price-desc">Price: High to Low</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label for="price-filter" class="filter-label">Price Range</label>
-                    <select id="price-filter" class="filter-select dropdown-toggle">
-                        <option value="">All Prices</option>
-                        <option value="0-100">$0 - $100</option>
-                        <option value="100-200">$100 - $200</option>
-                        <option value="200-300">$200 - $300</option>
-                        <option value="300-400">$300 - $400</option>
-                        <option value="400+">$400+</option>
-                    </select>
-                </div>
-                <div class="filter-group shipping-filter">
-                    <label for="shipping-filter" class="filter-label">Shipping</label>
-                    <select id="shipping-filter" class="dropdown-toggle">
-                        <option value="">All Shipping</option>
-                        <option value="free">Free shipping</option>
-                        <option value="0-10">$0 - $10</option>
-                        <option value="10-20">$10 - $20</option>
-                        <option value="20+">$20+</option>
-                        <option value="unknown">Unknown</option>
+                    <label for="sort-by" class="filter-label">Sort By</label>
+                    <select id="sort-by" class="dropdown-toggle">
+                        <option value="revenue">Recommended</option>
+                        <option value="price_asc">Price: Low to High</option>
+                        <option value="price_desc">Price: High to Low</option>
+                        <option value="commission">Highest Commission</option>
+                        <option value="trending">Trending</option>
+                        <option value="relevance">Relevance</option>
                     </select>
                 </div>
 
-                <div class="filter-group rating-filter">
-                    <label for="rating-filter" class="filter-label">Rating</label>
-                    <select id="rating-filter" class="dropdown-toggle">
-                        <option value="">All Ratings</option>
-                        <option value="5">5 stars</option>
-                        <option value="4">4 stars & up</option>
-                        <option value="3">3 stars & up</option>
-                        <option value="2">2 stars & up</option>
-                        <option value="1">1 star & up</option>
+                <!-- Price Range -->
+                <div class="filter-group">
+                    <label for="price-range" class="filter-label">Price Range</label>
+                    <select id="price-range" class="dropdown-toggle">
+                        <option value="all">All Prices</option>
+                        <option value="0-50">$0 - $50</option>
+                        <option value="50-100">$50 - $100</option>
+                        <option value="100-200">$100 - $200</option>
+                        <option value="200+">$200+</option>
                     </select>
                 </div>
-                
+
+                <!-- Shipping -->
+                <div class="filter-group">
+                    <label for="shipping-filter" class="filter-label">Shipping</label>
+                    <select id="shipping-filter" class="dropdown-toggle">
+                        <option value="all">All Shipping</option>
+                        <option value="free">Free Shipping</option>
+                    </select>
+                </div>
+
+                <!-- Rating -->
+                <div class="filter-group">
+                    <label for="rating-filter" class="filter-label">Rating</label>
+                    <select id="rating-filter" class="dropdown-toggle rating-filter">
+                        <option value="all">All Ratings</option>
+                        <option value="4+">4 Stars & Up</option>
+                        <option value="3+">3 Stars & Up</option>
+                    </select>
+                </div>
+
+                <!-- Clear Filters -->
                 <div class="filter-group">
                     <button id="clear-filters" class="btn-secondary">Clear Filters</button>
                 </div>
