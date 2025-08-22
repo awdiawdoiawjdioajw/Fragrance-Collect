@@ -332,167 +332,129 @@ function sortWithFreeShippingPriority(list) {
     });
 }
 
-// Load products and update UI
-async function loadCJProducts(query = '', page = 1) {
-    try {
-        // Use smart pagination based on connection speed
-        const settings = getPaginationSettings();
-        const limit = settings.pageSize;
-
-        const serverFilters = {};
-        if (currentFilters.priceRange) {
-            const [min, max] = currentFilters.priceRange.split('-').map(Number);
-            serverFilters.lowPrice = min;
-            serverFilters.highPrice = max || 0;
-        }
-        if (currentFilters.brand) {
-            serverFilters.partnerId = currentFilters.brand;
-        }
-
-        const data = await fetchCJProducts(query, page, limit, serverFilters);
-
-        if (data.error) {
-            throw new Error(data.error);
-        }
-
-        cjProducts = mapProductsDataToItems({ products: data.products });
-        totalPages = Math.ceil(data.total / limit);
-        currentPage = data.page || 1;
-        
-        // After fetching, always apply client-side filters
-        filterPerfumes();
-
-        return data;
-    } catch (error) {
-        console.error('Error loading CJ products:', error);
-        cjProducts = [];
-        totalPages = 1;
-        currentPage = 1;
-        throw error;
-    }
-}
-
-async function loadCJProductsMulti(queries) {
-    const results = await Promise.allSettled(queries.map(q => fetchCJProducts(q)));
-    const map = new Map();
-    results.forEach(r => {
-        if (r.status === 'fulfilled' && Array.isArray(r.value)) {
-            r.value.forEach(p => map.set(p.id, p));
-        }
-    });
-    cjProducts = sortWithFreeShippingPriority(Array.from(map.values()));
-}
-
-// Performance optimization for GitHub Pages
-function optimizeForGitHubPages() {
-    // Detect if we're on GitHub Pages
-    const isGitHubPages = location.hostname.includes('github.io');
-
-    if (isGitHubPages) {
-        console.log('Optimizing for GitHub Pages performance...');
-
-        // Performance monitoring
-        window.performanceMetrics = {
-            apiCalls: 0,
-            cacheHits: 0,
-            totalLoadTime: 0,
-            startTime: Date.now()
-        };
-
-        // Reduce prefetch cache size for GitHub Pages
-        setInterval(() => {
-            if (prefetchCache.size > 3) { // Even smaller cache for GitHub Pages
-                const oldestKey = Array.from(prefetchCache.keys())[0];
-                prefetchCache.delete(oldestKey);
-            }
-        }, 20000); // More frequent cleanup
-
-        // Monitor performance
-        setInterval(() => {
-            const metrics = window.performanceMetrics;
-            console.log('Performance Metrics:', {
-                apiCalls: metrics.apiCalls,
-                cacheHits: metrics.cacheHits,
-                hitRate: metrics.apiCalls > 0 ? (metrics.cacheHits / metrics.apiCalls * 100).toFixed(1) + '%' : '0%',
-                runtime: Date.now() - metrics.startTime + 'ms'
-            });
-        }, 30000);
-    }
-}
-
-// Initialize the application
-async function initializeApp() {
-    // Apply GitHub Pages optimizations
-    optimizeForGitHubPages();
-
+// Enhanced CJ products loading with revenue optimization
+async function loadCJProducts(query = '', page = 1, limit = null, filters = {}) {
+    const startTime = Date.now();
     showLoading();
-    const health = await checkApiHealth();
-    if (!health.healthy) {
-        showStatusMessage(`Error: ${health.message}`, true);
-        return;
-    }
     
     try {
-        await loadCJProducts(config.DEFAULT_SEARCH_TERM, 1);
-    } catch (error) {
-        console.error("Initialization failed:", error);
-    } finally {
-    hideLoading();
-    }
-    
-    displayTopRated();
-    displayTikTokProducts(); // Fetch and display TikTok Shop products
-    populateBrandFilter();
-    addEventListeners();
-    initializeExistingFeatures();
-    initHamburgerMenu();
-    initModal();
+        // Build query parameters for revenue-optimized search
+        const params = new URLSearchParams({
+            q: query || '',
+            page: page.toString(),
+            limit: (limit || 100).toString(),
+            sortBy: 'revenue', // Default to revenue optimization
+            includeTikTok: 'true' // Always include TikTok for better results
+        });
 
-    // Start prefetching popular search results
-    setTimeout(() => {
-        startPrefetching();
-    }, 2000); // Start after 2 seconds to not interfere with initial load
+        // Add filters if provided
+        if (filters.lowPrice) params.append('lowPrice', filters.lowPrice.toString());
+        if (filters.highPrice) params.append('highPrice', filters.highPrice.toString());
+        if (filters.brand) params.append('brand', filters.brand);
+        if (filters.rating) params.append('rating', filters.rating.toString());
+        if (filters.partnerId) params.append('partnerId', filters.partnerId.toString());
+
+        const apiUrl = `${config.API_ENDPOINT}/products?${params.toString()}`;
+        console.log('🚀 Revenue-optimized search:', apiUrl);
+
+        const res = await fetch(apiUrl, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache'
+            }
+        });
+
+        clearTimeout(timer);
+
+        // Track performance metrics
+        if (window.performanceMetrics) {
+            window.performanceMetrics.apiCalls++;
+            window.performanceMetrics.totalLoadTime += (Date.now() - startTime);
+        }
+
+        if (!res.ok) {
+            const errorText = await res.text();
+            let errorMessage = `API fetch failed (${res.status})`;
+            try {
+                const errorData = JSON.parse(errorText);
+                if (errorData.details) errorMessage += `: ${SecurityUtils.escapeHtml(errorData.details)}`;
+            } catch (e) {
+                if (errorText && errorText.length < 100) errorMessage += `: ${SecurityUtils.escapeHtml(errorText)}`;
+            }
+            throw new Error(errorMessage);
+        }
+        
+        const data = await res.json();
+        if (data && data.error) {
+            throw new Error(data.error + (data.details ? `: ${SecurityUtils.escapeHtml(data.details)}` : ''));
+        }
+
+        // Handle revenue-optimized response
+        if (data.revenue) {
+            console.log('💰 Revenue metrics:', data.revenue);
+            displayRevenueMetrics(data.revenue);
+        }
+
+        if (data.sources) {
+            console.log(`🛍️ Store results: CJ: ${data.sources.cj}, TikTok: ${data.sources.tiktok}`);
+        }
+
+        // Return the enhanced data structure
+        return data;
+
+    } catch (error) {
+        console.error('CJ API fetch error:', error);
+        showStatusMessage(`Error: Could not fetch products. ${error.message}`, true);
+        return []; // Return empty array on failure
+    } finally {
+        hideLoading();
+    }
 }
 
-// Display products in the grid
+// Display revenue metrics
+function displayRevenueMetrics(revenue) {
+    const metricsContainer = document.getElementById('revenue-metrics');
+    if (!metricsContainer) return;
+
+    metricsContainer.innerHTML = `
+        <div class="revenue-metrics">
+            <div class="metric">
+                <span class="label">Products Found:</span>
+                <span class="value">${revenue.totalProducts}</span>
+            </div>
+            <div class="metric">
+                <span class="label">Total Value:</span>
+                <span class="value">$${revenue.totalValue}</span>
+            </div>
+            <div class="metric">
+                <span class="label">Avg Commission:</span>
+                <span class="value">${(revenue.averageCommission * 100).toFixed(1)}%</span>
+            </div>
+            <div class="metric">
+                <span class="label">Est. Earnings:</span>
+                <span class="value">$${revenue.estimatedTotalCommission}</span>
+            </div>
+        </div>
+    `;
+}
+
+// Enhanced product display with revenue information
 function displayProducts(perfumes) {
     const productsGrid = document.getElementById('products-grid');
-    const noResults = document.getElementById('no-results');
-    const searchResultsInfo = document.getElementById('search-results-info');
-    
     if (!productsGrid) return;
-    
+
     if (perfumes.length === 0) {
-        productsGrid.innerHTML = '';
-        noResults.style.display = 'block';
-        if (searchResultsInfo) searchResultsInfo.style.display = 'none';
+        productsGrid.innerHTML = '<p class="no-products">No products found. Try adjusting your search or filters.</p>';
         return;
     }
-    
-    noResults.style.display = 'none';
-    
-    // Show search results count if there's an active search
-    if (currentFilters.search && searchResultsInfo) {
-        const totalProducts = cjProducts.length;
-        const foundProducts = perfumes.length;
-        // Use safe DOM manipulation
-        SecurityUtils.setInnerHTML(searchResultsInfo, `Found ${foundProducts} of ${totalProducts} fragrances for "${SecurityUtils.escapeHtml(currentFilters.search)}"`);
-        searchResultsInfo.style.display = 'block';
-    } else if (searchResultsInfo) {
-        searchResultsInfo.style.display = 'none';
-    }
-    
-    productsGrid.innerHTML = perfumes.map(perfume => createProductCard(perfume)).join('');
-    displayPagination();
-    
-    // Hide pagination if not needed
-    const paginationContainer = document.getElementById('pagination-container');
-    if (paginationContainer) {
-        if (totalPages <= 1) {
-            paginationContainer.style.display = 'none';
-        } else {
-            paginationContainer.style.display = 'flex';
-        }
+
+    const productCards = perfumes.map(perfume => createRevenueOptimizedProductCard(perfume)).join('');
+    productsGrid.innerHTML = productCards;
+
+    // Add infinite scroll if enabled
+    if (window.infiniteScrollEnabled) {
+        setupInfiniteScroll();
     }
 }
 
