@@ -357,8 +357,12 @@ async function loadCJProducts(query = '', page = 1, limit = null, filters = {}) 
         const apiUrl = `${config.API_ENDPOINT}/products?${params.toString()}`;
         console.log('🚀 Revenue-optimized search:', apiUrl);
 
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 15000); // 15s timeout
+
         const res = await fetch(apiUrl, {
             method: 'GET',
+            signal: controller.signal, // Add signal for timeout
             headers: {
                 'Content-Type': 'application/json',
                 'Cache-Control': 'no-cache'
