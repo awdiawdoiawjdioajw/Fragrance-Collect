@@ -1091,6 +1091,30 @@ h1, h2, h3, h4, h5, h6 {
     backdrop-filter: blur(10px);
 }
 
+/* Ensure all filter and sort elements have dark backgrounds */
+.filter-select,
+.filter-input,
+.sort-select,
+.price-range-input,
+.brand-filter,
+.rating-filter {
+    background: var(--soft-black) !important;
+    color: var(--warm-white) !important;
+    border: 1px solid var(--antique-gold) !important;
+}
+
+.filter-select:focus,
+.filter-input:focus,
+.sort-select:focus,
+.price-range-input:focus,
+.brand-filter:focus,
+.rating-filter:focus {
+    background: var(--dark-gray) !important;
+    border-color: var(--antique-gold) !important;
+    outline: none !important;
+    box-shadow: 0 0 0 2px rgba(201, 166, 70, 0.2) !important;
+}
+
 .filter-container {
     display: flex;
     justify-content: center;
@@ -1137,6 +1161,34 @@ h1, h2, h3, h4, h5, h6 {
 select.dropdown-toggle option {
     background: var(--soft-black);
     color: var(--warm-white);
+}
+
+/* Ensure all select options have dark backgrounds */
+select option {
+    background: var(--soft-black) !important;
+    color: var(--warm-white) !important;
+}
+
+/* Additional styling for any remaining white backgrounds */
+input[type="text"],
+input[type="number"],
+input[type="search"],
+select,
+textarea {
+    background: var(--soft-black) !important;
+    color: var(--warm-white) !important;
+    border: 1px solid var(--antique-gold) !important;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="search"]:focus,
+select:focus,
+textarea:focus {
+    background: var(--dark-gray) !important;
+    border-color: var(--antique-gold) !important;
+    outline: none !important;
+    box-shadow: 0 0 0 2px rgba(201, 166, 70, 0.2) !important;
 }
 
 /* Cleaner "Clear Filters" button */
@@ -2049,7 +2101,7 @@ select.dropdown-toggle option {
 }
 
 .filter-section h3 {
-    color: #2c3e50;
+    color: var(--warm-white);
     margin-bottom: 1rem;
     font-size: 1.2rem;
 }
@@ -2066,7 +2118,7 @@ select.dropdown-toggle option {
     padding: 0.5rem 1rem;
     border: 2px solid #667eea;
     border-radius: 20px;
-    background: white;
+    background: var(--soft-black);
     color: #667eea;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -2102,7 +2154,7 @@ select.dropdown-toggle option {
 
 .store-option:hover {
     border-color: #667eea;
-    background: #f8f9fa;
+    background: var(--dark-gray);
 }
 
 .store-option input[type="checkbox"] {
@@ -2118,7 +2170,7 @@ select.dropdown-toggle option {
 }
 
 .revenue-stat {
-    background: white;
+    background: var(--soft-black);
     padding: 1rem;
     border-radius: 8px;
     text-align: center;
@@ -2128,14 +2180,14 @@ select.dropdown-toggle option {
 
 .revenue-stat .label {
     font-size: 0.8rem;
-    color: #636e72;
+    color: var(--warm-white);
     margin-bottom: 0.5rem;
 }
 
 .revenue-stat .value {
     font-size: 1.2rem;
     font-weight: bold;
-    color: #2c3e50;
+    color: var(--warm-white);
 }
 
 /* Trending Section */

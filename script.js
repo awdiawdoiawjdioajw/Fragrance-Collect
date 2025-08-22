@@ -1495,7 +1495,13 @@ document.addEventListener('DOMContentLoaded', () => {
             Element.prototype.webkitMatchesSelector;
     }
     
-    initializeApp();
+    // Initialize the application
+    initModal();
+    checkMobileMenu();
+    initHamburgerMenu();
+    
+    // Load initial products
+    loadCJProducts();
 });
 
 // Check mobile menu on window resize
