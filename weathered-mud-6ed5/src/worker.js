@@ -98,12 +98,11 @@ async function handleProductsRequest(req, url, env) {
   const includeTikTok = searchParams.get('includeTikTok') !== 'false';
   const sortBy = searchParams.get('sortBy') || 'revenue'; // revenue, relevance, price, trending
   const brandFilter = searchParams.get('brand') || null;
-  const ratingFilter = parseFloat(searchParams.get('rating') || '4.0', 10);
 
   // Smart cache key generation
   const cacheKey = generateCacheKey({
     query, limit, page, lowPrice, highPrice, partnerId, 
-    includeTikTok, sortBy, brandFilter, ratingFilter
+    includeTikTok, sortBy, brandFilter
   });
   
   // Try to get from cache first
@@ -140,7 +139,7 @@ async function handleProductsRequest(req, url, env) {
     const deduplicatedProducts = deduplicateProducts(allProducts);
     
     // Step 5: Apply revenue-optimized sorting and filtering
-    const optimizedProducts = optimizeForRevenue(deduplicatedProducts, query, sortBy, brandFilter, ratingFilter);
+    const optimizedProducts = optimizeForRevenue(deduplicatedProducts, query, sortBy, brandFilter);
     
     // Step 6: Format results (pagination is handled by the API call offset)
     const products = optimizedProducts.map(p => formatProductForRevenue(p, query));
@@ -155,7 +154,7 @@ async function handleProductsRequest(req, url, env) {
       limit,
       hasMore: optimizedProducts.length > (page * limit),
       searchQuery: query,
-      filters: { lowPrice, highPrice, partnerId, includeTikTok, sortBy, brandFilter, ratingFilter },
+      filters: { lowPrice, highPrice, partnerId, includeTikTok, sortBy, brandFilter },
       revenue: revenueMetrics,
       sources: {
         cj: cjProducts.length,
@@ -357,11 +356,10 @@ async function searchTikTokStore(query, limit, offset, lowPrice, highPrice, env)
 /**
  * Revenue-optimized product optimization
  */
-function optimizeForRevenue(products, query, sortBy, brandFilter, ratingFilter) {
+function optimizeForRevenue(products, query, sortBy, brandFilter) {
   // Apply filters
   let filtered = products.filter(p => {
     if (brandFilter && p.brand?.toLowerCase() !== brandFilter.toLowerCase()) return false;
-    if (ratingFilter && (p.rating || 0) < ratingFilter) return false;
     return true;
   });
 
@@ -571,8 +569,8 @@ function calculateRevenueMetrics(products, cjCount, tiktokCount) {
  * Generate smart cache key
  */
 function generateCacheKey(params) {
-  const { query, limit, page, lowPrice, highPrice, partnerId, includeTikTok, sortBy, brandFilter, ratingFilter } = params;
-  return `products:${query}:${limit}:${page}:${lowPrice}:${highPrice}:${partnerId}:${includeTikTok}:${sortBy}:${brandFilter}:${ratingFilter}`;
+  const { query, limit, page, lowPrice, highPrice, partnerId, includeTikTok, sortBy, brandFilter } = params;
+  return `products:${query}:${limit}:${page}:${lowPrice}:${highPrice}:${partnerId}:${includeTikTok}:${sortBy}:${brandFilter}`;
 }
 
 /**
