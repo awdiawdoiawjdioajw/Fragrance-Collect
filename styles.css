@@ -1096,23 +1096,33 @@ h1, h2, h3, h4, h5, h6 {
 .filter-input,
 .sort-select,
 .price-range-input,
-.brand-filter,
-.rating-filter {
+.brand-filter {
     background: var(--soft-black) !important;
     color: var(--warm-white) !important;
     border: 1px solid var(--antique-gold) !important;
+}
+
+.rating-filter {
+    background: var(--soft-black) !important;
+    color: var(--warm-white) !important;
+    border: none !important;
 }
 
 .filter-select:focus,
 .filter-input:focus,
 .sort-select:focus,
 .price-range-input:focus,
-.brand-filter:focus,
-.rating-filter:focus {
+.brand-filter:focus {
     background: var(--dark-gray) !important;
     border-color: var(--antique-gold) !important;
     outline: none !important;
     box-shadow: 0 0 0 2px rgba(201, 166, 70, 0.2) !important;
+}
+
+.rating-filter:focus {
+    background: var(--dark-gray) !important;
+    outline: none !important;
+    box-shadow: none !important;
 }
 
 .filter-container {
@@ -2282,7 +2292,6 @@ textarea:focus {
 .sort-select,
 .price-range-input,
 .brand-filter,
-.rating-filter,
 .sort-option,
 .store-option {
     background: var(--soft-black) !important;
@@ -2294,16 +2303,31 @@ textarea:focus {
     transition: all 0.3s ease;
 }
 
+.rating-filter {
+    background: var(--soft-black) !important;
+    color: var(--warm-white) !important;
+    border: none !important;
+    border-radius: 6px;
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
 .filter-select:focus,
 .filter-input:focus,
 .sort-select:focus,
 .price-range-input:focus,
-.brand-filter:focus,
-.rating-filter:focus {
+.brand-filter:focus {
     background: var(--dark-gray) !important;
     border-color: var(--antique-gold) !important;
     outline: none !important;
     box-shadow: 0 0 0 2px rgba(201, 166, 70, 0.2) !important;
+}
+
+.rating-filter:focus {
+    background: var(--dark-gray) !important;
+    outline: none !important;
+    box-shadow: none !important;
 }
 
 .sort-option:hover,
