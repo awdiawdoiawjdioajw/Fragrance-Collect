@@ -1435,7 +1435,52 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Load initial products
     loadCJProducts();
+    loadPopularPicks();
+    loadTikTokFinds();
 });
 
 // Check mobile menu on window resize
 window.addEventListener('resize', checkMobileMenu); 
+
+async function loadPopularPicks() {
+    const grid = document.getElementById('top-rated-grid');
+    if (!grid) return;
+
+    grid.innerHTML = '<p class="loading-message">Fetching popular picks...</p>';
+
+    try {
+        const data = await loadCJProducts('popular', 1, 10, { sortBy: 'trending' });
+        if (data && data.products && data.products.length > 0) {
+            const products = mapProductsDataToItems(data);
+            const productCards = products.slice(0, 10).map(p => createProductCard(p)).join('');
+            grid.innerHTML = productCards;
+        } else {
+            grid.innerHTML = '<p class="no-products">Could not load popular picks at the moment.</p>';
+        }
+    } catch (error) {
+        console.error('Error loading popular picks:', error);
+        grid.innerHTML = '<p class="no-products">Error loading popular picks.</p>';
+    }
+}
+
+async function loadTikTokFinds() {
+    const grid = document.getElementById('tiktok-products-grid');
+    if (!grid) return;
+
+    grid.innerHTML = '<p class="loading-message">Searching for viral TikTok finds...</p>';
+
+    try {
+        // Use a specific query and partnerId for TikTok
+        const data = await loadCJProducts('tiktok viral', 1, 10, { partnerId: '7563286' });
+        if (data && data.products && data.products.length > 0) {
+            const products = mapProductsDataToItems(data);
+            const productCards = products.slice(0, 10).map(p => createProductCard(p)).join('');
+            grid.innerHTML = productCards;
+        } else {
+            grid.innerHTML = '<p class="no-products">No viral TikTok finds available right now. Check back later!</p>';
+        }
+    } catch (error) {
+        console.error('Error loading TikTok finds:', error);
+        grid.innerHTML = '<p class="no-products">Error loading TikTok finds.</p>';
+    }
+} 
