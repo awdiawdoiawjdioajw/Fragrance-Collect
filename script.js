@@ -321,17 +321,6 @@ async function fetchCJProducts(query = '', page = 1, limit = null, filters = {})
     }
 }
 
-function sortWithFreeShippingPriority(list) {
-    return list.sort((a, b) => {
-        if (a.price === b.price) {
-            const aFree = a.shippingCost === 0 ? 1 : 0;
-            const bFree = b.shippingCost === 0 ? 1 : 0;
-            return bFree - aFree;
-        }
-        return a.price - b.price;
-    });
-}
-
 // Enhanced CJ products loading with revenue optimization
 async function loadCJProducts(query = '', page = 1, limit = null, filters = {}) {
     const startTime = Date.now();
@@ -425,33 +414,6 @@ async function loadCJProducts(query = '', page = 1, limit = null, filters = {}) 
     }
 }
 
-// Display revenue metrics
-function displayRevenueMetrics(revenue) {
-    const metricsContainer = document.getElementById('revenue-metrics');
-    if (!metricsContainer) return;
-
-    metricsContainer.innerHTML = `
-        <div class="revenue-metrics">
-            <div class="metric">
-                <span class="label">Products Found:</span>
-                <span class="value">${revenue.totalProducts}</span>
-            </div>
-            <div class="metric">
-                <span class="label">Total Value:</span>
-                <span class="value">$${revenue.totalValue}</span>
-            </div>
-            <div class="metric">
-                <span class="label">Avg Commission:</span>
-                <span class="value">${(revenue.averageCommission * 100).toFixed(1)}%</span>
-            </div>
-            <div class="metric">
-                <span class="label">Est. Earnings:</span>
-                <span class="value">$${revenue.estimatedTotalCommission}</span>
-            </div>
-        </div>
-    `;
-}
-
 // Enhanced product display with revenue information
 function displayProducts(perfumes) {
     const productsGrid = document.getElementById('products-grid');
@@ -469,48 +431,6 @@ function displayProducts(perfumes) {
     if (window.infiniteScrollEnabled) {
         setupInfiniteScroll();
     }
-}
-
-// Display top rated products
-function displayTopRated() {
-    const topRatedGrid = document.getElementById('top-rated-grid');
-    if (!topRatedGrid) return;
-    
-    // Fetch a curated list of popular products
-    fetchCJProducts('popular fragrance', 1, 10).then(data => {
-        const popularProducts = data.products || [];
-        topRatedGrid.innerHTML = popularProducts.map(perfume => createProductCard(perfume)).join('');
-    }).catch(error => {
-        console.error('Failed to load popular products:', error);
-        topRatedGrid.innerHTML = '<p>Could not load popular products at this time.</p>';
-    });
-}
-
-/**
- * Fetches and displays products from TikTok Shop.
- */
-function displayTikTokProducts() {
-    const TIKTOK_SHOP_PARTNER_ID = '7563286';
-    const tiktokGrid = document.getElementById('tiktok-products-grid');
-    if (!tiktokGrid) return;
-
-    // Show a loading state
-    tiktokGrid.innerHTML = '<p>Loading TikTok Shop finds...</p>';
-
-    fetchCJProducts('', 1, 8, { partnerId: TIKTOK_SHOP_PARTNER_ID })
-        .then(data => {
-            const tiktokProducts = data.products || [];
-            if (tiktokProducts.length > 0) {
-                const productCards = tiktokProducts.map(perfume => createProductCard(perfume)).join('');
-                tiktokGrid.innerHTML = productCards;
-            } else {
-                tiktokGrid.innerHTML = '<p>Could not find any TikTok Shop products at this time.</p>';
-            }
-        })
-        .catch(error => {
-            console.error('Failed to load TikTok Shop products:', error);
-            tiktokGrid.innerHTML = '<p>There was an error loading products from TikTok Shop.</p>';
-        });
 }
 
 function displayPagination() {
