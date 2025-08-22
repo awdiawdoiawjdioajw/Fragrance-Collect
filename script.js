@@ -394,17 +394,26 @@ async function loadCJProducts(query = '', page = 1, limit = null, filters = {}) 
             throw new Error(data.error + (data.details ? `: ${SecurityUtils.escapeHtml(data.details)}` : ''));
         }
 
-        // Handle revenue-optimized response
-        if (data.revenue) {
-            console.log('💰 Revenue metrics:', data.revenue);
-            displayRevenueMetrics(data.revenue);
+        // SIMPLIFIED: Handle the new, flat data structure from the worker
+        cjProducts = mapProductsDataToItems(data);
+        filteredPerfumes = [...cjProducts];
+        
+        // Update total pages based on the new structure
+        totalPages = data.total ? Math.ceil(data.total / (limit || 100)) : 1;
+
+        // Display products and update UI
+        displayProducts(filteredPerfumes);
+        displayPagination();
+        populateBrandFilter();
+
+        // Update search results info
+        const searchResultsInfo = document.getElementById('search-results-info');
+        if (searchResultsInfo) {
+            const total = data.total || cjProducts.length;
+            SecurityUtils.setInnerHTML(searchResultsInfo, `Showing ${cjProducts.length} of approximately ${total} results.`);
+            searchResultsInfo.style.display = 'block';
         }
 
-        if (data.sources) {
-            console.log(`🛍️ Store results: CJ: ${data.sources.cj}, TikTok: ${data.sources.tiktok}`);
-        }
-
-        // Return the enhanced data structure
         return data;
 
     } catch (error) {
