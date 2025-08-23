@@ -55,14 +55,12 @@ h1, h2, h3, h4, h5, h6 {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 1.5rem;
-    position: relative;
 }
 
 .nav-left {
     display: flex;
     align-items: center;
-    gap: 2rem;
+    gap: 2rem; /* Space between logo and nav menu */
 }
 
 .nav-logo {
@@ -97,7 +95,7 @@ h1, h2, h3, h4, h5, h6 {
 .nav-menu {
     display: flex;
     list-style: none;
-    gap: 1.5rem;
+    gap: 1.5rem; /* Space between nav links */
     flex-wrap: nowrap;
     align-items: center;
     margin: 0;
@@ -140,7 +138,7 @@ h1, h2, h3, h4, h5, h6 {
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 0.5rem;
+    gap: 1rem; /* Space between menu and profile button */
     position: relative;
     margin: 0;
     width: auto;
@@ -296,7 +294,7 @@ h1, h2, h3, h4, h5, h6 {
     padding-right: 45px;
     color: var(--warm-white);
     font-size: 0.9rem;
-    width: 250px;
+    width: 300px; /* Increased width */
     transition: all 0.3s ease-in-out;
 }
 
