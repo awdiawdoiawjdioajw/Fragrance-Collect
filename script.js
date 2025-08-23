@@ -855,15 +855,15 @@ async function filterByCollection(collectionTitle) {
 // Clear all filters
 function clearFilters() {
     // Reset all filter select elements to their default value
-    const priceFilter = document.getElementById('price-filter');
+    const priceFilter = document.getElementById('price-range');
     const ratingFilter = document.getElementById('rating-filter');
     const shippingFilter = document.getElementById('shipping-filter');
     const mainSearch = document.getElementById('main-search');
     const brandFilter = document.getElementById('brand-filter');
 
-    if (priceFilter) priceFilter.value = '';
-    if (ratingFilter) ratingFilter.value = '';
-    if (shippingFilter) shippingFilter.value = '';
+    if (priceFilter) priceFilter.value = 'all';
+    if (ratingFilter) ratingFilter.value = 'all';
+    if (shippingFilter) shippingFilter.value = 'all';
     if (mainSearch) mainSearch.value = '';
     if (brandFilter) brandFilter.value = '';
     
