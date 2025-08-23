@@ -86,6 +86,31 @@ const config = {
   RESULTS_PER_PAGE: 50,
 };
 
+// Lightweight performance metrics for optional UI cards
+if (typeof window !== 'undefined' && !window.performanceMetrics) {
+  window.performanceMetrics = {
+    apiCalls: 0,
+    totalLoadTime: 0,
+    lastLoadMs: 0
+  };
+}
+
+function updatePerformanceCards() {
+  try {
+    if (!window.performanceMetrics) return;
+    const { apiCalls, totalLoadTime, lastLoadMs } = window.performanceMetrics;
+    const avg = apiCalls > 0 ? Math.round(totalLoadTime / apiCalls) : 0;
+    const elApi = document.getElementById('perf-api-calls');
+    const elAvg = document.getElementById('perf-avg-load');
+    const elLast = document.getElementById('perf-last-load');
+    if (elApi) elApi.textContent = String(apiCalls);
+    if (elAvg) elAvg.textContent = `${avg} ms`;
+    if (elLast) elLast.textContent = `${lastLoadMs} ms`;
+  } catch (e) {
+    // ignore UI update errors
+  }
+}
+
 function showStatusMessage(message, isError = false) {
     const grid = document.getElementById('products-grid');
     const noResults = document.getElementById('no-results');
@@ -360,7 +385,9 @@ async function loadCJProducts(query = '', page = 1, limit = null, filters = {}) 
         // Track performance metrics
         if (window.performanceMetrics) {
             window.performanceMetrics.apiCalls++;
-            window.performanceMetrics.totalLoadTime += (Date.now() - startTime);
+            window.performanceMetrics.lastLoadMs = (Date.now() - startTime);
+            window.performanceMetrics.totalLoadTime += window.performanceMetrics.lastLoadMs;
+            updatePerformanceCards();
         }
 
         if (!res.ok) {
