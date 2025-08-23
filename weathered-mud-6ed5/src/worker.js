@@ -189,33 +189,7 @@ async function handleProductsRequest(req, url, env) {
  * Revenue-optimized CJ Store search
  */
 async function searchCJStore(query, limit, offset, lowPrice, highPrice, partnerId, env) {
-  const gqlQuery = `
-    query shoppingProducts($companyId: ID!, $keywords: [String!], $limit: Int!, $offset: Int!, $websiteId: ID!, $lowPrice: Float, $highPrice: Float, $partnerIds: [ID!]) {
-      shoppingProducts(companyId: $companyId, keywords: $keywords, limit: $limit, offset: $offset, lowPrice: $lowPrice, highPrice: $highPrice, partnerIds: $partnerIds) {
-        totalCount
-        resultList {
-          id
-          title
-          brand
-          price {
-            amount
-            currency
-          }
-          imageLink
-          advertiserName
-          shipping {
-            price {
-              amount
-              currency
-            }
-          }
-          linkCode(pid: $websiteId) {
-            clickUrl
-          }
-        }
-      }
-    }
-  `;
+  const gqlQuery = buildShoppingProductsQuery(!!partnerId);
 
   if (query) {
     // Revenue-optimized search with expanded limit
@@ -273,33 +247,7 @@ async function searchCJStore(query, limit, offset, lowPrice, highPrice, partnerI
  */
 async function searchTikTokStore(query, limit, offset, lowPrice, highPrice, env) {
   try {
-    const gqlQuery = `
-      query shoppingProducts($companyId: ID!, $keywords: [String!], $limit: Int!, $offset: Int!, $websiteId: ID!, $lowPrice: Float, $highPrice: Float, $partnerIds: [ID!]) {
-        shoppingProducts(companyId: $companyId, keywords: $keywords, limit: $limit, offset: $offset, lowPrice: $lowPrice, highPrice: $highPrice, partnerIds: $partnerIds) {
-          totalCount
-          resultList {
-            id
-            title
-            brand
-            price {
-              amount
-              currency
-            }
-            imageLink
-            advertiserName
-            shipping {
-              price {
-                amount
-                currency
-              }
-            }
-            linkCode(pid: $websiteId) {
-              clickUrl
-            }
-          }
-        }
-      }
-    `;
+    const gqlQuery = buildShoppingProductsQuery(true);
 
     if (query) {
       // Trending-focused search for TikTok
@@ -698,6 +646,36 @@ async function fetchCJProducts(gqlQuery, variables, env) {
     throw new Error(`CJ GraphQL Error: ${JSON.stringify(gqlData.errors)}`);
   }
   return gqlData;
+}
+
+/**
+ * Build CJ GraphQL shoppingProducts query, optionally including $partnerIds
+ * Some CJ schemas reject unused variables, so only declare when used
+ */
+function buildShoppingProductsQuery(includePartnerIds) {
+  const varDecl = includePartnerIds
+    ? ", $partnerIds: [ID!]"
+    : "";
+  const argUse = includePartnerIds
+    ? ", partnerIds: $partnerIds"
+    : "";
+  return `
+    query shoppingProducts($companyId: ID!, $keywords: [String!], $limit: Int!, $offset: Int!, $websiteId: ID!, $lowPrice: Float, $highPrice: Float${varDecl}) {
+      shoppingProducts(companyId: $companyId, keywords: $keywords, limit: $limit, offset: $offset, lowPrice: $lowPrice, highPrice: $highPrice${argUse}) {
+        totalCount
+        resultList {
+          id
+          title
+          brand
+          price { amount currency }
+          imageLink
+          advertiserName
+          shipping { price { amount currency } }
+          linkCode(pid: $websiteId) { clickUrl }
+        }
+      }
+    }
+  `;
 }
 
 /**
