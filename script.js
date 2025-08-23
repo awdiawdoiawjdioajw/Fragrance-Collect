@@ -83,7 +83,7 @@ const config = {
   // PASTE YOUR CLOUDFLARE WORKER URL HERE
   API_ENDPOINT: 'https://weathered-mud-6ed5.joshuablaszczyk.workers.dev', 
   DEFAULT_SEARCH_TERM: 'fragrance',
-  RESULTS_PER_PAGE: 25,
+  RESULTS_PER_PAGE: 50,
 };
 
 // Lightweight performance metrics for optional UI cards
@@ -221,7 +221,9 @@ function applyFilters(isServerSide = false) {
         if (isServerSide) {
             showLoading();
             // Always fetch from page 1 when a major filter changes
-            loadCJProducts(currentFilters.search, 1).then(() => {
+            currentPage = 1;
+            const filters = buildServerFilters();
+            loadCJProducts(currentFilters.search, currentPage, null, filters).then(() => {
                 hideLoading();
             });
         } else {
@@ -233,7 +235,8 @@ function applyFilters(isServerSide = false) {
         // Fallback: just try to load products without filters
         if (isServerSide) {
             showLoading();
-            loadCJProducts(currentFilters.search, 1).then(() => {
+            currentPage = 1;
+            loadCJProducts(currentFilters.search, currentPage).then(() => {
                 hideLoading();
             });
         }
@@ -352,12 +355,14 @@ async function loadCJProducts(query = '', page = 1, limit = null, filters = {}) 
     showLoading();
     
     try {
+        const sortByEl = document.getElementById('sort-by-filter');
+        const sortBy = sortByEl ? sortByEl.value : 'revenue';
         // Build query parameters for revenue-optimized search
         const params = new URLSearchParams({
             q: query || '',
             page: page.toString(),
             limit: (limit || config.RESULTS_PER_PAGE).toString(),
-            sortBy: 'revenue', // Default to revenue optimization
+            sortBy: sortBy,
             includeTikTok: 'true' // Always include TikTok for better results
         });
 
@@ -477,7 +482,8 @@ function changePage(page) {
     if (page < 1 || page > totalPages) return;
     
     currentPage = page;
-    loadCJProducts(currentFilters.search, currentPage).then(() => {
+    const filters = buildServerFilters();
+    loadCJProducts(currentFilters.search, currentPage, null, filters).then(() => {
         document.getElementById('shop').scrollIntoView({ behavior: 'smooth' });
     });
 }
@@ -496,7 +502,7 @@ function createProductCard(perfume) {
     return `
         <div class="product-card" data-id="${perfume.id}" data-brand="${perfume.brand.toLowerCase().replace(/\s+/g, '-')}" data-price="${perfume.price}" data-rating="${perfume.rating}">
             <div class="product-image-container">
-                <img src="${perfume.image || ''}" alt="${perfume.name}" class="product-image" loading="lazy" onerror="this.onerror=null;this.src='https://via.placeholder.com/600x600?text=No+Image';">
+                <img src="${perfume.image || ''}" alt="${perfume.name}" class="product-image" loading="lazy" onerror="this.onerror=null;this.src='https://placehold.co/600x600?text=No+Image';">
             </div>
             <div class="product-info">
                 <p class="product-brand">${perfume.brand}</p>
@@ -545,7 +551,7 @@ function populateBrandFilter() {
     const brands = [...new Set(cjProducts.map(perfume => perfume.brand))].filter(Boolean).sort();
     brands.forEach(brand => {
         const option = document.createElement('option');
-        option.value = brand.toLowerCase().replace(/\s+/g, '-');
+        option.value = brand;
         option.textContent = brand; // textContent is safe
         brandFilter.appendChild(option);
     });
@@ -562,16 +568,15 @@ function addEventListeners() {
     const searchBtn = document.querySelector('.search-btn');
     const browseFragrancesBtn = document.getElementById('browse-fragrances');
     const sortByFilter = document.getElementById('sort-by-filter');
+    const brandFilter = document.getElementById('brand-filter');
     
     if (priceFilter) {
         priceFilter.addEventListener('change', () => applyFilters(true));
     }
     
-    // Brand filter doesn't exist in this HTML, so skip it
-    // const brandFilter = document.getElementById('brand-filter');
-    // if (brandFilter) {
-    //     brandFilter.addEventListener('change', () => applyFilters(true));
-    // }
+    if (brandFilter) {
+        brandFilter.addEventListener('change', () => applyFilters(true));
+    }
     
     if (ratingFilter) {
         ratingFilter.addEventListener('change', () => applyFilters(false));
@@ -823,13 +828,13 @@ async function filterByCollection(collectionTitle) {
     if (mainSearch) mainSearch.value = '';
 
     // Live themed fetch
-    const themedQueries = {
-        'Evening Luxury': 'oud OR luxury',
-        'Fresh & Floral': 'citrus OR floral',
-        'Rare Finds': 'niche OR rare',
-        'Artisan Creations': 'artisan OR handcrafted'
+    const brandQueries = {
+        'Chanel': 'Chanel',
+        'Dior': 'Dior',
+        'Tom Ford': 'Tom Ford',
+        'Creed': 'Creed'
     };
-    const q = themedQueries[collectionTitle] || 'fragrance';
+    const q = brandQueries[collectionTitle] ? `${brandQueries[collectionTitle]} perfume` : 'fragrance';
     
     showLoading();
     loadCJProducts(q, 1).then(() => {
@@ -858,11 +863,13 @@ function clearFilters() {
     const ratingFilter = document.getElementById('rating-filter');
     const shippingFilter = document.getElementById('shipping-filter');
     const mainSearch = document.getElementById('main-search');
+    const brandFilter = document.getElementById('brand-filter');
 
     if (priceFilter) priceFilter.value = '';
     if (ratingFilter) ratingFilter.value = '';
     if (shippingFilter) shippingFilter.value = '';
     if (mainSearch) mainSearch.value = '';
+    if (brandFilter) brandFilter.value = '';
     
     // Hide the clear search button
     const clearSearchBtn = document.getElementById('clear-search');
@@ -881,6 +888,7 @@ function clearFilters() {
 
     // Show loading indicator and reload the default set of products
     showLoading();
+    currentPage = 1;
     loadCJProducts('fragrance', currentPage).then(() => {
         filteredPerfumes = [...cjProducts];
         // Sort by price as the default criteria.
@@ -888,6 +896,29 @@ function clearFilters() {
         displayProducts(filteredPerfumes);
         hideLoading();
     });
+}
+
+function buildServerFilters() {
+    const filters = {};
+    const priceFilter = document.getElementById('price-filter');
+    const brandFilter = document.getElementById('brand-filter');
+    const priceRange = priceFilter ? priceFilter.value : '';
+    const brand = brandFilter ? brandFilter.value : '';
+
+    if (brand) {
+        filters.brand = brand;
+    }
+
+    if (priceRange) {
+        if (priceRange.includes('+')) {
+            filters.lowPrice = parseInt(priceRange, 10);
+        } else if (priceRange.includes('-')) {
+            const [low, high] = priceRange.split('-');
+            filters.lowPrice = low ? parseInt(low, 10) : null;
+            filters.highPrice = high ? parseInt(high, 10) : null;
+        }
+    }
+    return filters;
 }
 
 // Perform search with input validation
@@ -1493,7 +1524,21 @@ async function loadPopularPicks() {
     grid.innerHTML = '<p class="loading-message">Fetching popular picks...</p>';
 
     try {
-        const data = await loadCJProducts('popular', 1, 10, { sortBy: 'trending' });
+        const popularPerfumes = [
+            "Creed Aventus",
+            "Baccarat Rouge 540",
+            "Tom Ford Tobacco Vanille",
+            "Dior Sauvage",
+            "Chanel Coco Mademoiselle",
+            "Yves Saint Laurent Black Opium",
+            "Jo Malone Wood Sage & Sea Salt",
+            "Paco Rabanne 1 Million",
+            "Giorgio Armani Acqua di Gio",
+            "Versace Eros"
+        ];
+        const query = popularPerfumes.join(' OR ');
+
+        const data = await loadCJProducts(query, 1, 10, { sortBy: 'trending' });
         if (data && data.products && data.products.length > 0) {
             const products = mapProductsDataToItems(data);
             const productCards = products.slice(0, 10).map(p => createProductCard(p)).join('');

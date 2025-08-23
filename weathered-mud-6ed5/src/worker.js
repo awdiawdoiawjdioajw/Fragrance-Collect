@@ -89,7 +89,7 @@ let trendingKeywordsCache = {
 async function handleProductsRequest(req, url, env) {
   const { searchParams } = new URL(url);
   const query = searchParams.get('q') || '';
-  const limit = parseInt(searchParams.get('limit') || '25', 10);
+  const limit = parseInt(searchParams.get('limit') || '50', 10);
   const page = parseInt(searchParams.get('page') || '1', 10);
   const offset = (page - 1) * limit;
   const lowPrice = parseFloat(searchParams.get('lowPrice')) || null;
@@ -148,11 +148,11 @@ async function handleProductsRequest(req, url, env) {
     const revenueMetrics = calculateRevenueMetrics(products, cjProducts.length, tiktokProducts.length);
 
     const jsonResponse = {
-      products,
-      total: optimizedProducts.length,
+      products: products.slice(0, limit),
+      total: products.length,
       page,
       limit,
-      hasMore: optimizedProducts.length > (page * limit),
+      hasMore: products.length > limit,
       searchQuery: query,
       filters: { lowPrice, highPrice, partnerId, includeTikTok, sortBy, brandFilter },
       revenue: revenueMetrics,
