@@ -830,7 +830,7 @@ async function filterByCollection(collectionTitle) {
         'Tom Ford': 'Tom Ford',
         'Creed': 'Creed'
     };
-    const q = brandQueries[collectionTitle] ? `${brandQueries[collectionTitle]} perfume` : 'fragrance';
+    const q = brandQueries[collectionTitle] ? `${brandQueries[collectionTitle]} perfume fragrance` : 'fragrance perfume';
     
     showLoading();
     loadCJProducts(q, 1).then(() => {
@@ -1014,6 +1014,19 @@ if (!Element.prototype.closest) {
 if (!Element.prototype.matches) {
     Element.prototype.matches = Element.prototype.msMatchesSelector ||
                                 Element.prototype.webkitMatchesSelector;
+}
+
+// Initialize dropdowns to default values
+function initializeDropdowns() {
+    const priceFilter = document.getElementById('price-range');
+    const ratingFilter = document.getElementById('rating-filter');
+    const shippingFilter = document.getElementById('shipping-filter');
+    const sortByFilter = document.getElementById('sort-by-filter');
+
+    if (priceFilter) priceFilter.value = 'all';
+    if (ratingFilter) ratingFilter.value = 'all';
+    if (shippingFilter) shippingFilter.value = 'all';
+    if (sortByFilter) sortByFilter.value = 'revenue';
 }
 
 // Fuzzy search functionality
@@ -1510,6 +1523,7 @@ document.addEventListener('DOMContentLoaded', () => {
     checkMobileMenu();
     initHamburgerMenu();
     addEventListeners();
+    initializeDropdowns();
     
     // Load initial products
     loadCJProducts(config.DEFAULT_SEARCH_TERM);
@@ -1527,21 +1541,7 @@ async function loadPopularPicks() {
     grid.innerHTML = '<p class="loading-message">Fetching popular picks...</p>';
 
     try {
-        const popularPerfumes = [
-            "Creed Aventus",
-            "Baccarat Rouge 540",
-            "Tom Ford Tobacco Vanille",
-            "Dior Sauvage",
-            "Chanel Coco Mademoiselle",
-            "Yves Saint Laurent Black Opium",
-            "Jo Malone Wood Sage & Sea Salt",
-            "Paco Rabanne 1 Million",
-            "Giorgio Armani Acqua di Gio",
-            "Versace Eros"
-        ];
-        const query = popularPerfumes.join(' OR ');
-
-        const data = await loadCJProducts(query, 1, 10, { sortBy: 'trending' });
+        const data = await loadCJProducts('Chanel perfume fragrance', 1, 10, { sortBy: 'trending' });
         if (data && data.products && data.products.length > 0) {
             const products = mapProductsDataToItems(data);
             const productCards = products.slice(0, 10).map(p => createProductCard(p)).join('');
