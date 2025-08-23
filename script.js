@@ -82,8 +82,8 @@ const config = {
   // --- IMPORTANT ---
   // PASTE YOUR CLOUDFLARE WORKER URL HERE
   API_ENDPOINT: 'https://weathered-mud-6ed5.joshuablaszczyk.workers.dev', 
-  DEFAULT_SEARCH_TERM: 'fragrance',
-  RESULTS_PER_PAGE: 50,
+  DEFAULT_SEARCH_TERM: 'fragrance perfume',
+  RESULTS_PER_PAGE: 25,
 };
 
 // Lightweight performance metrics for optional UI cards
@@ -885,7 +885,7 @@ function clearFilters() {
     // Show loading indicator and reload the default set of products
     showLoading();
     currentPage = 1;
-    loadCJProducts('fragrance', currentPage).then(() => {
+    loadCJProducts(config.DEFAULT_SEARCH_TERM, currentPage).then(() => {
         filteredPerfumes = [...cjProducts];
         // Sort by price as the default criteria.
         filteredPerfumes.sort((a, b) => a.price - b.price);
@@ -1512,7 +1512,7 @@ document.addEventListener('DOMContentLoaded', () => {
     addEventListeners();
     
     // Load initial products
-    loadCJProducts();
+    loadCJProducts(config.DEFAULT_SEARCH_TERM);
     loadPopularPicks();
     loadTikTokFinds();
 });

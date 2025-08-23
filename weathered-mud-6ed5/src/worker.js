@@ -118,20 +118,21 @@ async function handleProductsRequest(req, url, env) {
 
   try {
     // Step 1: Search CJ Store (Primary - Higher Commission)
-    const cjProducts = await searchCJStore(query, limit * 2, offset, lowPrice, highPrice, partnerId, env);
+    // Fetch a larger pool of products to allow for proper sorting and pagination.
+    const cjProducts = await searchCJStore(query, 250, 0, lowPrice, highPrice, partnerId, env);
     console.log(`✅ CJ Store: Found ${cjProducts.length} products`);
     
     // Step 2: Search TikTok Shop (Secondary - Trending Products)
     let tiktokProducts = [];
     if (includeTikTok && !partnerId) {
-      tiktokProducts = await searchTikTokStore(query, limit, offset, lowPrice, highPrice, env);
+      tiktokProducts = await searchTikTokStore(query, 100, 0, lowPrice, highPrice, env);
       console.log(`🎵 TikTok Shop: Found ${tiktokProducts.length} products`);
     }
 
     // Step 3: Smart Fallback - If CJ has no results, prioritize TikTok
     if (cjProducts.length === 0 && tiktokProducts.length > 0) {
       console.log('🔄 Smart fallback: Using TikTok results as primary');
-      tiktokProducts = await searchTikTokStore(query, limit * 2, offset, lowPrice, highPrice, env);
+      tiktokProducts = await searchTikTokStore(query, 200, 0, lowPrice, highPrice, env);
     }
 
     // Step 4: Combine and optimize for revenue
@@ -144,15 +145,19 @@ async function handleProductsRequest(req, url, env) {
     // Step 6: Format results and filter out any invalid products
     const products = optimizedProducts.map(p => formatProductForRevenue(p, query)).filter(Boolean);
 
-    // Step 7: Calculate revenue metrics
-    const revenueMetrics = calculateRevenueMetrics(products, cjProducts.length, tiktokProducts.length);
+    // Step 7: Get total count and apply pagination
+    const total = products.length;
+    const paginatedProducts = products.slice(offset, offset + limit);
+
+    // Step 8: Calculate revenue metrics
+    const revenueMetrics = calculateRevenueMetrics(paginatedProducts, cjProducts.length, tiktokProducts.length);
 
     const jsonResponse = {
-      products: products.slice(0, limit),
-      total: products.length,
+      products: paginatedProducts,
+      total,
       page,
       limit,
-      hasMore: products.length > limit,
+      hasMore: total > (offset + limit),
       searchQuery: query,
       filters: { lowPrice, highPrice, partnerId, includeTikTok, sortBy, brandFilter },
       revenue: revenueMetrics,
