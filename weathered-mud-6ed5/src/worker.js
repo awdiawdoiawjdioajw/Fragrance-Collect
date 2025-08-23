@@ -275,7 +275,7 @@ async function searchTikTokStore(query, limit, offset, lowPrice, highPrice, env)
   try {
     const gqlQuery = `
       query shoppingProducts($companyId: ID!, $keywords: [String!], $limit: Int!, $offset: Int!, $websiteId: ID!, $lowPrice: Float, $highPrice: Float, $partnerIds: [ID!]) {
-        shoppingProducts(companyId: $companyId, keywords: $keywords, limit: $limit, offset: $offset, lowPrice: $lowPrice, highPrice: $highPrice, partnerIds: [${REVENUE_CONFIG.TIKTOK_PARTNER_ID}]) {
+        shoppingProducts(companyId: $companyId, keywords: $keywords, limit: $limit, offset: $offset, lowPrice: $lowPrice, highPrice: $highPrice, partnerIds: $partnerIds) {
           totalCount
           resultList {
             id
