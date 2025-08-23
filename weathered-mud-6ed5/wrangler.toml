@@ -10,3 +10,6 @@ CJ_COMPANY_ID = "7673871"# <-- PUT YOUR COMPANY ID HERE
 
 # The .dev.vars file is used for local development secrets and is NOT committed to Git.
 # 'wrangler dev' will automatically load this file.
+
+[observability.logs]
+enabled = true
