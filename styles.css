@@ -2017,14 +2017,14 @@ textarea:focus {
 
 .product-info h3 {
     margin: 0.5rem 0;
-    color: #2c3e50;
+    color: var(--antique-gold);
     font-size: 1.1rem;
     line-height: 1.3;
 }
 
 .product-brand {
-    color: #667eea;
-    font-weight: 600;
+    color: var(--antique-gold);
+    font-weight: 400;
     margin: 0.5rem 0;
     font-size: 0.9rem;
 }
@@ -2039,8 +2039,8 @@ textarea:focus {
 
 .product-price {
     font-size: 1.3rem;
-    font-weight: bold;
-    color: #2c3e50;
+    font-weight: 400;
+    color: var(--antique-gold);
     margin: 0;
 }
 
