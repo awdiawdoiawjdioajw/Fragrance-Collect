@@ -567,7 +567,8 @@ function addEventListeners() {
     }
 
     if (searchBtn) {
-        searchBtn.addEventListener('click', () => {
+        searchBtn.addEventListener('click', (e) => {
+            e.preventDefault();
             const searchInput = document.getElementById('main-search');
             if (searchInput) {
                 const searchTerm = searchInput.value.trim();
@@ -598,6 +599,16 @@ function addEventListeners() {
                 }
             }
         });
+        // Also handle Enter on keydown for better cross-browser support
+        mainSearch.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const searchTerm = e.target.value.trim();
+                if (validateSearchTerm(searchTerm)) {
+                    performSearch(searchTerm);
+                }
+            }
+        });
         // Show/hide clear button based on input
         mainSearch.addEventListener('input', function() {
             const clearBtn = document.getElementById('clear-search');
@@ -622,12 +633,13 @@ function addEventListeners() {
         });
     }
     
-    if (searchBtn) {
-        searchBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            performSearch();
-        });
-    }
+    // Removed duplicate click handler that called performSearch() without a term
+    // if (searchBtn) {
+    //     searchBtn.addEventListener('click', function(e) {
+    //         e.preventDefault();
+    //         performSearch();
+    //     });
+    // }
     
     if (browseFragrancesBtn) {
         browseFragrancesBtn.addEventListener('click', () => {
@@ -1208,6 +1220,13 @@ function debouncedSearch(searchTerm) {
 }
 
 function performSearch(searchTerm) {
+    // Fallback: if no argument provided, read from input
+    if (!searchTerm) {
+        const inputEl = document.getElementById('main-search');
+        if (inputEl) {
+            searchTerm = inputEl.value.trim();
+        }
+    }
     SearchDebugger.startSearch(searchTerm);
     SearchDebugger.monitorState();
     if (isSearching) {
