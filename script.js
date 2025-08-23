@@ -196,7 +196,7 @@ function mapProductsDataToItems(data) {
 }
 
 // Apply filters and sorting from UI controls
-function applyFilters(isServerSide = false) {
+async function applyFilters(isServerSide = false) {
     try {
         // Get all filter values from the UI (safely handle missing elements)
         const priceFilter = document.getElementById('price-filter');
@@ -223,9 +223,7 @@ function applyFilters(isServerSide = false) {
             // Always fetch from page 1 when a major filter changes
             currentPage = 1;
             const filters = buildServerFilters();
-            loadCJProducts(currentFilters.search, currentPage, null, filters).then(() => {
-                hideLoading();
-            });
+            await loadCJProducts(currentFilters.search, currentPage, null, filters);
         } else {
             // Client-side filters just refine the currently displayed products
             filterPerfumes();
@@ -236,9 +234,7 @@ function applyFilters(isServerSide = false) {
         if (isServerSide) {
             showLoading();
             currentPage = 1;
-            loadCJProducts(currentFilters.search, currentPage).then(() => {
-                hideLoading();
-            });
+            await loadCJProducts(currentFilters.search, currentPage);
         }
     }
 }
@@ -1274,7 +1270,7 @@ function debouncedSearch(searchTerm) {
     }, 300); // 300ms debounce delay
 }
 
-function performSearch(searchTerm) {
+async function performSearch(searchTerm) {
     // Fallback: if no argument provided, read from input
     if (!searchTerm) {
         const inputEl = document.getElementById('main-search');
@@ -1295,15 +1291,22 @@ function performSearch(searchTerm) {
     }
     isSearching = true;
     showSearchLoading(); // Show loading bar
-    // Track search analytics
-    if (validatedSearchTerm) {
-        trackSearchQuery(validatedSearchTerm);
-    }
-    currentFilters.search = validatedSearchTerm;
-    lastSearchTerm = searchTerm;
     
-    // A new search is a server-side filter action
-    applyFilters(true);
+    try {
+        // Track search analytics
+        if (validatedSearchTerm) {
+            trackSearchQuery(validatedSearchTerm);
+        }
+        currentFilters.search = validatedSearchTerm;
+        lastSearchTerm = searchTerm;
+        
+        // A new search is a server-side filter action
+        await applyFilters(true);
+    } finally {
+        isSearching = false;
+        hideSearchLoading();
+        SearchDebugger.endSearch(filteredPerfumes);
+    }
 }
 
 // Helper function to check if element is in viewport
