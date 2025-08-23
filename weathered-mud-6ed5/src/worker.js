@@ -89,7 +89,7 @@ let trendingKeywordsCache = {
 async function handleProductsRequest(req, url, env) {
   const { searchParams } = new URL(url);
   const query = searchParams.get('q') || '';
-  const limit = parseInt(searchParams.get('limit') || '100', 10);
+  const limit = parseInt(searchParams.get('limit') || '25', 10);
   const page = parseInt(searchParams.get('page') || '1', 10);
   const offset = (page - 1) * limit;
   const lowPrice = parseFloat(searchParams.get('lowPrice')) || null;
@@ -421,7 +421,11 @@ function calculateTrendingScore(product) {
  * Format product with revenue information
  */
 function formatProductForRevenue(p, query) {
-  const cjLink = p.linkCode?.clickUrl;
+  const cjLink = p.linkCode?.clickUrl || p.link;
+  
+  if (!cjLink) {
+    return null;
+  }
   
   const price = parseFloat(p.price?.amount || 0);
   const commissionRate = getCommissionRate(p);
@@ -674,6 +678,7 @@ function buildShoppingProductsQuery(includePartnerIds) {
           advertiserName
           shipping { price { amount currency } }
           linkCode(pid: $websiteId) { clickUrl }
+          link
         }
       }
     }

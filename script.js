@@ -83,7 +83,7 @@ const config = {
   // PASTE YOUR CLOUDFLARE WORKER URL HERE
   API_ENDPOINT: 'https://weathered-mud-6ed5.joshuablaszczyk.workers.dev', 
   DEFAULT_SEARCH_TERM: 'fragrance',
-  RESULTS_PER_PAGE: 50,
+  RESULTS_PER_PAGE: 25,
 };
 
 // Lightweight performance metrics for optional UI cards
@@ -356,7 +356,7 @@ async function loadCJProducts(query = '', page = 1, limit = null, filters = {}) 
         const params = new URLSearchParams({
             q: query || '',
             page: page.toString(),
-            limit: (limit || 100).toString(),
+            limit: (limit || config.RESULTS_PER_PAGE).toString(),
             sortBy: 'revenue', // Default to revenue optimization
             includeTikTok: 'true' // Always include TikTok for better results
         });
@@ -412,7 +412,7 @@ async function loadCJProducts(query = '', page = 1, limit = null, filters = {}) 
         filteredPerfumes = [...cjProducts];
         
         // Update total pages based on the new structure
-        totalPages = data.total ? Math.ceil(data.total / (limit || 100)) : 1;
+        totalPages = data.total ? Math.ceil(data.total / (limit || config.RESULTS_PER_PAGE)) : 1;
 
         // Display products and update UI
         displayProducts(filteredPerfumes);
@@ -749,7 +749,7 @@ function filterPerfumes() {
     SearchDebugger.logStep('Initial products', { count: tempProducts.length });
     
     // Rating filter (client-side)
-    if (currentFilters.rating) {
+    if (currentFilters.rating && currentFilters.rating !== 'all') {
         const minRating = Number(currentFilters.rating);
         const beforeCount = tempProducts.length;
         tempProducts = tempProducts.filter(p => p.rating >= minRating);
@@ -760,7 +760,7 @@ function filterPerfumes() {
         });
     }
     // Shipping filter (client-side)
-    if (currentFilters.shipping) {
+    if (currentFilters.shipping && currentFilters.shipping !== 'all') {
         const beforeCount = tempProducts.length;
         tempProducts = tempProducts.filter(p => matchesShipping(p, currentFilters.shipping));
         SearchDebugger.logStep('Shipping filter applied', {

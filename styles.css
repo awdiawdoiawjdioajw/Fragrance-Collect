@@ -796,11 +796,11 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Enhanced Product Card Styles */
 .product-card {
-    background: var(--dark-gray);
+    background: var(--soft-black); /* Black background */
     border-radius: 15px;
     overflow: hidden;
     transition: all 0.3s ease-in-out;
-    border: 1px solid var(--antique-gold);
+    border: 1px solid var(--antique-gold); /* Gold border */
     display: flex;
     flex-direction: column;
 }
@@ -834,11 +834,11 @@ h1, h2, h3, h4, h5, h6 {
     display: flex;
     flex-direction: column;
     flex-grow: 1;
-    background: var(--soft-black);
+    background: var(--soft-black); /* Black background */
 }
 
 .product-brand {
-    color: var(--warm-white);
+    color: var(--antique-gold); /* Gold text */
     font-size: 0.8rem;
     margin-bottom: 0.5rem;
     text-transform: uppercase;
@@ -849,7 +849,7 @@ h1, h2, h3, h4, h5, h6 {
     font-family: 'Playfair Display', serif;
     font-size: 1.3rem;
     font-weight: 600;
-    color: var(--warm-white);
+    color: var(--antique-gold); /* Gold text */
     margin-bottom: 1rem;
     flex-grow: 1;
 }
