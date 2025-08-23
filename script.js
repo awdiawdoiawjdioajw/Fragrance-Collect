@@ -351,11 +351,8 @@ async function loadCJProducts(query = '', page = 1, limit = null, filters = {}) 
 
         const res = await fetch(apiUrl, {
             method: 'GET',
-            signal: controller.signal, // Add signal for timeout
-            headers: {
-                'Content-Type': 'application/json',
-                'Cache-Control': 'no-cache'
-            }
+            signal: controller.signal // Add signal for timeout
+            // No custom headers on GET to avoid preflight CORS
         });
 
         clearTimeout(timer);
