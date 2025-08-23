@@ -423,7 +423,7 @@ function calculateTrendingScore(product) {
 function formatProductForRevenue(p, query) {
   const cjLink = p.linkCode?.clickUrl || p.link;
   
-  if (!cjLink) {
+  if (!cjLink || !p.imageLink) {
     return null;
   }
   
