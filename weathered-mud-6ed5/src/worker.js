@@ -96,7 +96,7 @@ async function handleProductsRequest(req, url, env) {
   const highPrice = parseFloat(searchParams.get('highPrice')) || null;
   const partnerId = searchParams.get('partnerId') || null;
   const includeTikTok = searchParams.get('includeTikTok') !== 'false';
-  const sortBy = searchParams.get('sortBy') || 'revenue'; // revenue, relevance, price, trending
+  const sortBy = searchParams.get('sortBy') || 'price_low'; // revenue, relevance, price, trending
   const brandFilter = searchParams.get('brand') || null;
 
   // Smart cache key generation
@@ -333,7 +333,7 @@ function optimizeForRevenue(products, query, sortBy, brandFilter) {
       return filtered.sort((a, b) => parseFloat(b.price?.amount || 0) - parseFloat(a.price?.amount || 0));
     case 'relevance':
     default:
-      return filtered.sort((a, b) => b.revenueScore - a.revenueScore);
+      return filtered.sort((a, b) => parseFloat(a.price?.amount || 0) - parseFloat(b.price?.amount || 0));
   }
 }
 
@@ -378,6 +378,9 @@ function calculateRevenueScore(product, query) {
  * Get commission rate for product
  */
 function getCommissionRate(product) {
+  if (!product.linkCode?.clickUrl) {
+    return 0;
+  }
   const brandCategory = getBrandCategory(product);
   return COMMISSION_RATES[brandCategory]?.rate || COMMISSION_RATES.default.rate;
 }
@@ -419,7 +422,6 @@ function calculateTrendingScore(product) {
  */
 function formatProductForRevenue(p, query) {
   const cjLink = p.linkCode?.clickUrl;
-  if (!cjLink) return null;
   
   const price = parseFloat(p.price?.amount || 0);
   const commissionRate = getCommissionRate(p);
