@@ -1432,6 +1432,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initModal();
     checkMobileMenu();
     initHamburgerMenu();
+    addEventListeners();
     
     // Load initial products
     loadCJProducts();
