@@ -1470,8 +1470,8 @@ async function loadTikTokFinds() {
     grid.innerHTML = '<p class="loading-message">Searching for viral TikTok finds...</p>';
 
     try {
-        // Use a specific query and partnerId for TikTok
-        const data = await loadCJProducts('tiktok viral', 1, 10, { partnerId: '7563286' });
+        // Use a specific query for fragrance-related TikTok items
+        const data = await loadCJProducts('tiktok viral fragrance perfume', 1, 10, { partnerId: '7563286' });
         if (data && data.products && data.products.length > 0) {
             const products = mapProductsDataToItems(data);
             const productCards = products.slice(0, 10).map(p => createProductCard(p)).join('');
