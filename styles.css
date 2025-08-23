@@ -53,8 +53,9 @@ h1, h2, h3, h4, h5, h6 {
     margin: 0 auto;
     padding: 0 20px;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start; /* Changed from space-between */
     align-items: center;
+    gap: 2rem; /* Added gap for symmetrical spacing */
 }
 
 .nav-left {
@@ -294,7 +295,7 @@ h1, h2, h3, h4, h5, h6 {
     padding-right: 45px;
     color: var(--warm-white);
     font-size: 0.9rem;
-    width: 300px; /* Increased width */
+    width: 350px; /* Increased width further */
     transition: all 0.3s ease-in-out;
 }
 
