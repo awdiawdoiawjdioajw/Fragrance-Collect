@@ -199,7 +199,7 @@ function mapProductsDataToItems(data) {
 async function applyFilters(isServerSide = false) {
     try {
         // Get all filter values from the UI (safely handle missing elements)
-        const priceFilter = document.getElementById('price-filter');
+        const priceFilter = document.getElementById('price-range');
         const brandFilter = document.getElementById('brand-filter');
         const shippingFilter = document.getElementById('shipping-filter');
         const ratingFilter = document.getElementById('rating-filter');
@@ -556,7 +556,7 @@ function populateBrandFilter() {
 // Add event listeners
 function addEventListeners() {
     // Filter event listeners
-    const priceFilter = document.getElementById('price-filter');
+    const priceFilter = document.getElementById('price-range');
     const ratingFilter = document.getElementById('rating-filter');
     const shippingFilter = document.getElementById('shipping-filter');
     const clearFiltersBtn = document.getElementById('clear-filters');
@@ -813,7 +813,7 @@ async function filterByCollection(collectionTitle) {
     currentFilters = { brand: '', priceRange: '', rating: '', shipping: '', search: '' };
 
     // Reset filter dropdowns
-    const priceFilter = document.getElementById('price-filter');
+    const priceFilter = document.getElementById('price-range');
     const ratingFilter = document.getElementById('rating-filter');
     const shippingFilter = document.getElementById('shipping-filter');
     const mainSearch = document.getElementById('main-search');
@@ -896,7 +896,7 @@ function clearFilters() {
 
 function buildServerFilters() {
     const filters = {};
-    const priceFilter = document.getElementById('price-filter');
+    const priceFilter = document.getElementById('price-range');
     const brandFilter = document.getElementById('brand-filter');
     const priceRange = priceFilter ? priceFilter.value : '';
     const brand = brandFilter ? brandFilter.value : '';
