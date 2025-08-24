@@ -208,33 +208,49 @@ document.addEventListener('DOMContentLoaded', function() {
     const GOOGLE_CLIENT_ID = "351083759622-fnmbu0am1knlj8ltcps8i7la64dhjpnn.apps.googleusercontent.com";
     const WORKER_URL = "https://auth-worker.joshuablaszczyk.workers.dev/verify";
 
-    // Initialize the Google Sign-In client
-    google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: handleCredentialResponse
-    });
-
-    // Render the Google Sign-In button for the sign-in form
-    google.accounts.id.renderButton(
-        document.getElementById('g_id_signin'), {
-            theme: "outline",
-            size: "large",
-            text: "signin_with",
-            shape: "rectangular",
-            logo_alignment: "left"
+    // We'll wrap the Google Sign-In logic in a function and call it on window.onload
+    // to ensure the Google script is loaded before we try to use it.
+    function initializeGoogleSignIn() {
+        // Check if the google object is available
+        if (typeof google === 'undefined' || typeof google.accounts === 'undefined') {
+            console.error('Google Sign-In script has not loaded yet.');
+            // Optionally, retry after a short delay
+            setTimeout(initializeGoogleSignIn, 500);
+            return;
         }
-    );
 
-    // Render the Google Sign-In button for the sign-up form
-    google.accounts.id.renderButton(
-        document.getElementById('g_id_signup'), {
-            theme: "outline",
-            size: "large",
-            text: "signup_with",
-            shape: "rectangular",
-            logo_alignment: "left"
-        }
-    );
+        // Initialize the Google Sign-In client
+        google.accounts.id.initialize({
+            client_id: GOOGLE_CLIENT_ID,
+            callback: handleCredentialResponse
+        });
+
+        // Render the Google Sign-In button for the sign-in form
+        google.accounts.id.renderButton(
+            document.getElementById('g_id_signin'), {
+                theme: "outline",
+                size: "large",
+                text: "signin_with",
+                shape: "rectangular",
+                logo_alignment: "left"
+            }
+        );
+
+        // Render the Google Sign-In button for the sign-up form
+        google.accounts.id.renderButton(
+            document.getElementById('g_id_signup'), {
+                theme: "outline",
+                size: "large",
+                text: "signup_with",
+                shape: "rectangular",
+                logo_alignment: "left"
+            }
+        );
+    }
+
+    // Assign the initialization function to the window.onload event
+    window.onload = initializeGoogleSignIn;
+
 
     // Callback function to handle the response from Google
     async function handleCredentialResponse(response) {
