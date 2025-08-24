@@ -433,17 +433,18 @@
 
 /* Custom Google Button Styles */
 .custom-google-btn {
-    background: transparent; /* Match the background animation */
-    border: 2px solid var(--antique-gold);
-    color: var(--antique-gold);
+    background: linear-gradient(135deg, var(--antique-gold) 0%, #B8943A 100%); /* Gold gradient background */
+    border: none; /* Remove the border */
+    color: var(--soft-black); /* Black text */
     font-family: 'Lato', sans-serif;
     font-weight: 700;
+    box-shadow: 0 4px 15px rgba(201, 166, 70, 0.3);
 }
 
 .custom-google-btn:hover {
-    background: var(--antique-gold);
+    background: linear-gradient(135deg, #B8943A 0%, var(--antique-gold) 100%); /* Invert gradient on hover */
     color: var(--soft-black);
-    box-shadow: 0 4px 20px rgba(201, 166, 70, 0.4);
+    box-shadow: 0 8px 25px rgba(201, 166, 70, 0.4);
 }
 
 .custom-google-btn span {
