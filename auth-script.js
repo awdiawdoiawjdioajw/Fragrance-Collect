@@ -185,12 +185,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Social sign-in buttons
-    const socialBtns = document.querySelectorAll('.social-btn');
-    
-    socialBtns.forEach(btn => {
+    // The google.accounts.id.renderButton calls below will handle the Google buttons.
+    // We remove the old placeholder listener.
+    document.querySelectorAll('.social-btn:not(.google-btn)').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
-            const platform = btn.classList.contains('google-btn') ? 'Google' : 'Facebook';
+            const platform = 'Facebook'; // Example for other buttons
             showInfoMessage(`${platform} sign-in functionality will be implemented soon!`);
         });
     });
@@ -203,6 +203,70 @@ document.addEventListener('DOMContentLoaded', function() {
             showInfoMessage('Password reset functionality will be implemented soon!');
         });
     }
+
+    // --- Google Sign-In Implementation ---
+    const GOOGLE_CLIENT_ID = "351083759622-fnmbu0am1knlj8ltcps8i7la64dhjpnn.apps.googleusercontent.com";
+    const WORKER_URL = "https://auth-worker.joshuablaszczyk.workers.dev/verify";
+
+    // Initialize the Google Sign-In client
+    google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleCredentialResponse
+    });
+
+    // Render the Google Sign-In button for the sign-in form
+    google.accounts.id.renderButton(
+        document.getElementById('g_id_signin'), {
+            theme: "outline",
+            size: "large",
+            text: "signin_with",
+            shape: "rectangular",
+            logo_alignment: "left"
+        }
+    );
+
+    // Render the Google Sign-In button for the sign-up form
+    google.accounts.id.renderButton(
+        document.getElementById('g_id_signup'), {
+            theme: "outline",
+            size: "large",
+            text: "signup_with",
+            shape: "rectangular",
+            logo_alignment: "left"
+        }
+    );
+
+    // Callback function to handle the response from Google
+    async function handleCredentialResponse(response) {
+        try {
+            const res = await fetch(WORKER_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ token: response.credential }),
+            });
+
+            const data = await res.json();
+
+            if (data.success && data.user) {
+                // On successful verification, welcome the user and redirect
+                showSuccessMessage(`Welcome, ${data.user.name}! You are now signed in.`);
+                // Here you would typically also store a session token from your worker
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 2000);
+            } else {
+                // If the worker returns an error, show it to the user
+                throw new Error(data.details || 'Verification failed.');
+            }
+        } catch (error) {
+            console.error('Error during Google sign-in:', error);
+            showNotification(`Sign-in failed: ${error.message}`, 'error');
+        }
+    }
+    // --- End of Google Sign-In Implementation ---
+
 
     // Terms links
     const termsLinks = document.querySelectorAll('.terms-link');
@@ -325,7 +389,7 @@ function showNotification(message, type = 'info') {
     notification.className = `notification notification-${type}`;
     notification.innerHTML = `
         <div class="notification-content">
-            <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-info-circle'}"></i>
+            <i class="fas ${type === 'success' ? 'fa-check-circle' : (type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle')}"></i>
             <span>${message}</span>
         </div>
         <button class="notification-close">
@@ -338,7 +402,7 @@ function showNotification(message, type = 'info') {
         position: fixed;
         top: 20px;
         right: 20px;
-        background: ${type === 'success' ? 'var(--antique-gold)' : 'var(--deep-plum)'};
+        background: ${type === 'success' ? 'var(--antique-gold)' : (type === 'error' ? '#c53030' : 'var(--deep-plum)')};
         color: ${type === 'success' ? 'var(--soft-black)' : 'var(--warm-white)'};
         padding: 1rem 1.5rem;
         border-radius: 12px;

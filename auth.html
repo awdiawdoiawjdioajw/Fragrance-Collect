@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign In / Sign Up - Fragrance Collect</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="auth-styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -142,10 +143,7 @@
                         <span>or continue with</span>
                     </div>
                     <div class="social-buttons">
-                        <button class="social-btn google-btn">
-                            <i class="fab fa-google"></i>
-                            Google
-                        </button>
+                        <div id="g_id_signin"></div>
                     </div>
                 </div>
             </div>
@@ -215,10 +213,7 @@
                         <span>or sign up with</span>
                     </div>
                     <div class="social-buttons">
-                        <button class="social-btn google-btn">
-                            <i class="fab fa-google"></i>
-                            Google
-                        </button>
+                        <div id="g_id_signup"></div>
                     </div>
                 </div>
             </div>

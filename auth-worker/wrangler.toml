@@ -1,0 +1,8 @@
+name = "auth-worker"
+main = "src/worker.js"
+compatibility_date = "2023-10-30"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+# This is a placeholder. The actual client ID will be set as a secret.
+GOOGLE_CLIENT_ID = "your_google_client_id_here"
