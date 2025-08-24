@@ -186,8 +186,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Social sign-in buttons
     // The google.accounts.id.renderButton calls below will handle the Google buttons.
-    // We remove the old placeholder listener.
-    document.querySelectorAll('.social-btn:not(.google-btn)').forEach(btn => {
+    // We update the listener to exclude our custom google buttons.
+    document.querySelectorAll('.social-btn:not(.custom-google-btn)').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
             const platform = 'Facebook'; // Example for other buttons
