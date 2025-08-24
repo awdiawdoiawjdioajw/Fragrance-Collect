@@ -225,27 +225,38 @@ document.addEventListener('DOMContentLoaded', function() {
             callback: handleCredentialResponse
         });
 
-        // Render the Google Sign-In button for the sign-in form
+        // Render the real Google button inside our hidden div for the sign-in form
         google.accounts.id.renderButton(
             document.getElementById('g_id_signin'), {
-                theme: "outline",
-                size: "large",
-                text: "signin_with",
-                shape: "rectangular",
-                logo_alignment: "left"
+                theme: "outline", // These settings don't matter visually
+                size: "large"
             }
         );
 
-        // Render the Google Sign-In button for the sign-up form
+        // Render the real Google button inside our hidden div for the sign-up form
         google.accounts.id.renderButton(
             document.getElementById('g_id_signup'), {
                 theme: "outline",
-                size: "large",
-                text: "signup_with",
-                shape: "rectangular",
-                logo_alignment: "left"
+                size: "large"
             }
         );
+
+        // Add click listeners to our custom buttons
+        document.getElementById('custom-g_id_signin').addEventListener('click', () => {
+            // Find the Google button's iframe and click the button inside it
+            const googleButton = document.querySelector('#g_id_signin iframe');
+            if (googleButton) {
+                googleButton.contentWindow.document.querySelector('[role="button"]').click();
+            }
+        });
+
+        document.getElementById('custom-g_id_signup').addEventListener('click', () => {
+            // Find the Google button's iframe and click the button inside it
+            const googleButton = document.querySelector('#g_id_signup iframe');
+            if (googleButton) {
+                googleButton.contentWindow.document.querySelector('[role="button"]').click();
+            }
+        });
     }
 
     // Assign the initialization function to the window.onload event

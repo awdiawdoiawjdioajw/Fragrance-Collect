@@ -431,6 +431,31 @@
     font-size: 1.1rem;
 }
 
+/* Custom Google Button Styles */
+.custom-google-btn {
+    background: transparent; /* Match the background animation */
+    border: 2px solid var(--antique-gold);
+    color: var(--antique-gold);
+    font-family: 'Lato', sans-serif;
+    font-weight: 700;
+}
+
+.custom-google-btn:hover {
+    background: var(--antique-gold);
+    color: var(--soft-black);
+    box-shadow: 0 4px 20px rgba(201, 166, 70, 0.4);
+}
+
+.custom-google-btn span {
+    margin-left: 0.75rem;
+}
+
+/* This hides the official Google button */
+.hidden-google-btn {
+    display: none !important;
+}
+
+
 /* Error Messages */
 .error-message {
     color: #ff6b6b;

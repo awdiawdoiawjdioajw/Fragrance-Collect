@@ -143,7 +143,13 @@
                         <span>or continue with</span>
                     </div>
                     <div class="social-buttons">
-                        <div id="g_id_signin"></div>
+                        <!-- Our new custom button -->
+                        <button class="social-btn custom-google-btn" id="custom-g_id_signin">
+                            <i class="fab fa-google"></i>
+                            <span>Sign in with Google</span>
+                        </button>
+                        <!-- The real Google button, which we will hide -->
+                        <div id="g_id_signin" class="hidden-google-btn"></div>
                     </div>
                 </div>
             </div>
@@ -213,7 +219,13 @@
                         <span>or sign up with</span>
                     </div>
                     <div class="social-buttons">
-                        <div id="g_id_signup"></div>
+                        <!-- Our new custom button -->
+                        <button class="social-btn custom-google-btn" id="custom-g_id_signup">
+                            <i class="fab fa-google"></i>
+                            <span>Sign up with Google</span>
+                        </button>
+                        <!-- The real Google button, which we will hide -->
+                        <div id="g_id_signup" class="hidden-google-btn"></div>
                     </div>
                 </div>
             </div>
