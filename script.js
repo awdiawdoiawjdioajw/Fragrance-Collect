@@ -88,7 +88,8 @@ const config = {
     DEBOUNCE_DELAY: 300,
     POPULAR_PICKS_LIMIT: 10, // New constant for popular picks
     TIKTOK_FINDS_LIMIT: 10, // New constant for TikTok finds
-    PREFETCH_ENABLED: true
+    PREFETCH_ENABLED: true,
+    DEFAULT_SEARCH_TERM: 'fragrance perfume' // The term to search on page load
 };
 
 // Lightweight performance metrics for optional UI cards
@@ -631,7 +632,18 @@ function addEventListeners() {
     }
     
     if (clearFiltersBtn) {
-        clearFiltersBtn.addEventListener('click', clearFilters);
+        clearFiltersBtn.addEventListener('click', () => {
+            // Reset dropdown filters
+            document.getElementById('sort-by-filter').value = 'revenue'; // Changed from sort-by to sort-by-filter
+            document.getElementById('price-range').value = 'all';
+            document.getElementById('shipping-filter').value = 'all';
+            document.getElementById('rating-filter').value = 'all';
+            document.getElementById('brand-filter').value = '';
+            
+            // Reset search input to default and perform a new search
+            mainSearch.value = config.DEFAULT_SEARCH_TERM;
+            document.getElementById('search-form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+        });
     }
 
     if (searchBtn) {
@@ -1587,9 +1599,15 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeDropdowns();
     initializeCollectionButtons(); // Add this line
 
-    // Load initial products
-    const initialSearchTerm = getUrlParameter('q') || '';
+    // Load initial products based on URL parameter or default search term
+    const initialSearchTerm = getUrlParameter('q') || config.DEFAULT_SEARCH_TERM;
+    const searchInput = document.getElementById('main-search'); // Changed from searchInput to mainSearch
+    if (searchInput) {
+        searchInput.value = initialSearchTerm;
+    }
     loadCJProducts(initialSearchTerm);
+
+    // Load recommendation sections
     loadPopularPicks();
     loadTikTokFinds();
 });
