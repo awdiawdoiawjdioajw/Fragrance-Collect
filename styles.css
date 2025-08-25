@@ -2042,6 +2042,57 @@ textarea:focus {
     margin: 0;
 }
 
+/* New container for shipping and button */
+.product-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(201, 166, 70, 0.1);
+}
+
+.product-shipping {
+    font-size: 0.8rem;
+    color: rgba(245, 240, 230, 0.7);
+    font-weight: 600;
+}
+
+.product-shipping.free {
+    color: #4CAF50; /* Green for free shipping */
+}
+
+/* Fancier button style */
+.btn-view-deal {
+    background: linear-gradient(135deg, var(--antique-gold) 0%, #B8943A 100%);
+    color: var(--soft-black);
+    padding: 0.6rem 1.2rem;
+    border-radius: 50px; /* Pill shape */
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 15px rgba(201, 166, 70, 0.2);
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: none;
+}
+
+.btn-view-deal:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(201, 166, 70, 0.3);
+}
+
+.btn-view-deal i {
+    transition: transform 0.3s ease;
+}
+
+.btn-view-deal:hover i {
+    transform: translateX(4px);
+}
+
+
 /* Shipping Badge Enhancements */
 .shipping-badge {
     padding: 0.3rem 0.8rem;

@@ -515,12 +515,10 @@ function createProductCard(perfume) {
                     <span class="rating-number">${perfume.rating.toFixed(1)}</span>
                 </div>
                 <p class="product-price">$${displayPrice} USD</p>
-                <div class="product-shipping">
-                    ${shipping}
-                </div>
             </div>
-            <div class="product-actions">
-                <a href="${perfume.buyUrl}" target="_blank" rel="nofollow sponsored noopener" class="btn-view-deal">✨ Visit Store & Shop Now ✨</a>
+            <div class="product-meta">
+                <div class="product-shipping ${shipping.cls}">${shipping.text}</div>
+                <a href="${perfume.buyUrl}" target="_blank" rel="nofollow sponsored noopener" class="btn-view-deal">Shop Now <i class="fas fa-arrow-right"></i></a>
             </div>
         </div>
     `;
