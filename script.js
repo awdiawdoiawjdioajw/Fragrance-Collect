@@ -520,7 +520,7 @@ function createProductCard(perfume) {
                 </div>
             </div>
             <div class="product-actions">
-                <a href="${perfume.buyUrl}" target="_blank" class="btn-view-deal">View Deal</a>
+                <a href="${perfume.buyUrl}" target="_blank" rel="nofollow sponsored noopener" class="btn-view-deal">✨ Visit Store & Shop Now ✨</a>
             </div>
         </div>
     `;
@@ -1436,8 +1436,8 @@ function showPerfumeDetails(perfume) {
         modalPrice.textContent = `$${perfume.price.toFixed(2)} USD`;
         if (modalBtn) {
             if (perfume.buyUrl) {
-                modalBtn.textContent = 'Buy from retailer';
-                modalBtn.onclick = () => window.open(perfume.buyUrl, '_blank', 'noopener');
+                modalBtn.textContent = '✨ Visit Store & Shop Now ✨';
+                modalBtn.onclick = () => window.open(perfume.buyUrl, '_blank', 'noopener,nofollow');
                 modalBtn.style.display = 'inline-block';
             } else {
                 modalBtn.style.display = 'none';
