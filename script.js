@@ -606,11 +606,11 @@ function addEventListeners() {
             if (shippingEl) shippingEl.value = 'all';
             if (ratingEl) ratingEl.value = 'all';
 
-            // Set the search input value and perform the search
-            const searchInput = document.getElementById('main-search');
-            if (searchInput) {
-                searchInput.value = searchQuery;
-            }
+            // Removed: Setting main search input value
+            // const searchInput = document.getElementById('main-search');
+            // if (searchInput) {
+            //     searchInput.value = searchQuery;
+            // }
             document.getElementById('clear-search').style.display = 'block'; // Show clear button
 
             // Load the clicked collection into the "Popular Picks" section and scroll to it
