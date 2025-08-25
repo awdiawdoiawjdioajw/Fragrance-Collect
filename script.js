@@ -1599,23 +1599,29 @@ async function loadTikTokFinds() {
 
 // --- Currency Conversion Logic ---
 async function initializeCurrencyConverter() {
-    const selector = document.getElementById('currency-selector');
-    if (!selector) return;
+    // Attempt to get currency from localStorage
+    const savedCurrency = localStorage.getItem('selectedCurrency');
+    if (savedCurrency) {
+        currentCurrency = savedCurrency;
+    }
 
-    // 1. Fetch exchange rates
-    await fetchExchangeRates();
-
-    // 2. Load currency from localStorage or default to USD
-    const savedCurrency = localStorage.getItem('selectedCurrency') || 'USD';
-    currentCurrency = savedCurrency;
-    selector.value = savedCurrency;
-
-    // 3. Add event listener for changes
-    selector.addEventListener('change', handleCurrencyChange);
-
-    // 4. Initial update of prices if products are already loaded
-    if (filteredPerfumes.length > 0) {
-        updateAllDisplayedPrices();
+    // This element only exists on main.html now
+    const currencySelector = document.getElementById('currency-converter');
+    if (currencySelector) {
+        currencySelector.value = currentCurrency;
+        currencySelector.addEventListener('change', (event) => {
+            currentCurrency = event.target.value;
+            localStorage.setItem('selectedCurrency', currentCurrency);
+            updateAllPrices(); // Re-render prices with new currency
+        });
+    }
+    
+    // Fetch rates and then update prices
+    try {
+        await fetchExchangeRates();
+        updateAllPrices();
+    } catch (error) {
+        console.error("Failed to initialize currency conversion:", error);
     }
 }
 
