@@ -1322,8 +1322,8 @@ document.addEventListener('DOMContentLoaded', () => {
     loadCJProducts(initialSearchTerm);
 
     // Load recommendation sections with their specific queries
-    loadPopularPicks('Chanel perfume'); // Use a featured brand for popular picks
-    loadTikTokFinds('tiktok viral fragrance'); // Specific query for TikTok section
+    loadPopularPicks('Dior perfume'); // Use a featured brand for popular picks
+    loadTikTokFinds('popular tiktok perfume'); // Specific query for TikTok section
 
     // Initialize event listeners after all functions are defined
     initializeDropdowns();
