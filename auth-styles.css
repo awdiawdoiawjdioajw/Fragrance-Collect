@@ -192,8 +192,8 @@
 .form-group input {
     width: 100%;
     padding: 1rem 1.25rem;
-    background: var(--deep-plum);
-    border: 2px solid transparent;
+    background: var(--soft-black); /* Changed to soft-black */
+    border: 2px solid var(--antique-gold); /* Gold border by default */
     border-radius: 12px;
     color: var(--warm-white);
     font-size: 1rem;
@@ -208,13 +208,13 @@
 
 .form-group input:focus {
     outline: none;
-    border-color: var(--antique-gold);
-    box-shadow: 0 0 0 3px rgba(201, 166, 70, 0.2);
-    background: var(--deep-plum);
+    border-color: #e6c866; /* Brighter gold on focus */
+    box-shadow: 0 0 0 4px rgba(201, 166, 70, 0.3);
+    background: var(--deep-plum); /* Slightly lighter background on focus */
 }
 
 .form-group input:valid {
-    border-color: rgba(201, 166, 70, 0.3);
+    border-color: var(--antique-gold); /* Keep gold border when valid */
 }
 
 .input-wrapper,
