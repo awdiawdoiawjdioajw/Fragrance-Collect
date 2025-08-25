@@ -217,6 +217,20 @@
     border-color: rgba(201, 166, 70, 0.3);
 }
 
+.input-wrapper,
+.password-input {
+    position: relative;
+}
+
+.input-wrapper input,
+.password-input input {
+    padding-right: 1.25rem; /* Default padding */
+}
+
+.password-input input {
+    padding-right: 3.5rem; /* More padding for password fields to not overlap with the eye icon */
+}
+
 /* Password Input */
 .password-input {
     position: relative;
@@ -308,6 +322,11 @@
 .terms-link:hover {
     color: var(--warm-white);
     text-decoration: underline;
+}
+
+.terms-text {
+    line-height: 1.4;
+    font-size: 0.9rem;
 }
 
 /* Submit Button */
