@@ -593,32 +593,25 @@ function addEventListeners() {
         button.addEventListener('click', function(event) {
             event.preventDefault();
             
-            // Get the fragrance name from the card's h3 title
+            // Get the brand name from the data-brand attribute
             const card = event.target.closest('.collection-card');
-            const searchQuery = card.querySelector('h3').textContent.trim();
+            const brand = card.getAttribute('data-brand');
+            if (!brand) return;
 
-            // Reset all filters to default
-            const priceRangeEl = document.getElementById('price-range');
-            const shippingEl = document.getElementById('shipping-filter');
-            const ratingEl = document.getElementById('rating-filter');
+            const searchQuery = `${brand} perfume`;
 
-            if (priceRangeEl) priceRangeEl.value = 'all';
-            if (shippingEl) shippingEl.value = 'all';
-            if (ratingEl) ratingEl.value = 'all';
-
-            // Removed: Setting main search input value
-            // const searchInput = document.getElementById('main-search');
-            // if (searchInput) {
-            //     searchInput.value = searchQuery;
-            // }
-            document.getElementById('clear-search').style.display = 'block'; // Show clear button
-
-            // Load the clicked collection into the "Popular Picks" section and scroll to it
-            const popularPicksSection = document.getElementById('popular-picks');
-            if (popularPicksSection) {
-                popularPicksSection.scrollIntoView({ behavior: 'smooth' });
-                loadPopularPicks(searchQuery); // Call the updated function
+            // Scroll to the filter/search section
+            const filterSection = document.getElementById('brands');
+            if (filterSection) {
+                filterSection.scrollIntoView({ behavior: 'smooth' });
             }
+
+            // Set the search input value and perform the search
+            const searchInput = document.getElementById('main-search');
+            if (searchInput) {
+                searchInput.value = searchQuery;
+            }
+            performSearch(searchQuery);
         });
     });
     
