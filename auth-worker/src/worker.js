@@ -30,6 +30,14 @@ export default {
       return handleGetStatus(request, env);
     }
 
+    if (url.pathname === '/signup/email' && request.method === 'POST') {
+      return handleEmailSignup(request, env);
+    }
+
+    if (url.pathname === '/login/email' && request.method === 'POST') {
+      return handleEmailLogin(request, env);
+    }
+
     const headers = getSecurityHeaders(request.headers.get('Origin'));
     return new Response('Not Found', { status: 404, headers });
   },
@@ -280,6 +288,173 @@ async function handleGetStatus(request, env) {
         return jsonResponse({ error: 'Failed to get user status' }, 500, headers);
     }
 }
+
+/**
+ * Handles user sign-up with email and password.
+ */
+async function handleEmailSignup(request, env) {
+    const origin = request.headers.get('Origin');
+    const headers = getSecurityHeaders(origin);
+    try {
+        const { name, email, password } = await request.json();
+
+        if (!name || !email || !password) {
+            return jsonResponse({ error: 'Name, email, and password are required.' }, 400, headers);
+        }
+
+        // Check if user already exists
+        const existingUser = await env.DB.prepare('SELECT id FROM users WHERE email = ?').bind(email).first();
+        if (existingUser) {
+            return jsonResponse({ error: 'A user with this email already exists.' }, 409, headers);
+        }
+        
+        // Hash the password
+        const { salt, hash } = await hashPassword(password);
+        const userId = crypto.randomUUID();
+
+        // Store the new user
+        await env.DB.prepare(
+            `INSERT INTO users (id, name, email, salt, password_hash) VALUES (?, ?, ?, ?, ?)`
+        ).bind(userId, name, email, salt, hash).run();
+        
+        // Create a session for the new user
+        const sessionId = crypto.randomUUID();
+        const token = crypto.randomUUID();
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+        await env.DB.prepare(
+            `INSERT INTO user_sessions (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)`
+        ).bind(sessionId, userId, token, expiresAt.toISOString()).run();
+
+        headers['Set-Cookie'] = `session_token=${token}; Expires=${expiresAt.toUTCString()}; Path=/; HttpOnly; Secure; SameSite=Strict`;
+
+        return jsonResponse({ success: true, user: { id: userId, name, email } }, 201, headers);
+
+    } catch (error) {
+        console.error('Error during email signup:', error);
+        return jsonResponse({ error: 'Signup failed.', details: error.message }, 500, headers);
+    }
+}
+
+/**
+ * Handles user login with email and password.
+ */
+async function handleEmailLogin(request, env) {
+    const origin = request.headers.get('Origin');
+    const headers = getSecurityHeaders(origin);
+    try {
+        const { email, password } = await request.json();
+
+        if (!email || !password) {
+            return jsonResponse({ error: 'Email and password are required.' }, 400, headers);
+        }
+
+        const user = await env.DB.prepare('SELECT * FROM users WHERE email = ?').bind(email).first();
+        if (!user || !user.password_hash || !user.salt) {
+            return jsonResponse({ error: 'Invalid email or password.' }, 401, headers);
+        }
+        
+        const isValid = await verifyPassword(password, user.salt, user.password_hash);
+        if (!isValid) {
+            return jsonResponse({ error: 'Invalid email or password.' }, 401, headers);
+        }
+
+        const sessionId = crypto.randomUUID();
+        const token = crypto.randomUUID();
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+        await env.DB.prepare(
+            `INSERT INTO user_sessions (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)`
+        ).bind(sessionId, user.id, token, expiresAt.toISOString()).run();
+
+        headers['Set-Cookie'] = `session_token=${token}; Expires=${expiresAt.toUTCString()}; Path=/; HttpOnly; Secure; SameSite=Strict`;
+        
+        return jsonResponse({ success: true, user: { id: user.id, name: user.name, email: user.email, picture: user.picture } }, 200, headers);
+
+    } catch (error) {
+        console.error('Error during email login:', error);
+        return jsonResponse({ error: 'Login failed.', details: error.message }, 500, headers);
+    }
+}
+
+
+// --- Password Hashing Utilities ---
+
+const PBKDF2_ITERATIONS = 100000;
+const SALT_LENGTH = 16;
+const HASH_ALGORITHM = 'SHA-256';
+
+/**
+ * Generates a salt and hashes a password.
+ * @param {string} password - The password to hash.
+ * @returns {Promise<{salt: string, hash: string}>}
+ */
+async function hashPassword(password) {
+    const salt = crypto.getRandomValues(new Uint8Array(SALT_LENGTH));
+    const key = await crypto.subtle.importKey(
+        'raw',
+        new TextEncoder().encode(password),
+        { name: 'PBKDF2' },
+        false,
+        ['deriveBits']
+    );
+    const hashBuffer = await crypto.subtle.deriveBits(
+        {
+            name: 'PBKDF2',
+            salt: salt,
+            iterations: PBKDF2_ITERATIONS,
+            hash: HASH_ALGORITHM,
+        },
+        key,
+        256
+    );
+
+    return {
+        salt: Array.from(salt).map(b => b.toString(16).padStart(2, '0')).join(''),
+        hash: Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join(''),
+    };
+}
+
+/**
+ * Verifies a password against a salt and hash.
+ * @param {string} password - The password to verify.
+ * @param {string} saltHex - The salt (hex).
+ * @param {string} hashHex - The hash to compare against (hex).
+ * @returns {Promise<boolean>}
+ */
+async function verifyPassword(password, saltHex, hashHex) {
+    const salt = new Uint8Array(saltHex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+    const key = await crypto.subtle.importKey(
+        'raw',
+        new TextEncoder().encode(password),
+        { name: 'PBKDF2' },
+        false,
+        ['deriveBits']
+    );
+    const hashBuffer = await crypto.subtle.deriveBits(
+        {
+            name: 'PBKDF2',
+            salt: salt,
+            iterations: PBKDF2_ITERATIONS,
+            hash: HASH_ALGORITHM,
+        },
+        key,
+        256
+    );
+    
+    const newHashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+    
+    // Constant-time comparison to prevent timing attacks
+    if (newHashHex.length !== hashHex.length) {
+        return false;
+    }
+    let diff = 0;
+    for (let i = 0; i < newHashHex.length; i++) {
+        diff |= newHashHex.charCodeAt(i) ^ hashHex.charCodeAt(i);
+    }
+    return diff === 0;
+}
+
 
 // --- Utility Functions ---
 

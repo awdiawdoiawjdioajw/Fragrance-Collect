@@ -5,6 +5,8 @@ CREATE TABLE IF NOT EXISTS users (
     email TEXT UNIQUE NOT NULL,
     name TEXT,
     picture TEXT,
+    password_hash TEXT, -- For email/password authentication
+    salt TEXT,          -- Salt for password hashing
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
