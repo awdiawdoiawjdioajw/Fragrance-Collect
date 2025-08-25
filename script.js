@@ -1600,9 +1600,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initModal();
     checkMobileMenu();
     initHamburgerMenu();
-    addEventListeners();
-    initializeDropdowns();
-    initializeCollectionButtons();
 
     // Load initial products for the main grid
     const initialSearchTerm = getUrlParameter('q') || config.DEFAULT_SEARCH_TERM;
@@ -1615,6 +1612,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load recommendation sections with their specific queries
     loadPopularPicks('Chanel perfume'); // Use a featured brand for popular picks
     loadTikTokFinds('tiktok viral fragrance'); // Specific query for TikTok section
+
+    // Initialize event listeners after all functions are defined
+    initializeCollectionButtons();
+    initializeDropdowns();
+    addEventListeners();
 });
 
 // Check mobile menu on window resize
