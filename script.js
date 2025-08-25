@@ -79,11 +79,12 @@ let totalPages = 1;
 
 // Configuration
 const config = {
-  // --- IMPORTANT ---
-  // PASTE YOUR CLOUDFLARE WORKER URL HERE
-  API_ENDPOINT: 'https://weathered-mud-6ed5.joshuablaszczyk.workers.dev', 
-  DEFAULT_SEARCH_TERM: 'fragrance perfume',
-  RESULTS_PER_PAGE: 25,
+    API_ENDPOINT: 'https://weathered-mud-6ed5.joshuablaszczyk.workers.dev/api',
+    RESULTS_PER_PAGE: 25, // Changed from original value
+    DEBOUNCE_DELAY: 300,
+    POPULAR_PICKS_LIMIT: 10, // New constant for popular picks
+    TIKTOK_FINDS_LIMIT: 10, // New constant for TikTok finds
+    PREFETCH_ENABLED: true
 };
 
 // Lightweight performance metrics for optional UI cards
@@ -1551,10 +1552,10 @@ async function loadPopularPicks() {
     grid.innerHTML = '<p class="loading-message">Fetching popular picks...</p>';
 
     try {
-        const data = await loadCJProducts('Chanel perfume fragrance', 1, 10, { sortBy: 'trending' });
+        const data = await loadCJProducts('Chanel perfume fragrance', 1, config.POPULAR_PICKS_LIMIT, { sortBy: 'trending' });
         if (data && data.products && data.products.length > 0) {
             const products = mapProductsDataToItems(data);
-            const productCards = products.slice(0, 10).map(p => createProductCard(p)).join('');
+            const productCards = products.slice(0, config.POPULAR_PICKS_LIMIT).map(p => createProductCard(p)).join('');
             grid.innerHTML = productCards;
         } else {
             grid.innerHTML = '<p class="no-products">Could not load popular picks at the moment.</p>';
@@ -1573,10 +1574,10 @@ async function loadTikTokFinds() {
 
     try {
         // Use a specific query for fragrance-related TikTok items
-        const data = await loadCJProducts('tiktok viral fragrance perfume', 1, 10, { partnerId: '7563286' });
+        const data = await loadCJProducts('tiktok viral fragrance perfume', 1, config.TIKTOK_FINDS_LIMIT, { partnerId: '7563286' });
         if (data && data.products && data.products.length > 0) {
             const products = mapProductsDataToItems(data);
-            const productCards = products.slice(0, 10).map(p => createProductCard(p)).join('');
+            const productCards = products.slice(0, config.TIKTOK_FINDS_LIMIT).map(p => createProductCard(p)).join('');
             grid.innerHTML = productCards;
         } else {
             grid.innerHTML = '<p class="no-products">No viral TikTok finds available right now. Check back later!</p>';
