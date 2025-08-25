@@ -1614,7 +1614,6 @@ document.addEventListener('DOMContentLoaded', () => {
     loadTikTokFinds('tiktok viral fragrance'); // Specific query for TikTok section
 
     // Initialize event listeners after all functions are defined
-    initializeCollectionButtons();
     initializeDropdowns();
     addEventListeners();
 });
