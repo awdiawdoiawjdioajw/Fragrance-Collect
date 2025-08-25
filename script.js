@@ -598,11 +598,11 @@ function addEventListeners() {
             }
             document.getElementById('clear-search').style.display = 'block'; // Show clear button
 
-            // Navigate to shop section
-            const shopSection = document.getElementById('shop');
-            if (shopSection) {
-                shopSection.scrollIntoView({ behavior: 'smooth' });
-                performSearch(searchQuery);
+            // Load the clicked collection into the "Popular Picks" section and scroll to it
+            const popularPicksSection = document.getElementById('popular-picks');
+            if (popularPicksSection) {
+                popularPicksSection.scrollIntoView({ behavior: 'smooth' });
+                loadPopularPicks(searchQuery); // Call the updated function
             }
         });
     });
@@ -1251,15 +1251,15 @@ window.addEventListener('resize', checkMobileMenu);
  * Populates the "Popular Picks" section.
  * @param {string} query - The search query to use for this section.
  */
-async function loadPopularPicks() {
+async function loadPopularPicks(query) {
     const grid = document.getElementById('popular-picks-grid');
     if (!grid) return;
 
-    // Dynamically pick one of the featured fragrances to display
-    const query = config.FEATURED_FRAGRANCES[Math.floor(Math.random() * config.FEATURED_FRAGRANCES.length)];
+    // Use provided query or dynamically pick one of the featured fragrances
+    const searchQuery = query || config.FEATURED_FRAGRANCES[Math.floor(Math.random() * config.FEATURED_FRAGRANCES.length)];
 
     try {
-        const data = await loadCJProducts(query, 1, config.POPULAR_PICKS_LIMIT, { sortBy: 'trending' });
+        const data = await loadCJProducts(searchQuery, 1, config.POPULAR_PICKS_LIMIT, { sortBy: 'trending' });
         if (data && data.products && data.products.length > 0) {
             const products = mapProductsDataToItems(data);
             const productCards = products.slice(0, config.POPULAR_PICKS_LIMIT).map(p => createProductCard(p)).join('');
