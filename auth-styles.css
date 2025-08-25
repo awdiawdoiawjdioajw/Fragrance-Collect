@@ -399,6 +399,7 @@
 
 .social-buttons {
     display: flex;
+    justify-content: center; /* This will center the Google button */
     gap: 1rem;
     margin-top: 1.5rem;
 }

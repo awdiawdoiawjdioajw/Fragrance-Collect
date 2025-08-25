@@ -233,7 +233,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 size: "large",
                 text: "continue_with",
                 shape: "rectangular",
-                width: "350" // Match the width of other form elements
+                width: "380" // Made slightly longer
             }
         );
 
@@ -244,7 +244,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 size: "large",
                 text: "signup_with",
                 shape: "rectangular",
-                width: "350" // Match the width of other form elements
+                width: "380" // Made slightly longer
             }
         );
     }
