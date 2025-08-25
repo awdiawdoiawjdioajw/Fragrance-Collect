@@ -1597,11 +1597,11 @@ document.addEventListener('DOMContentLoaded', () => {
     initHamburgerMenu();
     addEventListeners();
     initializeDropdowns();
-    initializeCollectionButtons(); // Add this line
+    initializeCollectionButtons();
 
     // Load initial products based on URL parameter or default search term
     const initialSearchTerm = getUrlParameter('q') || config.DEFAULT_SEARCH_TERM;
-    const searchInput = document.getElementById('main-search'); // Changed from searchInput to mainSearch
+    const searchInput = document.getElementById('search-input');
     if (searchInput) {
         searchInput.value = initialSearchTerm;
     }
