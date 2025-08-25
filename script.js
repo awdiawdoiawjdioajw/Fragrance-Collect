@@ -1270,16 +1270,24 @@ async function loadPopularPicks(query) {
     const grid = document.getElementById('popular-picks-grid');
     if (!grid) return;
 
+    // Show a loading state
+    grid.innerHTML = '<p class="loading-message">Loading popular picks...</p>';
+
     // Use provided query or dynamically pick one of the featured fragrances
     const searchQuery = query || config.FEATURED_FRAGRANCES[Math.floor(Math.random() * config.FEATURED_FRAGRANCES.length)];
+    console.log('[Debug] Loading Popular Picks with query:', searchQuery);
 
     try {
         const data = await fetchProductsFromApi(searchQuery, 1, config.POPULAR_PICKS_LIMIT, { sortBy: 'trending' });
+        console.log('[Debug] Popular Picks API response:', data);
+
         if (data && data.products && data.products.length > 0) {
+            console.log(`[Debug] Found ${data.products.length} popular picks.`);
             const products = mapProductsDataToItems(data);
             const productCards = products.slice(0, config.POPULAR_PICKS_LIMIT).map(p => createProductCard(p)).join('');
             grid.innerHTML = productCards;
         } else {
+            console.warn('[Debug] No products found for Popular Picks.');
             grid.innerHTML = '<p class="no-products">Could not load popular picks at this time.</p>';
         }
     } catch (error) {
@@ -1296,6 +1304,9 @@ async function loadTikTokFinds() {
     const grid = document.getElementById('tiktok-finds-grid');
     if (!grid) return;
 
+    // Show a loading state
+    grid.innerHTML = '<p class="loading-message">Finding TikTok trends...</p>';
+
     const queries = [
         'viral perfume tiktok',
         'trending fragrance 2024',
@@ -1305,14 +1316,19 @@ async function loadTikTokFinds() {
         'trending perfume tiktok'
     ];
     const query = queries[Math.floor(Math.random() * queries.length)];
+    console.log('[Debug] Loading TikTok Finds with query:', query);
 
     try {
         const data = await fetchProductsFromApi(query, 1, config.TIKTOK_FINDS_LIMIT, { partnerId: '7563286' }); // Using a specific partner ID for TikTok
+        console.log('[Debug] TikTok Finds API response:', data);
+
         if (data && data.products && data.products.length > 0) {
+            console.log(`[Debug] Found ${data.products.length} TikTok finds.`);
             const products = mapProductsDataToItems(data);
             const productCards = products.slice(0, config.TIKTOK_FINDS_LIMIT).map(p => createProductCard(p)).join('');
             grid.innerHTML = productCards;
         } else {
+            console.warn('[Debug] No products found for TikTok Finds.');
             grid.innerHTML = '<p class="no-products">Could not load TikTok finds at this time.</p>';
         }
     } catch (error) {
