@@ -244,16 +244,13 @@ function sortProducts(products) {
 }
 
 /**
- * Main function to load products from CJ Affiliate.
- * It now automatically fetches multiple pages if the initial result is too small.
+ * A dedicated function to fetch products from the API worker.
+ * This function only handles the network request and returns the data,
+ * without updating the UI directly.
  */
-async function loadCJProducts(query = '', page = 1, limit = null, filters = {}) {
-    const startTime = Date.now();
-    showLoading();
-    
+async function fetchProductsFromApi(query = '', page = 1, limit = null, filters = {}) {
     try {
-        const sortByEl = document.getElementById('sort-by-filter');
-        const sortBy = sortByEl ? sortByEl.value : 'revenue';
+        const sortBy = (filters && filters.sortBy) || 'revenue';
         const params = new URLSearchParams({
             q: query || '',
             page: page.toString(),
@@ -269,7 +266,7 @@ async function loadCJProducts(query = '', page = 1, limit = null, filters = {}) 
         if (filters.partnerId) params.append('partnerId', filters.partnerId.toString());
 
         const apiUrl = `${config.API_ENDPOINT}/products?${params.toString()}`;
-        console.log('🚀 API Search:', apiUrl);
+        console.log('🚀 API Fetch:', apiUrl);
 
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), 15000);
@@ -297,6 +294,24 @@ async function loadCJProducts(query = '', page = 1, limit = null, filters = {}) 
         if (data && data.error) {
             throw new Error(data.error + (data.details ? `: ${SecurityUtils.escapeHtml(data.details)}` : ''));
         }
+        
+        return data;
+
+    } catch (error) {
+        console.error('API fetch error:', error);
+        throw error; // Re-throw to be handled by the caller
+    }
+}
+
+/**
+ * Main function to load products from CJ Affiliate.
+ * It now automatically fetches multiple pages if the initial result is too small.
+ */
+async function loadCJProducts(query = '', page = 1, limit = null, filters = {}) {
+    showLoading();
+    
+    try {
+        const data = await fetchProductsFromApi(query, page, limit, filters);
 
         cjProducts = mapProductsDataToItems(data);
         filteredPerfumes = [...cjProducts];
@@ -1259,7 +1274,7 @@ async function loadPopularPicks(query) {
     const searchQuery = query || config.FEATURED_FRAGRANCES[Math.floor(Math.random() * config.FEATURED_FRAGRANCES.length)];
 
     try {
-        const data = await loadCJProducts(searchQuery, 1, config.POPULAR_PICKS_LIMIT, { sortBy: 'trending' });
+        const data = await fetchProductsFromApi(searchQuery, 1, config.POPULAR_PICKS_LIMIT, { sortBy: 'trending' });
         if (data && data.products && data.products.length > 0) {
             const products = mapProductsDataToItems(data);
             const productCards = products.slice(0, config.POPULAR_PICKS_LIMIT).map(p => createProductCard(p)).join('');
@@ -1292,7 +1307,7 @@ async function loadTikTokFinds() {
     const query = queries[Math.floor(Math.random() * queries.length)];
 
     try {
-        const data = await loadCJProducts(query, 1, config.TIKTOK_FINDS_LIMIT, { partnerId: '7563286' }); // Using a specific partner ID for TikTok
+        const data = await fetchProductsFromApi(query, 1, config.TIKTOK_FINDS_LIMIT, { partnerId: '7563286' }); // Using a specific partner ID for TikTok
         if (data && data.products && data.products.length > 0) {
             const products = mapProductsDataToItems(data);
             const productCards = products.slice(0, config.TIKTOK_FINDS_LIMIT).map(p => createProductCard(p)).join('');
