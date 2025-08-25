@@ -1318,14 +1318,14 @@ async function loadTikTokFinds() {
     // Show a loading state
     grid.innerHTML = '<p class="loading-message">Finding TikTok trends...</p>';
 
-    // Use a rotating list of effective TikTok queries
+    // Use a rotating list of effective TikTok queries, refined with specific keywords
     const queries = [
-        'viral perfume tiktok',
-        'trending fragrance 2024',
-        'tiktok famous perfume',
-        'PerfumeTok popular scents',
-        'viral fragrance tiktok',
-        'trending perfume tiktok'
+        'viral perfume tiktok fragrance perfume cologne',
+        'trending fragrance 2024 fragrance perfume cologne',
+        'tiktok famous perfume fragrance perfume cologne',
+        'PerfumeTok popular scents fragrance perfume cologne',
+        'viral fragrance tiktok fragrance perfume cologne',
+        'trending perfume tiktok fragrance perfume cologne'
     ];
     const query = queries[Math.floor(Math.random() * queries.length)];
     console.log('[Debug] Loading TikTok Finds with query:', query);
