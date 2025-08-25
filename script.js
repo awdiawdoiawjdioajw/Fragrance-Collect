@@ -584,8 +584,8 @@ function addEventListeners() {
 
             // Reset all filters to default
             const priceRangeEl = document.getElementById('price-range');
-            const shippingEl = document.getElementById('shipping');
-            const ratingEl = document.getElementById('rating');
+            const shippingEl = document.getElementById('shipping-filter');
+            const ratingEl = document.getElementById('rating-filter');
 
             if (priceRangeEl) priceRangeEl.value = 'all';
             if (shippingEl) shippingEl.value = 'all';
@@ -602,11 +602,7 @@ function addEventListeners() {
             const shopSection = document.getElementById('shop');
             if (shopSection) {
                 shopSection.scrollIntoView({ behavior: 'smooth' });
-                
-                // Filter products based on collection type
-                setTimeout(() => {
-                    filterByCollection(searchQuery);
-                }, 500);
+                performSearch(searchQuery);
             }
         });
     });
@@ -721,93 +717,6 @@ function matchesShipping(perfume, filterVal) {
             return cost >= min && cost <= max;
         }
     }
-}
-
-// Filter by collection type
-async function filterByCollection(collectionTitle) {
-    // Clear existing filters
-    currentFilters = { brand: '', priceRange: '', rating: '', shipping: '', search: '' };
-
-    // Reset filter dropdowns
-    const priceFilter = document.getElementById('price-range');
-    const ratingFilter = document.getElementById('rating-filter');
-    const shippingFilter = document.getElementById('shipping-filter');
-    const mainSearch = document.getElementById('main-search');
-
-    if (priceFilter) priceFilter.value = '';
-    if (ratingFilter) ratingFilter.value = '';
-    if (shippingFilter) shippingFilter.value = '';
-    if (mainSearch) mainSearch.value = '';
-
-    // Live themed fetch
-    const brandQueries = {
-        'Chanel': 'Chanel',
-        'Dior': 'Dior',
-        'Tom Ford': 'Tom Ford',
-        'Creed': 'Creed'
-    };
-    const q = brandQueries[collectionTitle] ? `${brandQueries[collectionTitle]} perfume fragrance` : 'fragrance perfume';
-    
-    showLoading();
-    loadCJProducts(q, 1).then(() => {
-        hideLoading();
-    });
-    
-    const filteredResults = [...cjProducts];
-
-    filteredPerfumes = filteredResults;
-    displayProducts(filteredPerfumes);
-
-    const searchResultsInfo = document.getElementById('search-results-info');
-    if (searchResultsInfo) {
-        const totalProducts = cjProducts.length;
-        const foundProducts = filteredResults.length;
-        // Use safe DOM manipulation
-        SecurityUtils.setInnerHTML(searchResultsInfo, `Showing ${foundProducts} of ${totalProducts} fragrances in "${SecurityUtils.escapeHtml(collectionTitle)}" collection`);
-        searchResultsInfo.style.display = 'block';
-    }
-}
-
-// Clear all filters
-function clearFilters() {
-    // Reset all filter select elements to their default value
-    const priceFilter = document.getElementById('price-range');
-    const ratingFilter = document.getElementById('rating-filter');
-    const shippingFilter = document.getElementById('shipping-filter');
-    const mainSearch = document.getElementById('main-search');
-    const brandFilter = document.getElementById('brand-filter');
-
-    if (priceFilter) priceFilter.value = 'all';
-    if (ratingFilter) ratingFilter.value = 'all';
-    if (shippingFilter) shippingFilter.value = 'all';
-    if (mainSearch) mainSearch.value = '';
-    if (brandFilter) brandFilter.value = '';
-    
-    // Hide the clear search button
-    const clearSearchBtn = document.getElementById('clear-search');
-    if (clearSearchBtn) {
-        clearSearchBtn.style.display = 'none';
-    }
-
-    // Reset the internal filters state object
-    currentFilters = { brand: '', priceRange: '', rating: '', shipping: '', search: '' };
-    
-    // Hide the search results informational text
-    const searchResultsInfo = document.getElementById('search-results-info');
-    if(searchResultsInfo) {
-        searchResultsInfo.style.display = 'none';
-    }
-
-    // Show loading indicator and reload the default set of products
-    showLoading();
-    currentPage = 1;
-    loadCJProducts(config.DEFAULT_SEARCH_TERM, currentPage).then(() => {
-        filteredPerfumes = [...cjProducts];
-        // Sort by price as the default criteria.
-        filteredPerfumes.sort((a, b) => a.price - b.price);
-        displayProducts(filteredPerfumes);
-        hideLoading();
-    });
 }
 
 function buildServerFilters() {
@@ -1326,8 +1235,8 @@ document.addEventListener('DOMContentLoaded', () => {
     loadCJProducts(initialSearchTerm);
 
     // Load recommendation sections with their specific queries
-    loadPopularPicks('Dior perfume'); // Use a featured brand for popular picks
-    loadTikTokFinds('popular tiktok perfume'); // Specific query for TikTok section
+    loadPopularPicks(); // Use a featured brand for popular picks
+    loadTikTokFinds(); // Specific query for TikTok section
 
     // Initialize event listeners after all functions are defined
     initializeDropdowns();
@@ -1341,9 +1250,18 @@ window.addEventListener('resize', checkMobileMenu);
  * Populates the "Popular Picks" section.
  * @param {string} query - The search query to use for this section.
  */
-async function loadPopularPicks(query) {
+async function loadPopularPicks() {
     const grid = document.getElementById('popular-picks-grid');
     if (!grid) return;
+
+    // Dynamically pick a featured collection to display
+    const collectionCards = document.querySelectorAll('.collection-card h3');
+    let query = 'luxury perfume'; // Fallback query
+    if (collectionCards.length > 0) {
+        const randomIndex = Math.floor(Math.random() * collectionCards.length);
+        const brandName = collectionCards[randomIndex].textContent.trim().split(' ')[0];
+        query = `${brandName} perfume`;
+    }
 
     try {
         const data = await loadCJProducts(query, 1, config.POPULAR_PICKS_LIMIT, { sortBy: 'trending' });
@@ -1364,9 +1282,12 @@ async function loadPopularPicks(query) {
  * Populates the "TikTok Finds" section.
  * @param {string} query - The search query to use for this section.
  */
-async function loadTikTokFinds(query) {
+async function loadTikTokFinds() {
     const grid = document.getElementById('tiktok-finds-grid');
     if (!grid) return;
+
+    const queries = ['popular tiktok perfume', 'viral fragrances tiktok', 'trending perfume tiktok'];
+    const query = queries[Math.floor(Math.random() * queries.length)];
 
     try {
         const data = await loadCJProducts(query, 1, config.TIKTOK_FINDS_LIMIT, { partnerId: '7563286' }); // Using a specific partner ID for TikTok
