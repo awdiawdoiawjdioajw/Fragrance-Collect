@@ -225,38 +225,28 @@ document.addEventListener('DOMContentLoaded', function() {
             callback: handleCredentialResponse
         });
 
-        // Render the real Google button inside our hidden div for the sign-in form
+        // Render the real Google button inside our div for the sign-in form
+        // We set the width to match the form fields.
         google.accounts.id.renderButton(
             document.getElementById('g_id_signin'), {
-                theme: "outline", // These settings don't matter visually
-                size: "large"
+                theme: "filled_black",
+                size: "large",
+                text: "continue_with",
+                shape: "rectangular",
+                width: "350" // Match the width of other form elements
             }
         );
 
-        // Render the real Google button inside our hidden div for the sign-up form
+        // Render the real Google button inside our div for the sign-up form
         google.accounts.id.renderButton(
             document.getElementById('g_id_signup'), {
-                theme: "outline",
-                size: "large"
+                theme: "filled_black",
+                size: "large",
+                text: "signup_with",
+                shape: "rectangular",
+                width: "350" // Match the width of other form elements
             }
         );
-
-        // Add click listeners to our custom buttons
-        document.getElementById('custom-g_id_signin').addEventListener('click', () => {
-            // Find the Google button's iframe and click the button inside it
-            const googleButton = document.querySelector('#g_id_signin iframe');
-            if (googleButton) {
-                googleButton.contentWindow.document.querySelector('[role="button"]').click();
-            }
-        });
-
-        document.getElementById('custom-g_id_signup').addEventListener('click', () => {
-            // Find the Google button's iframe and click the button inside it
-            const googleButton = document.querySelector('#g_id_signup iframe');
-            if (googleButton) {
-                googleButton.contentWindow.document.querySelector('[role="button"]').click();
-            }
-        });
     }
 
     // Assign the initialization function to the window.onload event
