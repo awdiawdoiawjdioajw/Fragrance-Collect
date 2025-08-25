@@ -505,7 +505,7 @@ function createProductCard(perfume) {
     return `
         <div class="product-card" data-id="${perfume.id}" data-brand="${perfume.brand.toLowerCase().replace(/\s+/g, '-')}" data-price="${perfume.price}" data-rating="${perfume.rating}">
             <div class="product-image-container">
-                <img src="${perfume.image_url}" alt="${perfume.name}" class="product-image" loading="lazy">
+                <img src="${perfume.image}" alt="${perfume.name}" class="product-image" loading="lazy" onerror="this.onerror=null;this.src='https://placehold.co/600x600?text=No+Image';">
             </div>
             <div class="product-info">
                 <h3 class="product-name">${perfume.name}</h3>
@@ -520,7 +520,7 @@ function createProductCard(perfume) {
                 </div>
             </div>
             <div class="product-actions">
-                <a href="${perfume.link}" target="_blank" class="btn-view-deal">View Deal</a>
+                <a href="${perfume.buyUrl}" target="_blank" class="btn-view-deal">View Deal</a>
             </div>
         </div>
     `;
@@ -1433,7 +1433,7 @@ function showPerfumeDetails(perfume) {
         modalBrand.textContent = perfume.brand;
         modalRating.innerHTML = generateStars(perfume.rating) + ` <span class="rating-text">(${perfume.rating})</span>`;
         modalDescription.textContent = perfume.description || '';
-        modalPrice.textContent = `${currencySymbol}${convertedPrice}`;
+        modalPrice.textContent = `$${perfume.price.toFixed(2)} USD`;
         if (modalBtn) {
             if (perfume.buyUrl) {
                 modalBtn.textContent = 'Buy from retailer';
