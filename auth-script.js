@@ -17,6 +17,15 @@ const ui = {
     authTabs: document.querySelectorAll('.tab-btn'),
     authForms: document.querySelectorAll('.auth-form'),
     tabsContainer: document.querySelector('.auth-tabs'),
+    // Email/Password Form Elements
+    signinForm: document.getElementById('signin-form-element'),
+    signupForm: document.getElementById('signup-form-element'),
+    signupName: document.getElementById('signup-name'),
+    signupEmail: document.getElementById('signup-email'),
+    signupPassword: document.getElementById('signup-password'),
+    signupConfirmPassword: document.getElementById('signup-confirm-password'),
+    signinEmail: document.getElementById('signin-email'),
+    signinPassword: document.getElementById('signin-password'),
 };
 
 // --- CORE FUNCTIONS ---
@@ -142,6 +151,109 @@ async function logout() {
     }
 }
 
+/**
+ * Handles the submission of the email sign-up form.
+ */
+async function handleEmailSignup(event) {
+    event.preventDefault();
+    clearErrors('signup');
+
+    const name = ui.signupName.value.trim();
+    const email = ui.signupEmail.value.trim();
+    const password = ui.signupPassword.value;
+    const confirmPassword = ui.signupConfirmPassword.value;
+
+    // --- Validation ---
+    let hasErrors = false;
+    if (!name) {
+        showError('signup-name-error', 'Full name is required.');
+        hasErrors = true;
+    }
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showError('signup-email-error', 'A valid email is required.');
+        hasErrors = true;
+    }
+    if (password.length < 8) {
+        showError('signup-password-error', 'Password must be at least 8 characters.');
+        hasErrors = true;
+    }
+    if (password !== confirmPassword) {
+        showError('signup-confirm-password-error', 'Passwords do not match.');
+        hasErrors = true;
+    }
+    if (hasErrors) return;
+
+    showStatus('Creating your account...');
+    try {
+        const res = await fetch(`${WORKER_URL}/signup/email`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email, password }),
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showStatus('Account created successfully! Welcome.');
+            updateUI(data.user);
+        } else {
+            throw new Error(data.error || 'Could not create account.');
+        }
+    } catch (error) {
+        showStatus(error.message, true);
+    }
+}
+
+/**
+ * Handles the submission of the email sign-in form.
+ */
+async function handleEmailLogin(event) {
+    event.preventDefault();
+    clearErrors('signin');
+    const email = ui.signinEmail.value.trim();
+    const password = ui.signinPassword.value;
+
+    if (!email || !password) {
+        showError('signin-email-error', 'Email and password are required.');
+        return;
+    }
+
+    showStatus('Signing you in...');
+    try {
+        const res = await fetch(`${WORKER_URL}/login/email`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password }),
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+            showStatus('Sign in successful!');
+            updateUI(data.user);
+        } else {
+            throw new Error(data.error || 'Sign-in failed.');
+        }
+    } catch (error) {
+        showStatus(error.message, true);
+    }
+}
+
+
+// --- UTILITY FUNCTIONS ---
+function showError(elementId, message) {
+    const errorElement = document.getElementById(elementId);
+    if (errorElement) {
+        errorElement.textContent = message;
+        errorElement.classList.add('show');
+    }
+}
+
+function clearErrors(formType) {
+    const errorElements = document.querySelectorAll(`#${formType}-form .error-message`);
+    errorElements.forEach(element => {
+        element.textContent = '';
+        element.classList.remove('show');
+    });
+}
+
 
 // --- INITIALIZATION ---
 
@@ -211,6 +323,16 @@ function setupEventListeners() {
     // Logout button
     if (ui.logoutButton) {
         ui.logoutButton.addEventListener('click', logout);
+    }
+
+    // Email Sign Up Form
+    if (ui.signupForm) {
+        ui.signupForm.addEventListener('submit', handleEmailSignup);
+    }
+
+    // Email Sign In Form
+    if (ui.signinForm) {
+        ui.signinForm.addEventListener('submit', handleEmailLogin);
     }
 }
 
