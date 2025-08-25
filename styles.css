@@ -2045,16 +2045,18 @@ textarea:focus {
 /* New container for shipping and button */
 .product-meta {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column; /* Stack items vertically */
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center horizontally */
     margin-top: 1rem;
     padding-top: 1rem;
     border-top: 1px solid rgba(201, 166, 70, 0.1);
+    gap: 0.5rem; /* Add some space between the text and button */
 }
 
 .product-shipping {
     font-size: 0.8rem;
-    color: rgba(245, 240, 230, 0.7);
+    color: var(--antique-gold); /* Change text color to gold */
     font-weight: 600;
 }
 
