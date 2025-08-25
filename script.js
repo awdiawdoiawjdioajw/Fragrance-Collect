@@ -583,12 +583,16 @@ function addEventListeners() {
             const searchQuery = `${brandName} perfume`;
 
             // Reset all filters to default
-            document.getElementById('price-range').value = 'all';
-            document.getElementById('shipping').value = 'all';
-            document.getElementById('rating').value = 'all';
+            const priceRangeEl = document.getElementById('price-range');
+            const shippingEl = document.getElementById('shipping');
+            const ratingEl = document.getElementById('rating');
+
+            if (priceRangeEl) priceRangeEl.value = 'all';
+            if (shippingEl) shippingEl.value = 'all';
+            if (ratingEl) ratingEl.value = 'all';
 
             // Set the search input value and perform the search
-            const searchInput = document.getElementById('search-input');
+            const searchInput = document.getElementById('main-search');
             if (searchInput) {
                 searchInput.value = searchQuery;
             }
