@@ -14,20 +14,41 @@
     <!-- Navigation Bar -->
     <nav class="navbar">
         <div class="nav-container">
-            <!-- Logo on the left -->
-            <div class="nav-logo">
-                <img src="emblem.png" alt="Fragrance Collect Logo" class="logo-emblem">
-                <h2>Fragrance Collect</h2>
+            <div class="nav-left">
+                <!-- Logo on the left -->
+                <div class="nav-logo">
+                    <img src="emblem.png" alt="Fragrance Collect Logo" class="logo-emblem">
+                    <h2>Fragrance Collect</h2>
+                </div>
+                
+                <!-- Navigation menu in center -->
+                <ul class="nav-menu">
+                    <li><a href="main.html#home" class="nav-link">Home</a></li>
+                    <li><a href="main.html#brands" class="nav-link">Brands</a></li>
+                    <li><a href="main.html#collections" class="nav-link">Collections</a></li>
+                    <li><a href="main.html#top-rated" class="nav-link">Top Rated</a></li>
+                    <li><a href="main.html#shop" class="nav-link">Shop</a></li>
+                </ul>
             </div>
             
-            <!-- Navigation menu in center -->
-            <ul class="nav-menu">
-                                        <li><a href="main.html" class="nav-link">Home</a></li>
-                        <li><a href="main.html#brands" class="nav-link">Brands</a></li>
-                        <li><a href="main.html#collections" class="nav-link">Collections</a></li>
-                        <li><a href="main.html#top-rated" class="nav-link">Top Rated</a></li>
-                        <li><a href="main.html#shop" class="nav-link">Shop</a></li>
-            </ul>
+            <div class="nav-right">
+                <!-- Currency Selector -->
+                <div class="currency-selector-wrapper">
+                    <select id="currency-selector" class="currency-selector" aria-label="Select Currency">
+                        <option value="USD">USD</option>
+                        <option value="EUR">EUR</option>
+                        <option value="GBP">GBP</option>
+                        <option value="CAD">CAD</option>
+                        <option value="AUD">AUD</option>
+                        <option value="JPY">JPY</option>
+                    </select>
+                </div>
+
+                <!-- Login button on the right -->
+                <a href="auth.html" class="login-btn">
+                    <i class="fas fa-user"></i>
+                </a>
+            </div>
             
             <!-- Search and dropdown row -->
             <div class="search-row">
@@ -39,7 +60,7 @@
                         <i class="fas fa-chevron-down"></i>
                     </a>
                     <ul class="dropdown-menu">
-                        <li><a href="main.html">Home</a></li>
+                        <li><a href="main.html#home">Home</a></li>
                         <li><a href="main.html#brands">Brands</a></li>
                         <li><a href="main.html#collections">Collections</a></li>
                         <li><a href="main.html#top-rated">Top Rated</a></li>
@@ -51,21 +72,6 @@
                         <li><a href="auth.html">Sign In/Up</a></li>
                     </ul>
                 </div>
-                
-                <!-- Centered Search Container -->
-                <div class="search-container">
-                    <input type="text" placeholder="Search fragrances..." class="search-input">
-                    <button class="search-btn">
-                        <i class="fas fa-search"></i>
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Login button on the right -->
-            <div class="nav-right">
-                <a href="auth.html" class="login-btn">
-                    <i class="fas fa-user"></i>
-                </a>
             </div>
             
             <!-- Hamburger menu for mobile -->
@@ -75,8 +81,6 @@
                 <span class="bar"></span>
             </div>
         </div>
-        
-        
     </nav>
 
     <!-- Main Content -->

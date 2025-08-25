@@ -77,6 +77,15 @@ let availableFeeds = [];
 let currentPage = 1;
 let totalPages = 1;
 
+// --- Currency Conversion ---
+let exchangeRates = {};
+let currentCurrency = 'USD';
+const currencySymbols = {
+    USD: '$', EUR: '€', GBP: '£', CAD: 'C$', AUD: 'A$', JPY: '¥'
+};
+// -------------------------
+
+
 // Configuration
 const config = {
   // --- IMPORTANT ---
@@ -495,6 +504,11 @@ function createProductCard(perfume) {
     const stars = generateStars(perfume.rating); // This will now be decorative
     const shipping = formatShipping(perfume);
     
+    // --- Currency Conversion ---
+    const convertedPrice = (perfume.price * (exchangeRates[currentCurrency] || 1)).toFixed(2);
+    const currencySymbol = currencySymbols[currentCurrency] || '$';
+    // -------------------------
+
     return `
         <div class="product-card" data-id="${perfume.id}" data-brand="${perfume.brand.toLowerCase().replace(/\s+/g, '-')}" data-price="${perfume.price}" data-rating="${perfume.rating}">
             <div class="product-image-container">
@@ -504,7 +518,7 @@ function createProductCard(perfume) {
                 <p class="product-brand">${perfume.brand}</p>
                 <h3 class="product-name">${perfume.name}</h3>
                 <div class="product-price-container">
-                    <p class="product-price">$${Number(perfume.price).toFixed(2)}</p>
+                    <p class="product-price">${currencySymbol}${convertedPrice}</p>
                     <span class="shipping-badge ${shipping.cls}">${shipping.text}</span>
                 </div>
                  <div class="product-rating">
@@ -1414,6 +1428,11 @@ function showPerfumeDetails(perfume) {
     const modalPrice = document.getElementById('modal-perfume-price');
     const modalBtn = document.querySelector('.modal-btn');
     
+    // --- Currency Conversion ---
+    const convertedPrice = (perfume.price * (exchangeRates[currentCurrency] || 1)).toFixed(2);
+    const currencySymbol = currencySymbols[currentCurrency] || '$';
+    // -------------------------
+    
     if (modal && modalImage && modalName && modalBrand && modalRating && modalDescription && modalPrice) {
         modalImage.src = perfume.image;
         modalImage.alt = perfume.name;
@@ -1421,7 +1440,7 @@ function showPerfumeDetails(perfume) {
         modalBrand.textContent = perfume.brand;
         modalRating.innerHTML = generateStars(perfume.rating) + ` <span class="rating-text">(${perfume.rating})</span>`;
         modalDescription.textContent = perfume.description || '';
-        modalPrice.textContent = `$${perfume.price}`;
+        modalPrice.textContent = `${currencySymbol}${convertedPrice}`;
         if (modalBtn) {
             if (perfume.buyUrl) {
                 modalBtn.textContent = 'Buy from retailer';
@@ -1524,6 +1543,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initHamburgerMenu();
     addEventListeners();
     initializeDropdowns();
+    initializeCurrencyConverter(); // Initialize currency converter
     
     // Load initial products
     loadCJProducts(config.DEFAULT_SEARCH_TERM);
@@ -1576,3 +1596,51 @@ async function loadTikTokFinds() {
         grid.innerHTML = '<p class="no-products">Error loading TikTok finds.</p>';
     }
 } 
+
+// --- Currency Conversion Logic ---
+async function initializeCurrencyConverter() {
+    const selector = document.getElementById('currency-selector');
+    if (!selector) return;
+
+    // 1. Fetch exchange rates
+    await fetchExchangeRates();
+
+    // 2. Load currency from localStorage or default to USD
+    const savedCurrency = localStorage.getItem('selectedCurrency') || 'USD';
+    currentCurrency = savedCurrency;
+    selector.value = savedCurrency;
+
+    // 3. Add event listener for changes
+    selector.addEventListener('change', handleCurrencyChange);
+
+    // 4. Initial update of prices if products are already loaded
+    if (filteredPerfumes.length > 0) {
+        updateAllDisplayedPrices();
+    }
+}
+
+async function fetchExchangeRates() {
+    try {
+        const response = await fetch(`${config.API_ENDPOINT}/rates`);
+        if (!response.ok) throw new Error('Failed to fetch rates');
+        const data = await response.json();
+        exchangeRates = data.rates;
+        console.log('Successfully fetched exchange rates.');
+    } catch (error) {
+        console.error('Error fetching exchange rates:', error);
+        // Fallback to USD only if rates fail to load
+        exchangeRates = { USD: 1 };
+    }
+}
+
+function handleCurrencyChange(event) {
+    currentCurrency = event.target.value;
+    localStorage.setItem('selectedCurrency', currentCurrency);
+    updateAllDisplayedPrices();
+}
+
+function updateAllDisplayedPrices() {
+    // This function re-renders all currently visible products with the new currency
+    displayProducts(filteredPerfumes);
+}
+// --------------------------------- 

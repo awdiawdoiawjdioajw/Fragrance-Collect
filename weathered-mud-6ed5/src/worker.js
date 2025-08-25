@@ -16,9 +16,9 @@ export default {
         case '':
           return json({ 
             ok: true, 
-            endpoints: ['/health', '/products', '/feeds', '/trending', '/analytics'],
-            version: '2.0.0',
-            features: ['multi-store-search', 'revenue-optimization', 'smart-caching']
+            endpoints: ['/health', '/products', '/feeds', '/trending', '/analytics', '/rates'],
+            version: '2.0.1', // Incremented version
+            features: ['multi-store-search', 'revenue-optimization', 'smart-caching', 'currency-conversion']
           }, env);
         
         case 'health':
@@ -35,6 +35,9 @@ export default {
 
         case 'analytics':
           return await handleAnalyticsRequest(req, env);
+
+        case 'rates':
+          return await handleRatesRequest(env);
 
         case 'test-cj':
           return await handleTestCJRequest(env);
@@ -904,6 +907,43 @@ async function handleAnalyticsRequest(req, env) {
     timestamp: new Date().toISOString()
   }, env);
 }
+
+/**
+ * Handles currency conversion rate requests.
+ * Fetches rates from a free API and caches them.
+ */
+async function handleRatesRequest(env) {
+  const cache = caches.default;
+  const cacheKey = 'https://api.currency/rates';
+  let response = await cache.match(cacheKey);
+
+  if (response) {
+    console.log('🔄 Currency rates cache hit');
+    return response;
+  }
+
+  console.log(' fetching fresh currency rates...');
+  try {
+    const ratesResponse = await fetch('https://open.er-api.com/v6/latest/USD');
+    if (!ratesResponse.ok) {
+      throw new Error(`Failed to fetch rates: ${ratesResponse.status}`);
+    }
+    const ratesData = await ratesResponse.json();
+    
+    // Create a new response to be cached
+    response = json(ratesData, env);
+    response.headers.set('Cache-Control', 's-maxage=14400'); // Cache for 4 hours
+    
+    await cache.put(cacheKey, response.clone());
+    
+    return response;
+
+  } catch (error) {
+    console.error('Currency rates fetch error:', error);
+    return json({ error: 'Failed to fetch currency rates', details: error.message }, env, 500);
+  }
+}
+
 
 // --- Helper Functions ---
 
