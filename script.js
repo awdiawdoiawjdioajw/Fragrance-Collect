@@ -1604,7 +1604,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeDropdowns();
     initializeCollectionButtons();
 
-    // Load initial products based on URL parameter or default search term
+    // Load initial products for the main grid
     const initialSearchTerm = getUrlParameter('q') || config.DEFAULT_SEARCH_TERM;
     const searchInput = document.getElementById('search-input');
     if (searchInput) {
@@ -1612,28 +1612,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     loadCJProducts(initialSearchTerm);
 
-    // Load recommendation sections
-    loadPopularPicks();
-    loadTikTokFinds();
+    // Load recommendation sections with their specific queries
+    loadPopularPicks('Chanel perfume'); // Use a featured brand for popular picks
+    loadTikTokFinds('tiktok viral fragrance'); // Specific query for TikTok section
 });
 
 // Check mobile menu on window resize
 window.addEventListener('resize', checkMobileMenu); 
 
-async function loadPopularPicks() {
-    const grid = document.getElementById('top-rated-grid');
+/**
+ * Populates the "Popular Picks" section.
+ * @param {string} query - The search query to use for this section.
+ */
+async function loadPopularPicks(query) {
+    const grid = document.getElementById('popular-picks-grid');
     if (!grid) return;
 
-    grid.innerHTML = '<p class="loading-message">Fetching popular picks...</p>';
-
     try {
-        const data = await loadCJProducts('Chanel perfume fragrance', 1, config.POPULAR_PICKS_LIMIT, { sortBy: 'trending' });
+        const data = await loadCJProducts(query, 1, config.POPULAR_PICKS_LIMIT, { sortBy: 'trending' });
         if (data && data.products && data.products.length > 0) {
             const products = mapProductsDataToItems(data);
             const productCards = products.slice(0, config.POPULAR_PICKS_LIMIT).map(p => createProductCard(p)).join('');
             grid.innerHTML = productCards;
         } else {
-            grid.innerHTML = '<p class="no-products">Could not load popular picks at the moment.</p>';
+            grid.innerHTML = '<p class="no-products">Could not load popular picks at this time.</p>';
         }
     } catch (error) {
         console.error('Error loading popular picks:', error);
@@ -1641,21 +1643,22 @@ async function loadPopularPicks() {
     }
 }
 
-async function loadTikTokFinds() {
-    const grid = document.getElementById('tiktok-products-grid');
+/**
+ * Populates the "TikTok Finds" section.
+ * @param {string} query - The search query to use for this section.
+ */
+async function loadTikTokFinds(query) {
+    const grid = document.getElementById('tiktok-finds-grid');
     if (!grid) return;
 
-    grid.innerHTML = '<p class="loading-message">Searching for viral TikTok finds...</p>';
-
     try {
-        // Use a specific query for fragrance-related TikTok items
-        const data = await loadCJProducts('tiktok viral fragrance perfume', 1, config.TIKTOK_FINDS_LIMIT, { partnerId: '7563286' });
+        const data = await loadCJProducts(query, 1, config.TIKTOK_FINDS_LIMIT, { partnerId: '7563286' }); // Using a specific partner ID for TikTok
         if (data && data.products && data.products.length > 0) {
             const products = mapProductsDataToItems(data);
             const productCards = products.slice(0, config.TIKTOK_FINDS_LIMIT).map(p => createProductCard(p)).join('');
             grid.innerHTML = productCards;
         } else {
-            grid.innerHTML = '<p class="no-products">No viral TikTok finds available right now. Check back later!</p>';
+            grid.innerHTML = '<p class="no-products">Could not load TikTok finds at this time.</p>';
         }
     } catch (error) {
         console.error('Error loading TikTok finds:', error);
