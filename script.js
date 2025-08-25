@@ -135,36 +135,6 @@ function hideLoading() {
     if (noResults) noResults.style.display = 'none';
 }
 
-async function checkApiHealth() {
-    try {
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 30000); // 30s timeout for health check
-        const res = await fetch(`${config.API_ENDPOINT}/health`, { signal: controller.signal });
-        clearTimeout(timer);
-        if (!res.ok) {
-            console.error('API health check failed with status:', res.status);
-            return { healthy: false, message: `API returned status ${res.status}` };
-        }
-        const data = await res.json().catch(() => ({}));
-        console.log('API Health Check Response:', data); // Log the full response
-        
-        // Check if the API is responding (your worker returns { status: 'ok' })
-        const isOverallHealthy = data && (data.status === 'ok' || data.ok === true);
-        
-        if (!isOverallHealthy) {
-            return { healthy: false, message: 'Backend API is not healthy.' };
-        }
-
-        // Since your worker doesn't have a separate CJ health check,
-        // we'll consider it healthy if the API responds
-        return { healthy: true, message: 'API is healthy and ready to serve products.' };
-
-    } catch (e) {
-        console.error('API health check threw an error:', e);
-        return { healthy: false, message: 'Could not connect to the Backend API.' };
-    }
-}
-
 // SIMPLIFIED: This function is no longer needed as the new API provides clean data.
 /*
 function normalizeShippingLocal(cost, shippingField) {
@@ -267,137 +237,6 @@ function sortProducts(products) {
     displayProducts(products);
 }
 
-// Fetch products from the worker
-async function fetchCJProducts(query = '', page = 1, limit = null, filters = {}) {
-    const base = `${config.API_ENDPOINT}/products`;
-    const sp = new URLSearchParams();
-
-    const sanitizedQuery = SecurityUtils.validateSearchQuery(query);
-    
-    // Always add search query to params
-    if (sanitizedQuery) {
-        let expandedQuery = sanitizedQuery;
-        if (sanitizedQuery.toLowerCase() === 'women') {
-            expandedQuery = 'women OR woman OR female OR pour femme';
-        } else if (sanitizedQuery.toLowerCase() === 'men') {
-            expandedQuery = 'men OR man OR male OR pour homme';
-        }
-        sp.set('q', expandedQuery);
-    }
-
-    // Use smart limit or fallback to config
-    const finalLimit = limit || config.RESULTS_PER_PAGE;
-    sp.set('limit', finalLimit.toString());
-    sp.set('page', page.toString());
-
-    // Add server-side filters to query params
-    if (filters.lowPrice) sp.set('lowPrice', filters.lowPrice);
-    if (filters.highPrice) sp.set('highPrice', filters.highPrice);
-    if (filters.partnerId) sp.set('partnerId', filters.partnerId);
-
-    // Add sorting parameters (safely handle missing element)
-    const sortByFilter = document.getElementById('sort-by-filter');
-    if (sortByFilter) {
-        const [sortBy, sortOrder] = sortByFilter.value.split('-');
-        if (sortBy) sp.set('sortBy', sortBy);
-        if (sortOrder) sp.set('sortOrder', sortOrder);
-    }
-
-    const url = `${base}?${sp.toString()}`;
-
-    try {
-        const startTime = Date.now();
-        const controller = new AbortController();
-        // Shorter timeout for GitHub Pages (15s instead of 20s)
-        const timer = setTimeout(() => controller.abort(), 15000);
-        const res = await fetch(url, {
-            signal: controller.signal,
-            // Add headers to help with GitHub Pages CORS
-            headers: {
-                'Accept': 'application/json'
-            }
-        });
-        clearTimeout(timer);
-
-        // Track performance metrics
-        if (window.performanceMetrics) {
-            window.performanceMetrics.apiCalls++;
-            window.performanceMetrics.totalLoadTime += (Date.now() - startTime);
-        }
-
-        if (!res.ok) {
-            const errorText = await res.text();
-            let errorMessage = `API fetch failed (${res.status})`;
-            try {
-                const errorData = JSON.parse(errorText);
-                if (errorData.details) errorMessage += `: ${SecurityUtils.escapeHtml(errorData.details)}`;
-            } catch (e) {
-                if (errorText && errorText.length < 100) errorMessage += `: ${SecurityUtils.escapeHtml(errorText)}`;
-            }
-            throw new Error(errorMessage);
-        }
-        
-        const data = await res.json();
-        if (data && data.error) {
-            throw new Error(data.error + (data.details ? `: ${SecurityUtils.escapeHtml(data.details)}` : ''));
-        }
-        
-        // Return the raw data structure from worker
-        return data;
-
-    } catch (error) {
-        console.error('CJ API fetch error:', error);
-        showStatusMessage(`Error: Could not fetch products. ${error.message}`, true);
-        return []; // Return empty array on failure
-    }
-}
-
-/**
- * A helper function to fetch a single page of products from the API.
- * This is used by the main loadCJProducts function.
- */
-async function fetchProductsFromApi(query, page, limit, filters) {
-    const params = new URLSearchParams({
-        q: query || '',
-        page: page.toString(),
-        limit: limit.toString(),
-        sortBy: filters.sortBy || 'revenue',
-        includeTikTok: 'true'
-    });
-
-    if (filters.lowPrice) params.append('lowPrice', filters.lowPrice.toString());
-    if (filters.highPrice) params.append('highPrice', filters.highPrice.toString());
-    if (filters.brand) params.append('brand', filters.brand);
-    if (filters.rating) params.append('rating', filters.rating.toString());
-    if (filters.partnerId) params.append('partnerId', filters.partnerId.toString());
-
-    const apiUrl = `${config.API_ENDPOINT}/products?${params.toString()}`;
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 15000); // 15s timeout
-
-    const res = await fetch(apiUrl, {
-        method: 'GET',
-        signal: controller.signal
-    });
-
-    clearTimeout(timer);
-
-    if (!res.ok) {
-        const errorText = await res.text();
-        let errorMessage = `API fetch failed (${res.status})`;
-        try {
-            const errorData = JSON.parse(errorText);
-            if (errorData.details) errorMessage += `: ${SecurityUtils.escapeHtml(errorData.details)}`;
-        } catch (e) {
-            if (errorText && errorText.length < 100) errorMessage += `: ${SecurityUtils.escapeHtml(errorText)}`;
-        }
-        throw new Error(errorMessage);
-    }
-
-    return await res.json();
-}
-
-
 /**
  * Main function to load products from CJ Affiliate.
  * It now automatically fetches multiple pages if the initial result is too small.
@@ -495,7 +334,7 @@ function displayProducts(perfumes) {
 
     // Add infinite scroll if enabled
     if (window.infiniteScrollEnabled) {
-        setupInfiniteScroll();
+        // setupInfiniteScroll();
     }
 }
 
@@ -1322,40 +1161,6 @@ function validateSearchTerm(term) {
     return trimmed.length >= 2 && !/^\s*$/.test(trimmed);
 }
 
-// Debounced search function
-function debouncedSearch(searchTerm) {
-    // Clear existing timeout
-    if (searchTimeout) {
-        clearTimeout(searchTimeout);
-    }
-
-    // If search term is the same as last search, don't search again
-    if (searchTerm === lastSearchTerm && searchTerm) {
-        return;
-    }
-
-    // If search is too short or empty, clear results and return
-    if (!validateSearchTerm(searchTerm)) {
-        if (!searchTerm) {
-            // Empty search - load default products
-            currentFilters.search = '';
-            loadCJProducts('', 1).then(() => {
-                // No client-side filtering needed here
-            });
-            lastSearchTerm = '';
-        }
-        return;
-    }
-
-    // Show loading state
-    showLoading();
-
-    // Set timeout for debounced search
-    searchTimeout = setTimeout(() => {
-        performSearch(searchTerm);
-    }, 300); // 300ms debounce delay
-}
-
 async function performSearch(searchTerm) {
     // Fallback: if no argument provided, read from input
     if (!searchTerm) {
@@ -1393,87 +1198,6 @@ async function performSearch(searchTerm) {
         hideSearchLoading();
         SearchDebugger.endSearch(filteredPerfumes);
     }
-}
-
-// Helper function to check if element is in viewport
-function isElementInViewport(el) {
-    if (!el) return false;
-    const rect = el.getBoundingClientRect();
-    return (
-        rect.top >= 0 &&
-        rect.left >= 0 &&
-        rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-        rect.right <= (window.innerWidth || document.documentElement.clientWidth)
-    );
-}
-
-// Initialize existing features
-function initializeExistingFeatures() {
-    // Smooth scrolling for navigation links
-    const navLinks = document.querySelectorAll('.nav-link[href^="#"]');
-    navLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            const targetId = this.getAttribute('href').substring(1);
-            const targetElement = document.getElementById(targetId);
-            
-            if (targetElement) {
-                targetElement.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
-            }
-        });
-    });
-
-    // Navbar background change on scroll
-    const navbar = document.querySelector('.navbar');
-    
-    window.addEventListener('scroll', function() {
-        if (window.scrollY > 100) {
-            navbar.style.background = 'rgba(18, 18, 18, 0.98)';
-            navbar.style.boxShadow = '0 2px 20px rgba(0, 0, 0, 0.3)';
-        } else {
-            navbar.style.background = 'rgba(18, 18, 18, 0.95)';
-            navbar.style.boxShadow = 'none';
-        }
-    });
-
-    // Product card hover effects
-    document.addEventListener('mouseenter', function(e) {
-        if (!(e.target instanceof Element)) return;
-        if (e.target.closest('.product-card')) {
-            const card = e.target.closest('.product-card');
-            card.style.transform = 'translateY(-10px)';
-        }
-    }, true);
-    
-    document.addEventListener('mouseleave', function(e) {
-        if (!(e.target instanceof Element)) return;
-        if (e.target.closest('.product-card')) {
-            const card = e.target.closest('.product-card');
-            card.style.transform = 'translateY(0)';
-        }
-    }, true);
-
-    // Collection card hover effects
-    document.addEventListener('mouseenter', function(e) {
-        if (!(e.target instanceof Element)) return;
-        if (e.target.closest('.collection-card')) {
-            const card = e.target.closest('.collection-card');
-            card.style.boxShadow = '0 15px 35px rgba(0, 0, 0, 0.2)';
-            card.style.transform = 'translateY(-8px)';
-        }
-    }, true);
-    
-    document.addEventListener('mouseleave', function(e) {
-        if (!(e.target instanceof Element)) return;
-        if (e.target.closest('.collection-card')) {
-            const card = e.target.closest('.collection-card');
-            card.style.boxShadow = '0 10px 20px rgba(0, 0, 0, 0.1)';
-            card.style.transform = 'translateY(0)';
-        }
-    }, true);
 }
 
 // Show perfume details in modal
@@ -1575,27 +1299,15 @@ function initHamburgerMenu() {
     }
 }
 
+function getUrlParameter(name) {
+    name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+    var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+    var results = regex.exec(location.search);
+    return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+}
+
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    // Polyfill for Element.closest()
-    if (!Element.prototype.closest) {
-        Element.prototype.closest = function (s) {
-            var el = this;
-            do {
-                if (Element.prototype.matches.call(el, s)) return el;
-                el = el.parentElement || el.parentNode;
-            } while (el !== null && el.nodeType === 1);
-            return null;
-        };
-    }
-
-    // Polyfill for Element.matches()
-    if (!Element.prototype.matches) {
-        Element.prototype.matches =
-            Element.prototype.msMatchesSelector ||
-            Element.prototype.webkitMatchesSelector;
-    }
-    
     // Initialize the application
     initModal();
     checkMobileMenu();
@@ -1603,7 +1315,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Load initial products for the main grid
     const initialSearchTerm = getUrlParameter('q') || config.DEFAULT_SEARCH_TERM;
-    const searchInput = document.getElementById('search-input');
+    const searchInput = document.getElementById('main-search');
     if (searchInput) {
         searchInput.value = initialSearchTerm;
     }
