@@ -718,13 +718,26 @@ function addEventListeners() {
     // Collection Explore buttons functionality
     const collectionButtons = document.querySelectorAll('.collection-btn');
     collectionButtons.forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault();
+        button.addEventListener('click', function(event) {
+            event.preventDefault();
             
-            // Get the collection name from the parent card
-            const collectionCard = this.closest('.collection-card');
-            const collectionTitle = collectionCard.querySelector('h3').textContent;
+            // Get the fragrance name from the card's h3 title
+            const card = event.target.closest('.collection-card');
+            const fullTitle = card.querySelector('h3').textContent.trim();
             
+            // Extract just the brand name (the first word)
+            const brandName = fullTitle.split(' ')[0];
+
+            // Construct the search query
+            const searchQuery = `${brandName} perfume fragrance`;
+
+            // Reset all filters to default
+            document.getElementById('price-range').value = 'all';
+            document.getElementById('rating-filter').value = 'all';
+            document.getElementById('shipping-filter').value = 'all';
+            document.getElementById('main-search').value = searchQuery;
+            document.getElementById('clear-search').style.display = 'block'; // Show clear button
+
             // Navigate to shop section
             const shopSection = document.getElementById('shop');
             if (shopSection) {
@@ -732,7 +745,7 @@ function addEventListeners() {
                 
                 // Filter products based on collection type
                 setTimeout(() => {
-                    filterByCollection(collectionTitle);
+                    filterByCollection(searchQuery);
                 }, 500);
             }
         });
