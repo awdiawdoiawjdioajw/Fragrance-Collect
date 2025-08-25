@@ -740,14 +740,19 @@ function addEventListeners() {
             // Extract just the brand name (the first word)
             const brandName = fullTitle.split(' ')[0];
 
-            // Construct the search query
-            const searchQuery = `${brandName} perfume fragrance`;
+            // Construct the search query as "Brand perfume"
+            const searchQuery = `${brandName} perfume`;
 
             // Reset all filters to default
             document.getElementById('price-range').value = 'all';
-            document.getElementById('rating-filter').value = 'all';
-            document.getElementById('shipping-filter').value = 'all';
-            document.getElementById('main-search').value = searchQuery;
+            document.getElementById('shipping').value = 'all';
+            document.getElementById('rating').value = 'all';
+
+            // Set the search input value and perform the search
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) {
+                searchInput.value = searchQuery;
+            }
             document.getElementById('clear-search').style.display = 'block'; // Show clear button
 
             // Navigate to shop section
