@@ -1572,9 +1572,11 @@ document.addEventListener('DOMContentLoaded', () => {
     initHamburgerMenu();
     addEventListeners();
     initializeDropdowns();
-    
+    initializeCollectionButtons(); // Add this line
+
     // Load initial products
-    loadCJProducts(config.DEFAULT_SEARCH_TERM);
+    const initialSearchTerm = getUrlParameter('q') || '';
+    loadCJProducts(initialSearchTerm);
     loadPopularPicks();
     loadTikTokFinds();
 });
