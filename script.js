@@ -1242,8 +1242,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initHamburgerMenu();
 
     // Load initial products for the main grid
-    const randomFeatured = config.FEATURED_FRAGRANCES[Math.floor(Math.random() * config.FEATURED_FRAGRANCES.length)];
-    const initialSearchTerm = getUrlParameter('q') || randomFeatured;
+    const initialSearchTerm = getUrlParameter('q') || 'fragrance perfume';
     const searchInput = document.getElementById('main-search');
     if (searchInput) {
         searchInput.value = initialSearchTerm;
@@ -1267,14 +1266,23 @@ window.addEventListener('resize', checkMobileMenu);
  * @param {string} query - The search query to use for this section.
  */
 async function loadPopularPicks(query) {
-    const grid = document.getElementById('popular-picks-grid');
-    if (!grid) return;
+    const grid = document.getElementById('top-rated-grid'); // CORRECTED ID
+    if (!grid) {
+        console.error('Error: Popular Picks grid container not found.');
+        return;
+    }
 
     // Show a loading state
     grid.innerHTML = '<p class="loading-message">Loading popular picks...</p>';
 
-    // Use provided query or dynamically pick one of the featured fragrances
-    const searchQuery = query || config.FEATURED_FRAGRANCES[Math.floor(Math.random() * config.FEATURED_FRAGRANCES.length)];
+    // Use a rotating list of luxury queries if no specific one is provided
+    const luxuryQueries = [
+        'Creed Aventus',
+        'Baccarat Rouge 540',
+        'Tom Ford Oud Wood',
+        'Parfums de Marly Layton'
+    ];
+    const searchQuery = query || luxuryQueries[Math.floor(Math.random() * luxuryQueries.length)];
     console.log('[Debug] Loading Popular Picks with query:', searchQuery);
 
     try {
@@ -1301,12 +1309,16 @@ async function loadPopularPicks(query) {
  * @param {string} query - The search query to use for this section.
  */
 async function loadTikTokFinds() {
-    const grid = document.getElementById('tiktok-finds-grid');
-    if (!grid) return;
+    const grid = document.getElementById('tiktok-products-grid'); // CORRECTED ID
+    if (!grid) {
+        console.error('Error: TikTok Finds grid container not found.');
+        return;
+    }
 
     // Show a loading state
     grid.innerHTML = '<p class="loading-message">Finding TikTok trends...</p>';
 
+    // Use a rotating list of effective TikTok queries
     const queries = [
         'viral perfume tiktok',
         'trending fragrance 2024',

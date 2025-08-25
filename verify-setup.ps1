@@ -21,7 +21,7 @@ try {
 }
 
 # Extract GitHub username and repo name from URL
-if ($remoteUrl -match "github\.com/([^/]+)/([^/]+)\.git") {
+if ($remoteUrl -match 'github\.com/([^/]+)/([^/]+)\.git') {
     $githubUsername = $matches[1]
     $repoName = $matches[2]
     Write-Host "✅ GitHub repository: $githubUsername/$repoName" -ForegroundColor Green
