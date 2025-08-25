@@ -1281,7 +1281,14 @@ async function loadTikTokFinds() {
     const grid = document.getElementById('tiktok-finds-grid');
     if (!grid) return;
 
-    const queries = ['popular tiktok perfume', 'viral fragrances tiktok', 'trending perfume tiktok'];
+    const queries = [
+        'viral perfume tiktok',
+        'trending fragrance 2024',
+        'tiktok famous perfume',
+        'PerfumeTok popular scents',
+        'viral fragrance tiktok',
+        'trending perfume tiktok'
+    ];
     const query = queries[Math.floor(Math.random() * queries.length)];
 
     try {
