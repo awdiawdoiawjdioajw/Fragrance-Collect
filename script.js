@@ -77,15 +77,6 @@ let availableFeeds = [];
 let currentPage = 1;
 let totalPages = 1;
 
-// --- Currency Conversion ---
-let exchangeRates = {};
-let currentCurrency = 'USD';
-const currencySymbols = {
-    USD: '$', EUR: '€', GBP: '£', CAD: 'C$', AUD: 'A$', JPY: '¥'
-};
-// -------------------------
-
-
 // Configuration
 const config = {
   // --- IMPORTANT ---
@@ -503,28 +494,27 @@ function formatShipping(perfume) {
 function createProductCard(perfume) {
     const stars = generateStars(perfume.rating); // This will now be decorative
     const shipping = formatShipping(perfume);
-    
-    // --- Currency Conversion ---
-    const convertedPrice = (perfume.price * (exchangeRates[currentCurrency] || 1)).toFixed(2);
-    const currencySymbol = currencySymbols[currentCurrency] || '$';
-    // -------------------------
+    const displayPrice = perfume.price.toFixed(2);
 
     return `
         <div class="product-card" data-id="${perfume.id}" data-brand="${perfume.brand.toLowerCase().replace(/\s+/g, '-')}" data-price="${perfume.price}" data-rating="${perfume.rating}">
             <div class="product-image-container">
-                <img src="${perfume.image || ''}" alt="${perfume.name}" class="product-image" loading="lazy" onerror="this.onerror=null;this.src='https://placehold.co/600x600?text=No+Image';">
+                <img src="${perfume.image_url}" alt="${perfume.name}" class="product-image" loading="lazy">
             </div>
             <div class="product-info">
-                <p class="product-brand">${perfume.brand}</p>
                 <h3 class="product-name">${perfume.name}</h3>
-                <div class="product-price-container">
-                    <p class="product-price">${currencySymbol}${convertedPrice}</p>
-                    <span class="shipping-badge ${shipping.cls}">${shipping.text}</span>
-                </div>
-                 <div class="product-rating">
+                <p class="product-brand">${perfume.brand}</p>
+                <div class="product-rating" role="img" aria-label="Rating: ${perfume.rating} out of 5 stars">
                     ${stars}
+                    <span class="rating-number">${perfume.rating.toFixed(1)}</span>
                 </div>
-                <a href="${perfume.buyUrl}" class="buy-now-btn" target="_blank" rel="nofollow sponsored noopener">Buy Now</a>
+                <p class="product-price">$${displayPrice} USD</p>
+                <div class="product-shipping">
+                    ${shipping}
+                </div>
+            </div>
+            <div class="product-actions">
+                <a href="${perfume.link}" target="_blank" class="btn-view-deal">View Deal</a>
             </div>
         </div>
     `;
@@ -1543,7 +1533,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initHamburgerMenu();
     addEventListeners();
     initializeDropdowns();
-    initializeCurrencyConverter(); // Initialize currency converter
     
     // Load initial products
     loadCJProducts(config.DEFAULT_SEARCH_TERM);
