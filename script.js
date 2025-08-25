@@ -177,22 +177,28 @@ function normalizeShippingLocal(cost, shippingField) {
 function mapProductsDataToItems(data) {
     if (!data || !Array.isArray(data.products)) return [];
     
-    return data.products.map(p => ({
-        id: SecurityUtils.escapeHtml(p.id || `cj_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`),
-        name: SecurityUtils.escapeHtml(p.name || 'Unnamed Product'),
-        brand: SecurityUtils.escapeHtml(p.brand || 'Unknown Brand'),
-        price: SecurityUtils.validateNumber(p.price, 0, 10000, 0),
-        rating: SecurityUtils.validateNumber(p.rating, 0, 5, 0),
-        image: SecurityUtils.validateUrl(p.image || ''),
-        description: SecurityUtils.escapeHtml(p.description || ''),
-        buyUrl: SecurityUtils.validateUrl(p.cjLink || p.buyUrl || ''),
-        shippingCost: p.shippingCost, // The worker now provides this as null
-        advertiser: SecurityUtils.escapeHtml(p.advertiser || 'Unknown'),
-        category: SecurityUtils.escapeHtml(p.category || 'Fragrance'),
-        availability: 'In Stock',
-        currency: 'USD',
-        isReal: true
-    }));
+    return data.products
+        .filter(p => {
+            // Filter out products that don't use USD currency
+            const currency = p.currency || 'USD';
+            return currency.toUpperCase() === 'USD';
+        })
+        .map(p => ({
+            id: SecurityUtils.escapeHtml(p.id || `cj_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`),
+            name: SecurityUtils.escapeHtml(p.name || 'Unnamed Product'),
+            brand: SecurityUtils.escapeHtml(p.brand || 'Unknown Brand'),
+            price: SecurityUtils.validateNumber(p.price, 0, 10000, 0),
+            rating: SecurityUtils.validateNumber(p.rating, 0, 5, 0),
+            image: SecurityUtils.validateUrl(p.image || ''),
+            description: SecurityUtils.escapeHtml(p.description || ''),
+            buyUrl: SecurityUtils.validateUrl(p.cjLink || p.buyUrl || ''),
+            shippingCost: p.shippingCost, // The worker now provides this as null
+            advertiser: SecurityUtils.escapeHtml(p.advertiser || 'Unknown'),
+            category: SecurityUtils.escapeHtml(p.category || 'Fragrance'),
+            availability: 'In Stock',
+            currency: 'USD',
+            isReal: true
+        }));
 }
 
 // Apply filters and sorting from UI controls
@@ -1418,10 +1424,7 @@ function showPerfumeDetails(perfume) {
     const modalPrice = document.getElementById('modal-perfume-price');
     const modalBtn = document.querySelector('.modal-btn');
     
-    // --- Currency Conversion ---
-    const convertedPrice = (perfume.price * (exchangeRates[currentCurrency] || 1)).toFixed(2);
-    const currencySymbol = currencySymbols[currentCurrency] || '$';
-    // -------------------------
+
     
     if (modal && modalImage && modalName && modalBrand && modalRating && modalDescription && modalPrice) {
         modalImage.src = perfume.image;
@@ -1586,56 +1589,4 @@ async function loadTikTokFinds() {
     }
 } 
 
-// --- Currency Conversion Logic ---
-async function initializeCurrencyConverter() {
-    // Attempt to get currency from localStorage
-    const savedCurrency = localStorage.getItem('selectedCurrency');
-    if (savedCurrency) {
-        currentCurrency = savedCurrency;
-    }
-
-    // This element only exists on main.html now
-    const currencySelector = document.getElementById('currency-converter');
-    if (currencySelector) {
-        currencySelector.value = currentCurrency;
-        currencySelector.addEventListener('change', (event) => {
-            currentCurrency = event.target.value;
-            localStorage.setItem('selectedCurrency', currentCurrency);
-            updateAllPrices(); // Re-render prices with new currency
-        });
-    }
-    
-    // Fetch rates and then update prices
-    try {
-        await fetchExchangeRates();
-        updateAllPrices();
-    } catch (error) {
-        console.error("Failed to initialize currency conversion:", error);
-    }
-}
-
-async function fetchExchangeRates() {
-    try {
-        const response = await fetch(`${config.API_ENDPOINT}/rates`);
-        if (!response.ok) throw new Error('Failed to fetch rates');
-        const data = await response.json();
-        exchangeRates = data.rates;
-        console.log('Successfully fetched exchange rates.');
-    } catch (error) {
-        console.error('Error fetching exchange rates:', error);
-        // Fallback to USD only if rates fail to load
-        exchangeRates = { USD: 1 };
-    }
-}
-
-function handleCurrencyChange(event) {
-    currentCurrency = event.target.value;
-    localStorage.setItem('selectedCurrency', currentCurrency);
-    updateAllDisplayedPrices();
-}
-
-function updateAllDisplayedPrices() {
-    // This function re-renders all currently visible products with the new currency
-    displayProducts(filteredPerfumes);
-}
 // --------------------------------- 

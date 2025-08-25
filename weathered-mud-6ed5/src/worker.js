@@ -432,6 +432,12 @@ function formatProductForRevenue(p, query) {
     return null;
   }
   
+  // Filter out non-USD products
+  const currency = p.price?.currency || 'USD';
+  if (currency.toUpperCase() !== 'USD') {
+    return null;
+  }
+  
   const price = parseFloat(p.price?.amount || 0);
   const commissionRate = getCommissionRate(p);
   const estimatedCommission = price * commissionRate;
