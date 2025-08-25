@@ -75,7 +75,7 @@
     <main class="auth-main">
         <div class="auth-container">
             <!-- Tab Navigation -->
-            <div class="auth-tabs">
+            <div class="auth-tabs" data-active-tab="signin">
                 <button class="tab-btn active" data-tab="signin">
                     <i class="fas fa-sign-in-alt"></i>
                     Sign In
@@ -86,131 +86,89 @@
                 </button>
             </div>
 
-            <!-- Sign In Form -->
-            <div class="auth-form active" id="signin-form">
-                <div class="auth-header">
-                    <h2 class="form-title">Welcome Back</h2>
-                    <div class="form-title-accent"></div>
-                </div>
-                <p class="form-subtitle">Sign in to your account to continue</p>
-                
-                <form class="form" id="signin-form-element">
-                    <div class="form-group">
-                        <label for="signin-email">Email</label>
-                        <input type="email" id="signin-email" name="email" placeholder="Enter your email" required>
-                        <div class="error-message" id="signin-email-error"></div>
+            <!-- This view is shown when the user is logged OUT -->
+            <div id="logged-out-view">
+                <!-- Sign In Form -->
+                <div class="auth-form active" id="signin-form">
+                    <div class="auth-header">
+                        <h2 class="form-title">Welcome Back</h2>
+                        <div class="form-title-accent"></div>
                     </div>
+                    <p class="form-subtitle">Sign in to your account to continue</p>
                     
-                    <div class="form-group">
-                        <label for="signin-password">Password</label>
-                        <div class="password-input">
-                            <input type="password" id="signin-password" name="password" placeholder="Enter your password" required>
-                            <button type="button" class="password-toggle" id="signin-password-toggle">
-                                <i class="fas fa-eye"></i>
-                            </button>
+                    <!-- Social Sign In -->
+                    <div class="social-signin">
+                        <div class="divider">
+                            <span>or continue with</span>
                         </div>
-                        <div class="error-message" id="signin-password-error"></div>
+                        <div class="social-buttons">
+                             <div id="g_id_onload"
+                                 data-client_id="351083759622-fnmbu0am1knlj8ltcps8i7la64dhjpnn.apps.googleusercontent.com"
+                                 data-context="signin"
+                                 data-ux_mode="popup"
+                                 data-callback="handleCredentialResponse"
+                                 data-auto_prompt="false">
+                            </div>
+                            <div class="g_id_signin"
+                                 data-type="standard"
+                                 data-shape="rectangular"
+                                 data-theme="filled_black"
+                                 data-text="continue_with"
+                                 data-size="large"
+                                 data-logo_alignment="left"
+                                 data-width="380">
+                            </div>
+                        </div>
                     </div>
-                    
-                    <div class="form-options">
-                        <label class="checkbox-container">
-                            <input type="checkbox" id="remember-me">
-                            <span class="checkmark"></span>
-                            Remember me
-                        </label>
-                        <a href="#" class="forgot-password">Forgot Password?</a>
-                    </div>
-                    
-                    <button type="submit" class="submit-btn">
-                        <span class="btn-text">Sign In</span>
-                        <span class="btn-loading">
-                            <i class="fas fa-spinner fa-spin"></i>
-                        </span>
-                    </button>
-                </form>
+                </div>
 
-                <!-- Social Sign In -->
-                <div class="social-signin">
-                    <div class="divider">
-                        <span>or continue with</span>
+                <!-- Sign Up Form -->
+                <div class="auth-form" id="signup-form">
+                    <div class="auth-header">
+                        <h2 class="form-title">Create Account</h2>
+                        <div class="form-title-accent"></div>
                     </div>
-                    <div class="social-buttons">
-                        <!-- The real Google button, now visible -->
-                        <div id="g_id_signin"></div>
+                    <p class="form-subtitle">Join us to discover your signature scent</p>
+                    
+                    <!-- Social Sign Up -->
+                    <div class="social-signin">
+                        <div class="divider">
+                            <span>or sign up with</span>
+                        </div>
+                        <div class="social-buttons">
+                            <!-- The same Google button can be used for sign up -->
+                            <div class="g_id_signin"
+                                 data-type="standard"
+                                 data-shape="rectangular"
+                                 data-theme="filled_black"
+                                 data-text="signup_with"
+                                 data-size="large"
+                                 data-logo_alignment="left"
+                                 data-width="380">
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Sign Up Form -->
-            <div class="auth-form" id="signup-form">
-                <div class="auth-header">
-                    <h2 class="form-title">Create Account</h2>
+            <!-- This view is shown when the user is logged IN -->
+            <div id="logged-in-view" style="display: none;">
+                 <div class="auth-header">
+                    <h2 class="form-title">Welcome</h2>
                     <div class="form-title-accent"></div>
                 </div>
-                <p class="form-subtitle">Join us to discover your signature scent</p>
-                
-                <form class="form" id="signup-form-element">
-                    <div class="form-group">
-                        <label for="signup-name">Full Name</label>
-                        <input type="text" id="signup-name" name="name" placeholder="Enter your full name" required>
-                        <div class="error-message" id="signup-name-error"></div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="signup-email">Email</label>
-                        <input type="email" id="signup-email" name="email" placeholder="Enter your email" required>
-                        <div class="error-message" id="signup-email-error"></div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="signup-password">Password</label>
-                        <div class="password-input">
-                            <input type="password" id="signup-password" name="password" placeholder="Create a password" required>
-                            <button type="button" class="password-toggle" id="signup-password-toggle">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                        </div>
-                        <div class="error-message" id="signup-password-error"></div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="signup-confirm-password">Confirm Password</label>
-                        <div class="password-input">
-                            <input type="password" id="signup-confirm-password" name="confirm-password" placeholder="Confirm your password" required>
-                            <button type="button" class="password-toggle" id="signup-confirm-password-toggle">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                        </div>
-                        <div class="error-message" id="signup-confirm-password-error"></div>
-                    </div>
-                    
-                    <div class="form-options">
-                        <label class="checkbox-container">
-                            <input type="checkbox" id="agree-terms" required>
-                            <span class="checkmark"></span>
-                            I agree to the <a href="#" class="terms-link">Terms of Service</a> and <a href="#" class="terms-link">Privacy Policy</a>
-                        </label>
-                    </div>
-                    
-                    <button type="submit" class="submit-btn">
-                        <span class="btn-text">Create Account</span>
-                        <span class="btn-loading">
-                            <i class="fas fa-spinner fa-spin"></i>
-                        </span>
-                    </button>
-                </form>
-
-                <!-- Social Sign Up -->
-                <div class="social-signin">
-                    <div class="divider">
-                        <span>or sign up with</span>
-                    </div>
-                    <div class="social-buttons">
-                        <!-- The real Google button, now visible -->
-                        <div id="g_id_signup"></div>
-                    </div>
+                <div id="user-info">
+                    <img id="user-picture" src="" alt="User profile picture">
+                    <p id="user-name"></p>
+                    <p id="user-email"></p>
                 </div>
+                <button id="logout-button" class="submit-btn">
+                     <span class="btn-text">Sign Out</span>
+                </button>
             </div>
+
+            <!-- Status messages can be displayed here -->
+            <div id="auth-status" class="error-message"></div>
         </div>
     </main>
 
