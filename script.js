@@ -352,90 +352,111 @@ async function fetchCJProducts(query = '', page = 1, limit = null, filters = {})
     }
 }
 
-// Enhanced CJ products loading with revenue optimization
+/**
+ * A helper function to fetch a single page of products from the API.
+ * This is used by the main loadCJProducts function.
+ */
+async function fetchProductsFromApi(query, page, limit, filters) {
+    const params = new URLSearchParams({
+        q: query || '',
+        page: page.toString(),
+        limit: limit.toString(),
+        sortBy: filters.sortBy || 'revenue',
+        includeTikTok: 'true'
+    });
+
+    if (filters.lowPrice) params.append('lowPrice', filters.lowPrice.toString());
+    if (filters.highPrice) params.append('highPrice', filters.highPrice.toString());
+    if (filters.brand) params.append('brand', filters.brand);
+    if (filters.rating) params.append('rating', filters.rating.toString());
+    if (filters.partnerId) params.append('partnerId', filters.partnerId.toString());
+
+    const apiUrl = `${config.API_ENDPOINT}/products?${params.toString()}`;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 15000); // 15s timeout
+
+    const res = await fetch(apiUrl, {
+        method: 'GET',
+        signal: controller.signal
+    });
+
+    clearTimeout(timer);
+
+    if (!res.ok) {
+        const errorText = await res.text();
+        let errorMessage = `API fetch failed (${res.status})`;
+        try {
+            const errorData = JSON.parse(errorText);
+            if (errorData.details) errorMessage += `: ${SecurityUtils.escapeHtml(errorData.details)}`;
+        } catch (e) {
+            if (errorText && errorText.length < 100) errorMessage += `: ${SecurityUtils.escapeHtml(errorText)}`;
+        }
+        throw new Error(errorMessage);
+    }
+
+    return await res.json();
+}
+
+
+/**
+ * Main function to load products from CJ Affiliate.
+ * It now automatically fetches multiple pages if the initial result is too small.
+ */
 async function loadCJProducts(query = '', page = 1, limit = null, filters = {}) {
     const startTime = Date.now();
     showLoading();
-    
+
     try {
-        const sortByEl = document.getElementById('sort-by-filter');
-        const sortBy = sortByEl ? sortByEl.value : 'revenue';
-        // Build query parameters for revenue-optimized search
-        const params = new URLSearchParams({
-            q: query || '',
-            page: page.toString(),
-            limit: (limit || config.RESULTS_PER_PAGE).toString(),
-            sortBy: sortBy,
-            includeTikTok: 'true' // Always include TikTok for better results
-        });
+        const desiredLimit = limit || config.RESULTS_PER_PAGE;
+        let currentPageFetched = page;
+        let allProducts = [];
+        let totalResults = 0;
+        let initialData;
 
-        // Add filters if provided
-        if (filters.lowPrice) params.append('lowPrice', filters.lowPrice.toString());
-        if (filters.highPrice) params.append('highPrice', filters.highPrice.toString());
-        if (filters.brand) params.append('brand', filters.brand);
-        if (filters.rating) params.append('rating', filters.rating.toString());
-        if (filters.partnerId) params.append('partnerId', filters.partnerId.toString());
+        // Keep fetching pages until we have enough products or run out of pages.
+        while (allProducts.length < desiredLimit && currentPageFetched < page + 5) { // Limit to fetching 5 extra pages to avoid long loads
+            const data = await fetchProductsFromApi(query, currentPageFetched, desiredLimit, filters);
 
-        const apiUrl = `${config.API_ENDPOINT}/products?${params.toString()}`;
-        console.log('🚀 Revenue-optimized search:', apiUrl);
-
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 15000); // 15s timeout
-
-        const res = await fetch(apiUrl, {
-            method: 'GET',
-            signal: controller.signal // Add signal for timeout
-            // No custom headers on GET to avoid preflight CORS
-        });
-
-        clearTimeout(timer);
-
-        // Track performance metrics
-        if (window.performanceMetrics) {
-            window.performanceMetrics.apiCalls++;
-            window.performanceMetrics.lastLoadMs = (Date.now() - startTime);
-            window.performanceMetrics.totalLoadTime += window.performanceMetrics.lastLoadMs;
-            updatePerformanceCards();
-        }
-
-        if (!res.ok) {
-            const errorText = await res.text();
-            let errorMessage = `API fetch failed (${res.status})`;
-            try {
-                const errorData = JSON.parse(errorText);
-                if (errorData.details) errorMessage += `: ${SecurityUtils.escapeHtml(errorData.details)}`;
-            } catch (e) {
-                if (errorText && errorText.length < 100) errorMessage += `: ${SecurityUtils.escapeHtml(errorText)}`;
+            if (!data || !data.products || data.products.length === 0) {
+                if (!initialData) initialData = data;
+                break; // No more products from the backend
             }
-            throw new Error(errorMessage);
-        }
-        
-        const data = await res.json();
-        if (data && data.error) {
-            throw new Error(data.error + (data.details ? `: ${SecurityUtils.escapeHtml(data.details)}` : ''));
+            
+            if (!initialData) initialData = data;
+            
+            // The map function also filters for USD products
+            const usdProducts = mapProductsDataToItems(data);
+            allProducts.push(...usdProducts);
+            
+            const totalPagesAvailable = data.total ? Math.ceil(data.total / desiredLimit) : currentPageFetched;
+            if (currentPageFetched >= totalPagesAvailable) {
+                break; // Reached the last available page
+            }
+            
+            currentPageFetched++;
         }
 
-        // SIMPLIFIED: Handle the new, flat data structure from the worker
-        cjProducts = mapProductsDataToItems(data);
+        cjProducts = allProducts;
         filteredPerfumes = [...cjProducts];
         
-        // Update total pages based on the new structure
-        totalPages = data.total ? Math.ceil(data.total / (limit || config.RESULTS_PER_PAGE)) : 1;
+        // Use total from the very first API call for consistency
+        totalResults = initialData.total || cjProducts.length;
+        totalPages = Math.ceil(totalResults / desiredLimit);
 
         // Display products and update UI
-        displayProducts(filteredPerfumes);
+        displayProducts(filteredPerfumes.slice(0, desiredLimit)); // Only display up to the limit
         displayPagination();
         populateBrandFilter();
 
         // Update search results info
         const searchResultsInfo = document.getElementById('search-results-info');
         if (searchResultsInfo) {
-            const total = data.total || cjProducts.length;
-            SecurityUtils.setInnerHTML(searchResultsInfo, `Showing ${cjProducts.length} of approximately ${total} results.`);
+            const displayedCount = Math.min(cjProducts.length, desiredLimit);
+            SecurityUtils.setInnerHTML(searchResultsInfo, `Showing ${displayedCount} of approximately ${totalResults} results.`);
             searchResultsInfo.style.display = 'block';
         }
 
-        return data;
+        return initialData; // Return original data for compatibility
 
     } catch (error) {
         console.error('CJ API fetch error:', error);
