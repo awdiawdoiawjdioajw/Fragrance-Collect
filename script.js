@@ -89,7 +89,13 @@ const config = {
     POPULAR_PICKS_LIMIT: 10, // New constant for popular picks
     TIKTOK_FINDS_LIMIT: 10, // New constant for TikTok finds
     PREFETCH_ENABLED: true,
-    DEFAULT_SEARCH_TERM: 'fragrance perfume' // The term to search on page load
+    DEFAULT_SEARCH_TERM: 'fragrance perfume', // The term to search on page load
+    FEATURED_FRAGRANCES: [
+        'Creed Green Irish Tweed',
+        'Tom Ford Ombré Leather',
+        'Chanel Coco Mademoiselle',
+        'Dior Sauvage'
+    ]
 };
 
 // Lightweight performance metrics for optional UI cards
@@ -574,13 +580,7 @@ function addEventListeners() {
             
             // Get the fragrance name from the card's h3 title
             const card = event.target.closest('.collection-card');
-            const fullTitle = card.querySelector('h3').textContent.trim();
-            
-            // Extract just the brand name (the first word)
-            const brandName = fullTitle.split(' ')[0];
-
-            // Construct the search query as "Brand perfume"
-            const searchQuery = `${brandName} perfume`;
+            const searchQuery = card.querySelector('h3').textContent.trim();
 
             // Reset all filters to default
             const priceRangeEl = document.getElementById('price-range');
@@ -1227,7 +1227,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initHamburgerMenu();
 
     // Load initial products for the main grid
-    const initialSearchTerm = getUrlParameter('q') || config.DEFAULT_SEARCH_TERM;
+    const randomFeatured = config.FEATURED_FRAGRANCES[Math.floor(Math.random() * config.FEATURED_FRAGRANCES.length)];
+    const initialSearchTerm = getUrlParameter('q') || randomFeatured;
     const searchInput = document.getElementById('main-search');
     if (searchInput) {
         searchInput.value = initialSearchTerm;
@@ -1254,14 +1255,8 @@ async function loadPopularPicks() {
     const grid = document.getElementById('popular-picks-grid');
     if (!grid) return;
 
-    // Dynamically pick a featured collection to display
-    const collectionCards = document.querySelectorAll('.collection-card h3');
-    let query = 'luxury perfume'; // Fallback query
-    if (collectionCards.length > 0) {
-        const randomIndex = Math.floor(Math.random() * collectionCards.length);
-        const brandName = collectionCards[randomIndex].textContent.trim().split(' ')[0];
-        query = `${brandName} perfume`;
-    }
+    // Dynamically pick one of the featured fragrances to display
+    const query = config.FEATURED_FRAGRANCES[Math.floor(Math.random() * config.FEATURED_FRAGRANCES.length)];
 
     try {
         const data = await loadCJProducts(query, 1, config.POPULAR_PICKS_LIMIT, { sortBy: 'trending' });
