@@ -77,6 +77,10 @@ let availableFeeds = [];
 let currentPage = 1;
 let totalPages = 1;
 
+const currencySymbols = {
+    USD: '$', EUR: '€', GBP: '£', CAD: 'C$', AUD: 'A$', JPY: '¥', CNY: '¥'
+};
+
 // Configuration
 const config = {
     API_ENDPOINT: 'https://weathered-mud-6ed5.joshuablaszczyk.workers.dev/api',
@@ -179,11 +183,6 @@ function mapProductsDataToItems(data) {
     if (!data || !Array.isArray(data.products)) return [];
     
     return data.products
-        .filter(p => {
-            // Filter out products that don't use USD currency
-            const currency = p.currency || 'USD';
-            return currency.toUpperCase() === 'USD';
-        })
         .map(p => ({
             id: SecurityUtils.escapeHtml(p.id || `cj_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`),
             name: SecurityUtils.escapeHtml(p.name || 'Unnamed Product'),
@@ -197,7 +196,7 @@ function mapProductsDataToItems(data) {
             advertiser: SecurityUtils.escapeHtml(p.advertiser || 'Unknown'),
             category: SecurityUtils.escapeHtml(p.category || 'Fragrance'),
             availability: 'In Stock',
-            currency: 'USD',
+            currency: SecurityUtils.escapeHtml(p.currency || 'USD'),
             isReal: true
         }));
 }
@@ -405,63 +404,76 @@ async function fetchProductsFromApi(query, page, limit, filters) {
 async function loadCJProducts(query = '', page = 1, limit = null, filters = {}) {
     const startTime = Date.now();
     showLoading();
-
+    
     try {
-        const desiredLimit = limit || config.RESULTS_PER_PAGE;
-        let currentPageFetched = page;
-        let allProducts = [];
-        let totalResults = 0;
-        let initialData;
+        const sortByEl = document.getElementById('sort-by-filter');
+        const sortBy = sortByEl ? sortByEl.value : 'revenue';
+        const params = new URLSearchParams({
+            q: query || '',
+            page: page.toString(),
+            limit: (limit || config.RESULTS_PER_PAGE).toString(),
+            sortBy: sortBy,
+            includeTikTok: 'true'
+        });
 
-        // Keep fetching pages until we have enough products or run out of pages.
-        while (allProducts.length < desiredLimit && currentPageFetched < page + 5) { // Limit to fetching 5 extra pages to avoid long loads
-            const data = await fetchProductsFromApi(query, currentPageFetched, desiredLimit, filters);
+        if (filters.lowPrice) params.append('lowPrice', filters.lowPrice.toString());
+        if (filters.highPrice) params.append('highPrice', filters.highPrice.toString());
+        if (filters.brand) params.append('brand', filters.brand);
+        if (filters.rating) params.append('rating', filters.rating.toString());
+        if (filters.partnerId) params.append('partnerId', filters.partnerId.toString());
 
-            if (!data || !data.products || data.products.length === 0) {
-                if (!initialData) initialData = data;
-                break; // No more products from the backend
+        const apiUrl = `${config.API_ENDPOINT}/products?${params.toString()}`;
+        console.log('🚀 API Search:', apiUrl);
+
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 15000);
+
+        const res = await fetch(apiUrl, {
+            method: 'GET',
+            signal: controller.signal
+        });
+
+        clearTimeout(timer);
+
+        if (!res.ok) {
+            const errorText = await res.text();
+            let errorMessage = `API fetch failed (${res.status})`;
+            try {
+                const errorData = JSON.parse(errorText);
+                if (errorData.details) errorMessage += `: ${SecurityUtils.escapeHtml(errorData.details)}`;
+            } catch (e) {
+                if (errorText && errorText.length < 100) errorMessage += `: ${SecurityUtils.escapeHtml(errorText)}`;
             }
-            
-            if (!initialData) initialData = data;
-            
-            // The map function also filters for USD products
-            const usdProducts = mapProductsDataToItems(data);
-            allProducts.push(...usdProducts);
-            
-            const totalPagesAvailable = data.total ? Math.ceil(data.total / desiredLimit) : currentPageFetched;
-            if (currentPageFetched >= totalPagesAvailable) {
-                break; // Reached the last available page
-            }
-            
-            currentPageFetched++;
+            throw new Error(errorMessage);
+        }
+        
+        const data = await res.json();
+        if (data && data.error) {
+            throw new Error(data.error + (data.details ? `: ${SecurityUtils.escapeHtml(data.details)}` : ''));
         }
 
-        cjProducts = allProducts;
+        cjProducts = mapProductsDataToItems(data);
         filteredPerfumes = [...cjProducts];
         
-        // Use total from the very first API call for consistency
-        totalResults = initialData.total || cjProducts.length;
-        totalPages = Math.ceil(totalResults / desiredLimit);
+        totalPages = data.total ? Math.ceil(data.total / (limit || config.RESULTS_PER_PAGE)) : 1;
 
-        // Display products and update UI
-        displayProducts(filteredPerfumes.slice(0, desiredLimit)); // Only display up to the limit
+        displayProducts(filteredPerfumes);
         displayPagination();
         populateBrandFilter();
 
-        // Update search results info
         const searchResultsInfo = document.getElementById('search-results-info');
         if (searchResultsInfo) {
-            const displayedCount = Math.min(cjProducts.length, desiredLimit);
-            SecurityUtils.setInnerHTML(searchResultsInfo, `Showing ${displayedCount} of approximately ${totalResults} results.`);
+            const total = data.total || cjProducts.length;
+            SecurityUtils.setInnerHTML(searchResultsInfo, `Showing ${cjProducts.length} of approximately ${total} results.`);
             searchResultsInfo.style.display = 'block';
         }
 
-        return initialData; // Return original data for compatibility
+        return data;
 
     } catch (error) {
         console.error('CJ API fetch error:', error);
         showStatusMessage(`Error: Could not fetch products. ${error.message}`, true);
-        return []; // Return empty array on failure
+        return [];
     } finally {
         hideLoading();
     }
@@ -523,6 +535,7 @@ function createProductCard(perfume) {
     const stars = generateStars(perfume.rating); // This will now be decorative
     const shipping = formatShipping(perfume);
     const displayPrice = perfume.price.toFixed(2);
+    const currencySymbol = currencySymbols[perfume.currency] || '$';
 
     return `
         <div class="product-card" data-id="${perfume.id}" data-brand="${perfume.brand.toLowerCase().replace(/\s+/g, '-')}" data-price="${perfume.price}" data-rating="${perfume.rating}">
@@ -536,7 +549,7 @@ function createProductCard(perfume) {
                     ${stars}
                     <span class="rating-number">${perfume.rating.toFixed(1)}</span>
                 </div>
-                <p class="product-price">$${displayPrice} USD</p>
+                <p class="product-price">${currencySymbol}${displayPrice} ${perfume.currency}</p>
             </div>
             <div class="product-meta">
                 <div class="product-shipping ${shipping.cls}">${shipping.text}</div>
@@ -1153,7 +1166,7 @@ async function prefetchSearchResult(query) {
 
     try {
         const settings = getPaginationSettings();
-        const data = await fetchCJProducts(query, 1, settings.pageSize);
+        const data = await loadCJProducts(query, 1, settings.pageSize);
 
         if (data.products && data.products.length > 0) {
             prefetchCache.set(query, data);
@@ -1453,7 +1466,10 @@ function showPerfumeDetails(perfume) {
         modalBrand.textContent = perfume.brand;
         modalRating.innerHTML = generateStars(perfume.rating) + ` <span class="rating-text">(${perfume.rating})</span>`;
         modalDescription.textContent = perfume.description || '';
-        modalPrice.textContent = `$${perfume.price.toFixed(2)} USD`;
+        
+        const currencySymbol = currencySymbols[perfume.currency] || '$';
+        modalPrice.textContent = `${currencySymbol}${perfume.price.toFixed(2)} ${perfume.currency}`;
+        
         if (modalBtn) {
             if (perfume.buyUrl) {
                 modalBtn.textContent = '✨ Visit Store & Shop Now ✨';
