@@ -343,20 +343,17 @@ async function applyFilters(isServerSide = false) {
         const priceFilter = document.getElementById('price-range');
         const brandFilter = document.getElementById('brand-filter');
         const shippingFilter = document.getElementById('shipping-filter');
-        const ratingFilter = document.getElementById('rating-filter');
         
         // Debug logging
         console.log('Filter elements found:', {
             priceFilter: !!priceFilter,
             brandFilter: !!brandFilter,
-            shippingFilter: !!shippingFilter,
-            ratingFilter: !!ratingFilter
+            shippingFilter: !!shippingFilter
         });
         
         currentFilters.priceRange = priceFilter ? priceFilter.value : '';
         currentFilters.brand = brandFilter ? brandFilter.value : '';
         currentFilters.shipping = shippingFilter ? shippingFilter.value : '';
-        currentFilters.rating = ratingFilter ? ratingFilter.value : '';
         
         // Server-side filters trigger a new data fetch from the worker
         if (isServerSide) {
@@ -456,7 +453,11 @@ async function fetchProductsFromApi(query = '', page = 1, limit = null, filters 
         return data;
 
     } catch (error) {
-        console.error('API fetch error:', error);
+        if (error.name === 'AbortError') {
+            console.log('Request was aborted (timeout or cancelled)');
+        } else {
+            console.error('API fetch error:', error);
+        }
         throw error; // Re-throw to be handled by the caller
     }
 }
@@ -619,7 +620,6 @@ function populateBrandFilter() {
 function addEventListeners() {
     // Filter event listeners
     const priceFilter = document.getElementById('price-range');
-    const ratingFilter = document.getElementById('rating-filter');
     const shippingFilter = document.getElementById('shipping-filter');
     const clearFiltersBtn = document.getElementById('clear-filters');
     const mainSearch = document.getElementById('main-search');
@@ -644,25 +644,9 @@ function addEventListeners() {
         shippingFilter.addEventListener('change', () => applyFilters(false));
     }
 
-    if (sortByFilter) {
-        // Sorting should trigger a new server-side request
-        sortByFilter.addEventListener('change', () => applyFilters(true));
-    }
+
     
-    if (clearFiltersBtn) {
-        clearFiltersBtn.addEventListener('click', () => {
-            // Reset dropdown filters
-            document.getElementById('sort-by-filter').value = 'revenue'; // Changed from sort-by to sort-by-filter
-            document.getElementById('price-range').value = 'all';
-            document.getElementById('shipping-filter').value = 'all';
-            document.getElementById('rating-filter').value = 'all';
-            document.getElementById('brand-filter').value = '';
-            
-            // Reset search input to default and perform a new search
-            mainSearch.value = config.DEFAULT_SEARCH_TERM;
-            document.getElementById('search-form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
-        });
-    }
+
 
     if (searchBtn) {
         searchBtn.addEventListener('click', (e) => {
@@ -1010,12 +994,10 @@ if (!Element.prototype.matches) {
 // Initialize dropdowns to default values
 function initializeDropdowns() {
     const priceFilter = document.getElementById('price-range');
-    const ratingFilter = document.getElementById('rating-filter');
     const shippingFilter = document.getElementById('shipping-filter');
     const sortByFilter = document.getElementById('sort-by-filter');
 
     if (priceFilter) priceFilter.value = 'all';
-    if (ratingFilter) ratingFilter.value = 'all';
     if (shippingFilter) shippingFilter.value = 'all';
     if (sortByFilter) sortByFilter.value = 'revenue';
 }
