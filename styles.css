@@ -2482,7 +2482,7 @@ select option {
 .product-card .favorite-btn {
     position: absolute;
     top: 10px;
-    right: 10px;
+    left: 10px;
     background: none;
     border: none;
     color: var(--warm-white);

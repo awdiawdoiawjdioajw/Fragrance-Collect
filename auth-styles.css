@@ -418,9 +418,11 @@
 
 .social-buttons {
     display: flex;
+    flex-direction: column; /* Stack buttons vertically */
     justify-content: center;
     gap: 1rem;
     margin-top: 1rem;
+    width: 100%; /* Ensure the container takes full width */
 }
 
 /* --- Style container for Google button to influence its size --- */
@@ -435,6 +437,9 @@
 .social-buttons .g_id_signin > div {
     width: 100% !important;
     min-height: 50px;
+    display: flex;       /* Use flexbox to center the button content */
+    justify-content: center; /* Center horizontally */
+    align-items: center;     /* Center vertically */
 }
 
 .social-buttons iframe {
