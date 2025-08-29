@@ -2472,6 +2472,21 @@ select option {
     box-shadow: 0 4px 12px rgba(201, 166, 70, 0.2);
 }
 
+.nav-menu .nav-button {
+    background: none;
+    border: none;
+    color: var(--warm-white);
+    font-family: inherit;
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.nav-menu .nav-button:hover {
+    color: var(--antique-gold);
+}
+
 .product-card .price {
     font-size: 1.1rem;
     font-weight: bold;

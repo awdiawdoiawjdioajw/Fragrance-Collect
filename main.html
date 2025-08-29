@@ -42,11 +42,11 @@
                 
                 <!-- Navigation menu in center -->
                 <ul class="nav-menu">
-                    <li><a href="#home" class="nav-link">Home</a></li>
-                    <li id="favorites-nav-link" style="display: none;"><a href="#favorites" class="nav-link">Favorites</a></li>
+                    <li><a href="#home" class="nav-link home-link">Home</a></li>
+                    <li id="favorites-nav-link" style="display: none;"><button id="favorites-btn" class="nav-button">Favorites</button></li>
                     <li><a href="#collections" class="nav-link">Collections</a></li>
                     <li><a href="#top-rated" class="nav-link">Top Rated</a></li>
-                    <li><a href="#shop" class="nav-link">Shop</a></li>
+                    <li><a href="#shop" class="nav-link shop-link">Shop</a></li>
                 </ul>
             </div>
             
@@ -133,145 +133,148 @@
         </div>
     </section>
 
-    <!-- Filter Section -->
-    <section class="filter-section" id="filter">
-        <div class="container">
-            <div class="filter-controls">
-                <!-- Search Bar -->
-                <div class="search-bar main-search-bar">
-                    <input type="text" id="main-search" placeholder="Search for a fragrance...">
-                    <button id="search-btn"><i class="fas fa-search"></i></button>
-                </div>
-                <!-- Filter Dropdowns -->
-                <div class="filter-dropdowns">
-                    <select id="brand-filter">
-                        <option value="">All Brands</option>
-                    </select>
-                    <select id="price-filter">
-                        <option value="">All Prices</option>
-                        <option value="0-50">$0 - $50</option>
-                        <option value="50-100">$50 - $100</option>
-                        <option value="100-200">$100 - $200</option>
-                        <option value="200+">$200+</option>
-                    </select>
+    <!-- Main Content Wrapper -->
+    <div class="main-content">
+        <!-- Filter Section -->
+        <section class="filter-section" id="filter">
+            <div class="container">
+                <div class="filter-controls">
+                    <!-- Search Bar -->
+                    <div class="search-bar main-search-bar">
+                        <input type="text" id="main-search" placeholder="Search for a fragrance...">
+                        <button id="search-btn"><i class="fas fa-search"></i></button>
+                    </div>
+                    <!-- Filter Dropdowns -->
+                    <div class="filter-dropdowns">
+                        <select id="brand-filter">
+                            <option value="">All Brands</option>
+                        </select>
+                        <select id="price-filter">
+                            <option value="">All Prices</option>
+                            <option value="0-50">$0 - $50</option>
+                            <option value="50-100">$50 - $100</option>
+                            <option value="100-200">$100 - $200</option>
+                            <option value="200+">$200+</option>
+                        </select>
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- Brands Section -->
-    <section id="brands" class="brands-section">
-        <div class="container">
-            <h2 class="section-title">Featured Brands</h2>
-            <div class="brand-logos">
-                <div class="brand-logo">
-                    <img src="Creed_ING.jpg" alt="Creed">
-                </div>
-                <div class="brand-logo">
-                    <img src="Tom Ford_IMG.jpg" alt="Tom Ford">
-                </div>
-                <div class="brand-logo">
-                    <img src="Dior_IMG.jpg" alt="Dior">
-                </div>
-                <div class="brand-logo">
-                    <img src="Chanel_IMG.jpg" alt="Chanel">
+        <!-- Brands Section -->
+        <section id="brands" class="brands-section">
+            <div class="container">
+                <h2 class="section-title">Featured Brands</h2>
+                <div class="brand-logos">
+                    <div class="brand-logo">
+                        <img src="Creed_ING.jpg" alt="Creed">
+                    </div>
+                    <div class="brand-logo">
+                        <img src="Tom Ford_IMG.jpg" alt="Tom Ford">
+                    </div>
+                    <div class="brand-logo">
+                        <img src="Dior_IMG.jpg" alt="Dior">
+                    </div>
+                    <div class="brand-logo">
+                        <img src="Chanel_IMG.jpg" alt="Chanel">
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- Featured Products -->
-    <section class="products-section" id="shop">
-        <div class="container">
-            <h2 class="section-title">Featured Fragrances</h2>
-            <div class="search-results-info" id="search-results-info" style="display: none;">
-                <!-- Search results count will be displayed here -->
+        <!-- Featured Products -->
+        <section id="shop" class="products-section">
+            <div class="container">
+                <h2 class="section-title">Featured Fragrances</h2>
+                <div class="search-results-info" id="search-results-info" style="display: none;">
+                    <!-- Search results count will be displayed here -->
+                </div>
+                
+                <!-- Revenue Metrics Container -->
+                <div id="revenue-metrics" style="display: none;">
+                    <!-- Revenue metrics will be dynamically loaded here -->
+                </div>
+                
+                <div id="products-grid" class="products-grid">
+                    <!-- Product cards will be injected here -->
+                </div>
+                <div id="pagination-container" class="pagination-container"></div>
+                <div id="no-results" style="display:none; text-align: center; margin-top: 50px;">
+                    <h2>No products found</h2>
+                    <p>Try adjusting your filters or search terms.</p>
+                </div>
             </div>
-            
-            <!-- Revenue Metrics Container -->
-            <div id="revenue-metrics" style="display: none;">
-                <!-- Revenue metrics will be dynamically loaded here -->
-            </div>
-            
-            <div id="products-grid" class="products-grid">
-                <!-- Product cards will be injected here -->
-            </div>
-            <div id="pagination-container" class="pagination-container"></div>
-            <div id="no-results" style="display:none; text-align: center; margin-top: 50px;">
-                <h2>No products found</h2>
-                <p>Try adjusting your filters or search terms.</p>
-            </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- Top Rated Section -->
-    <section class="top-rated-section" id="top-rated">
-        <div class="container">
-            <h2 class="section-title">Popular Picks</h2>
-            <div class="products-grid" id="top-rated-grid">
-                <!-- Top rated products will be dynamically loaded here -->
+        <!-- Top Rated Section -->
+        <section id="top-rated" class="top-rated-section">
+            <div class="container">
+                <h2 class="section-title">Popular Picks</h2>
+                <div class="products-grid" id="top-rated-grid">
+                    <!-- Top rated products will be dynamically loaded here -->
+                </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- TikTok Shop Section -->
-    <section class="tiktok-section" id="tiktok-shop">
-        <div class="container">
-            <h2 class="section-title">Viral TikTok Finds</h2>
-            <div class="products-grid" id="tiktok-products-grid">
-                <!-- TikTok Shop products will be dynamically loaded here -->
+        <!-- TikTok Shop Section -->
+        <section id="tiktok-shop" class="tiktok-section">
+            <div class="container">
+                <h2 class="section-title">Viral TikTok Finds</h2>
+                <div class="products-grid" id="tiktok-products-grid">
+                    <!-- TikTok Shop products will be dynamically loaded here -->
+                </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- Featured Collections -->
-    <section class="collections-section" id="collections">
-        <div class="container">
-            <h2 class="section-title">Featured Collections</h2>
-            <div class="collections-scroll">
-                <div class="collection-card" data-brand="Creed">
-                    <div class="collection-image">
-                        <img src="Creed_ING.jpg" alt="Creed Green Irish Tweed">
+        <!-- Featured Collections -->
+        <section id="collections" class="collections-section">
+            <div class="container">
+                <h2 class="section-title">Featured Collections</h2>
+                <div class="collections-scroll">
+                    <div class="collection-card" data-brand="Creed">
+                        <div class="collection-image">
+                            <img src="Creed_ING.jpg" alt="Creed Green Irish Tweed">
+                        </div>
+                        <div class="collection-content">
+                            <h3>Creed Green Irish Tweed</h3>
+                            <p>A timeless classic for the confident individual.</p>
+                            <a href="#" class="collection-btn">View Collection</a>
+                        </div>
                     </div>
-                    <div class="collection-content">
-                        <h3>Creed Green Irish Tweed</h3>
-                        <p>A timeless classic for the confident individual.</p>
-                        <a href="#" class="collection-btn">View Collection</a>
+                    <div class="collection-card" data-brand="Tom Ford">
+                        <div class="collection-image">
+                            <img src="Tom Ford_IMG.jpg" alt="Tom Ford Ombré Leather">
+                        </div>
+                        <div class="collection-content">
+                            <h3>Tom Ford Ombré Leather</h3>
+                            <p>Bold, sensual, and undeniably luxurious.</p>
+                            <a href="#" class="collection-btn">View Collection</a>
+                        </div>
                     </div>
-                </div>
-                <div class="collection-card" data-brand="Tom Ford">
-                    <div class="collection-image">
-                        <img src="Tom Ford_IMG.jpg" alt="Tom Ford Ombré Leather">
+                    <div class="collection-card" data-brand="Dior">
+                        <div class="collection-image">
+                            <img src="Dior_IMG.jpg" alt="Dior Sauvage">
+                        </div>
+                        <div class="collection-content">
+                            <h3>Dior Sauvage</h3>
+                            <p>A powerful and fresh statement of masculinity.</p>
+                            <a href="#" class="collection-btn">View Collection</a>
+                        </div>
                     </div>
-                    <div class="collection-content">
-                        <h3>Tom Ford Ombré Leather</h3>
-                        <p>Bold, sensual, and undeniably luxurious.</p>
-                        <a href="#" class="collection-btn">View Collection</a>
-                    </div>
-                </div>
-                <div class="collection-card" data-brand="Dior">
-                    <div class="collection-image">
-                        <img src="Dior_IMG.jpg" alt="Dior Sauvage">
-                    </div>
-                    <div class="collection-content">
-                        <h3>Dior Sauvage</h3>
-                        <p>A powerful and fresh statement of masculinity.</p>
-                        <a href="#" class="collection-btn">View Collection</a>
-                    </div>
-                </div>
-                <div class="collection-card" data-brand="Chanel">
-                    <div class="collection-image">
-                        <img src="Chanel_IMG.jpg" alt="Chanel Coco Mademoiselle">
-                    </div>
-                    <div class="collection-content">
-                        <h3>Chanel Coco Mademoiselle</h3>
-                        <p>The essence of a free and captivating woman.</p>
-                        <a href="#" class="collection-btn">View Collection</a>
+                    <div class="collection-card" data-brand="Chanel">
+                        <div class="collection-image">
+                            <img src="Chanel_IMG.jpg" alt="Chanel Coco Mademoiselle">
+                        </div>
+                        <div class="collection-content">
+                            <h3>Chanel Coco Mademoiselle</h3>
+                            <p>The essence of a free and captivating woman.</p>
+                            <a href="#" class="collection-btn">View Collection</a>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
+    </div>
 
     <!-- Footer -->
     <footer class="footer">

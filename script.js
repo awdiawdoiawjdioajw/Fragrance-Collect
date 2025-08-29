@@ -108,7 +108,12 @@ const authUI = {
     favoritesNavLink: document.getElementById('favorites-nav-link'),
     favoritesSection: document.getElementById('favorites'),
     favoritesGrid: document.getElementById('favorites-grid'),
-    favoritesEmptyState: document.getElementById('favorites-empty-state')
+    favoritesEmptyState: document.getElementById('favorites-empty-state'),
+    // Main content sections to hide when showing favorites
+    mainContentSections: document.querySelectorAll('.main-content'),
+    favoritesBtn: document.getElementById('favorites-btn'),
+    homeLinks: document.querySelectorAll('.home-link'),
+    shopLinks: document.querySelectorAll('.shop-link')
 };
 
 async function checkUserStatus() {
@@ -174,6 +179,19 @@ document.addEventListener('DOMContentLoaded', () => {
             handleLogout();
         });
     }
+
+    if (authUI.favoritesBtn) {
+        authUI.favoritesBtn.addEventListener('click', () => {
+            showFavoritesView();
+        });
+    }
+
+    const restoreMainViewLinks = [...authUI.homeLinks, ...authUI.shopLinks];
+    restoreMainViewLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            showMainContentView();
+        });
+    });
 
     // Initialize the application
     initModal();
@@ -1466,8 +1484,26 @@ async function toggleFavorite(button, perfume) {
     }
 }
 
+function showFavoritesView() {
+    authUI.mainContentSections.forEach(section => {
+        section.style.display = 'none';
+    });
+    authUI.favoritesSection.style.display = 'block';
+    loadUserFavorites(); // Ensure favorites are loaded
+}
+
+function showMainContentView() {
+    authUI.mainContentSections.forEach(section => {
+        section.style.display = 'block';
+    });
+    authUI.favoritesSection.style.display = 'none';
+}
+
 async function loadUserFavorites() {
-    if (authUI.favoritesSection) authUI.favoritesSection.style.display = 'block';
+    if (authUI.favoritesSection.style.display === 'none') {
+        // Don't load favorites if the section isn't visible, unless toggling it on
+        return;
+    }
 
     try {
         const response = await fetch('/api/user/favorites');
