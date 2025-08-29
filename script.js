@@ -193,6 +193,31 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Add event listeners for filter controls
+    const clearFiltersBtn = document.getElementById('clear-filters');
+    const sortByFilter = document.getElementById('sort-by-filter');
+    const priceRangeFilter = document.getElementById('price-range');
+    const shippingFilter = document.getElementById('shipping-filter');
+
+    if (clearFiltersBtn) {
+        clearFiltersBtn.addEventListener('click', clearAllFilters);
+    }
+
+    if (sortByFilter) {
+        sortByFilter.addEventListener('change', () => {
+            // Sort the currently displayed products
+            sortProducts(filteredPerfumes);
+        });
+    }
+
+    if (priceRangeFilter) {
+        priceRangeFilter.addEventListener('change', applyFilters);
+    }
+
+    if (shippingFilter) {
+        shippingFilter.addEventListener('change', applyFilters);
+    }
+
     // Initialize the application
     initModal();
     checkMobileMenu();
@@ -296,6 +321,22 @@ function mapProductsDataToItems(data) {
 }
 
 // Apply filters and sorting from UI controls
+function clearAllFilters() {
+    // Reset all filter dropdowns to their default values
+    const sortByFilter = document.getElementById('sort-by-filter');
+    const priceRangeFilter = document.getElementById('price-range');
+    const shippingFilter = document.getElementById('shipping-filter');
+    const searchInput = document.getElementById('main-search');
+
+    if (sortByFilter) sortByFilter.value = 'revenue';
+    if (priceRangeFilter) priceRangeFilter.value = 'all';
+    if (shippingFilter) shippingFilter.value = 'all';
+    if (searchInput) searchInput.value = '';
+
+    // Apply the cleared filters
+    applyFilters();
+}
+
 async function applyFilters(isServerSide = false) {
     try {
         // Get all filter values from the UI (safely handle missing elements)
