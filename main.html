@@ -135,52 +135,69 @@
 
     <!-- Main Content Wrapper -->
     <div class="main-content">
-        <!-- Filter Section -->
-        <section class="filter-section" id="filter">
-            <div class="container">
-                <div class="filter-controls">
-                    <!-- Search Bar -->
-                    <div class="search-bar main-search-bar">
-                        <input type="text" id="main-search" placeholder="Search for a fragrance...">
-                        <button id="search-btn"><i class="fas fa-search"></i></button>
-                    </div>
-                    <!-- Filter Dropdowns -->
-                    <div class="filter-dropdowns">
-                        <select id="brand-filter">
-                            <option value="">All Brands</option>
-                        </select>
-                        <select id="price-filter">
-                            <option value="">All Prices</option>
-                            <option value="0-50">$0 - $50</option>
-                            <option value="50-100">$50 - $100</option>
-                            <option value="100-200">$100 - $200</option>
-                            <option value="200+">$200+</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-        </section>
+                 <!-- Filter Section -->
+         <section class="filter-section" id="filter">
+             <div class="container">
+                 <div class="filter-container">
+                     <!-- Sort By -->
+                     <div class="filter-group">
+                         <label for="sort-by-filter" class="filter-label">Sort By</label>
+                         <select id="sort-by-filter" class="sort-select dropdown-toggle">
+                             <option value="revenue">Best Match</option>
+                             <option value="price_low">Price: Low to High</option>
+                             <option value="price_high">Price: High to Low</option>
+                             <option value="trending">Trending</option>
+                             <option value="relevance">Relevance</option>
+                         </select>
+                     </div>
 
-        <!-- Brands Section -->
-        <section id="brands" class="brands-section">
-            <div class="container">
-                <h2 class="section-title">Featured Brands</h2>
-                <div class="brand-logos">
-                    <div class="brand-logo">
-                        <img src="Creed_ING.jpg" alt="Creed">
-                    </div>
-                    <div class="brand-logo">
-                        <img src="Tom Ford_IMG.jpg" alt="Tom Ford">
-                    </div>
-                    <div class="brand-logo">
-                        <img src="Dior_IMG.jpg" alt="Dior">
-                    </div>
-                    <div class="brand-logo">
-                        <img src="Chanel_IMG.jpg" alt="Chanel">
-                    </div>
-                </div>
-            </div>
-        </section>
+                     <!-- Price Range -->
+                     <div class="filter-group">
+                         <label for="price-range" class="filter-label">Price Range</label>
+                         <select id="price-range" class="dropdown-toggle">
+                             <option value="all">All Prices</option>
+                             <option value="0-50">$0 - $50</option>
+                             <option value="50-100">$50 - $100</option>
+                             <option value="100-200">$100 - $200</option>
+                             <option value="200+">$200+</option>
+                         </select>
+                     </div>
+
+                     <!-- Shipping -->
+                     <div class="filter-group">
+                         <label for="shipping-filter" class="filter-label">Shipping</label>
+                         <select id="shipping-filter" class="dropdown-toggle">
+                             <option value="all">All Shipping</option>
+                             <option value="free">Free Shipping</option>
+                         </select>
+                     </div>
+
+                     <!-- Clear Filters -->
+                     <div class="filter-group">
+                         <button id="clear-filters" class="btn-secondary">Clear Filters</button>
+                     </div>
+                     
+                     <!-- Centered Search Container -->
+                     <div class="search-container">
+                         <input type="text" placeholder="Search fragrances..." class="search-input" id="main-search">
+                         <button class="search-btn" aria-label="Search">
+                             <i class="fas fa-search"></i>
+                         </button>
+                         <button class="clear-search-btn" id="clear-search" style="display: none;" aria-label="Clear search">
+                             <i class="fas fa-times"></i>
+                         </button>
+                     </div>
+                 </div>
+             </div>
+         </section>
+
+                 <!-- Brands Section -->
+         <section id="brands" class="brands-section">
+             <div class="container">
+                 <h2 class="section-title">Featured Brands</h2>
+                 <!-- Brand images removed as requested -->
+             </div>
+         </section>
 
         <!-- Featured Products -->
         <section id="shop" class="products-section">
