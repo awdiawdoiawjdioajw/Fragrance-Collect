@@ -298,25 +298,29 @@ function initializeGoogleSignIn() {
 }
 
 
-/**
- * Sets up event listeners for the page.
- */
-function setupEventListeners() {
-    // Tab switching
-    ui.authTabs.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const targetTab = btn.getAttribute('data-tab');
+// --- EVENT LISTENERS ---
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Check user status on page load
+    checkUserStatus();
+
+    // Tab switching logic
+    ui.authTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const activeTab = tab.dataset.tab;
             
-            ui.authTabs.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+            // Update active button state
+            ui.authTabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
             
+            // Show the correct form
             ui.authForms.forEach(form => {
-                form.classList.remove('active');
-                if (form.id === `${targetTab}-form`) {
+                if (form.id === `${activeTab}-form`) {
                     form.classList.add('active');
+                } else {
+                    form.classList.remove('active');
                 }
             });
-            ui.tabsContainer.setAttribute('data-active-tab', targetTab);
         });
     });
 
@@ -324,25 +328,64 @@ function setupEventListeners() {
     if (ui.logoutButton) {
         ui.logoutButton.addEventListener('click', logout);
     }
-
-    // Email Sign Up Form
-    if (ui.signupForm) {
-        ui.signupForm.addEventListener('submit', handleEmailSignup);
-    }
-
-    // Email Sign In Form
-    if (ui.signinForm) {
-        ui.signinForm.addEventListener('submit', handleEmailLogin);
-    }
-}
-
-
-// --- PAGE LOAD ---
-document.addEventListener('DOMContentLoaded', () => {
-    setupEventListeners();
-    checkUserStatus(); // Check if user is already logged in
     
-    // The Google script is loaded with 'async defer', so we can initialize it here.
-    // The `g_id_onload` div in the HTML also helps ensure it's ready.
-    initializeGoogleSignIn(); 
+    // --- Email/Password Form Submission ---
+    if (ui.signinForm) {
+        ui.signinForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = ui.signinEmail.value;
+            const password = ui.signinPassword.value;
+            
+            showStatus('Signing in...');
+            try {
+                const res = await fetch(`${WORKER_URL}/login/email`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password }),
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    showStatus('Login successful!');
+                    updateUI(data.user);
+                } else {
+                    throw new Error(data.error || 'Failed to sign in.');
+                }
+            } catch (error) {
+                showStatus(error.message, true);
+            }
+        });
+    }
+
+    if (ui.signupForm) {
+        ui.signupForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = ui.signupName.value;
+            const email = ui.signupEmail.value;
+            const password = ui.signupPassword.value;
+            const confirmPassword = ui.signupConfirmPassword.value;
+
+            if (password !== confirmPassword) {
+                showStatus('Passwords do not match.', true);
+                return;
+            }
+
+            showStatus('Creating account...');
+            try {
+                const res = await fetch(`${WORKER_URL}/signup/email`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, password }),
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    showStatus('Account created successfully!');
+                    updateUI(data.user);
+                } else {
+                    throw new Error(data.error || 'Failed to sign up.');
+                }
+            } catch (error) {
+                showStatus(error.message, true);
+            }
+        });
+    }
 }); 

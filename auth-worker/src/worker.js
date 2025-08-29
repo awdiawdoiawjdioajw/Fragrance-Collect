@@ -309,13 +309,13 @@ async function handleEmailSignup(request, env) {
         }
         
         // Hash the password
-        const { salt, hash } = await hashPassword(password);
+        const passwordHash = await sha512(password);
         const userId = crypto.randomUUID();
 
         // Store the new user
         await env.DB.prepare(
-            `INSERT INTO users (id, name, email, salt, password_hash) VALUES (?, ?, ?, ?, ?)`
-        ).bind(userId, name, email, salt, hash).run();
+            `INSERT INTO users (id, name, email, password_hash) VALUES (?, ?, ?, ?)`
+        ).bind(userId, name, email, passwordHash).run();
         
         // Create a session for the new user
         const sessionId = crypto.randomUUID();
@@ -350,12 +350,23 @@ async function handleEmailLogin(request, env) {
         }
 
         const user = await env.DB.prepare('SELECT * FROM users WHERE email = ?').bind(email).first();
-        if (!user || !user.password_hash || !user.salt) {
+        if (!user || !user.password_hash) {
             return jsonResponse({ error: 'Invalid email or password.' }, 401, headers);
         }
         
-        const isValid = await verifyPassword(password, user.salt, user.password_hash);
-        if (!isValid) {
+        const passwordHash = await sha512(password);
+        
+        // Constant-time comparison to prevent timing attacks
+        if (passwordHash.length !== user.password_hash.length) {
+          return jsonResponse({ error: 'Invalid email or password.' }, 401, headers);
+        }
+
+        let diff = 0;
+        for (let i = 0; i < passwordHash.length; i++) {
+            diff |= passwordHash.charCodeAt(i) ^ user.password_hash.charCodeAt(i);
+        }
+
+        if (diff !== 0) {
             return jsonResponse({ error: 'Invalid email or password.' }, 401, headers);
         }
 
@@ -380,81 +391,20 @@ async function handleEmailLogin(request, env) {
 
 // --- Password Hashing Utilities ---
 
-const PBKDF2_ITERATIONS = 100000;
-const SALT_LENGTH = 16;
-const HASH_ALGORITHM = 'SHA-256';
-
 /**
- * Generates a salt and hashes a password.
- * @param {string} password - The password to hash.
- * @returns {Promise<{salt: string, hash: string}>}
+ * Hashes a string using SHA-512.
+ * @param {string} str The string to hash.
+ * @returns {Promise<string>} The hex-encoded hash.
  */
-async function hashPassword(password) {
-    const salt = crypto.getRandomValues(new Uint8Array(SALT_LENGTH));
-    const key = await crypto.subtle.importKey(
-        'raw',
-        new TextEncoder().encode(password),
-        { name: 'PBKDF2' },
-        false,
-        ['deriveBits']
-    );
-    const hashBuffer = await crypto.subtle.deriveBits(
-        {
-            name: 'PBKDF2',
-            salt: salt,
-            iterations: PBKDF2_ITERATIONS,
-            hash: HASH_ALGORITHM,
-        },
-        key,
-        256
-    );
-
-    return {
-        salt: Array.from(salt).map(b => b.toString(16).padStart(2, '0')).join(''),
-        hash: Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join(''),
-    };
+async function sha512(str) {
+  const buffer = await crypto.subtle.digest(
+    'SHA-512',
+    new TextEncoder().encode(str)
+  );
+  const hashArray = Array.from(new Uint8Array(buffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex;
 }
-
-/**
- * Verifies a password against a salt and hash.
- * @param {string} password - The password to verify.
- * @param {string} saltHex - The salt (hex).
- * @param {string} hashHex - The hash to compare against (hex).
- * @returns {Promise<boolean>}
- */
-async function verifyPassword(password, saltHex, hashHex) {
-    const salt = new Uint8Array(saltHex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
-    const key = await crypto.subtle.importKey(
-        'raw',
-        new TextEncoder().encode(password),
-        { name: 'PBKDF2' },
-        false,
-        ['deriveBits']
-    );
-    const hashBuffer = await crypto.subtle.deriveBits(
-        {
-            name: 'PBKDF2',
-            salt: salt,
-            iterations: PBKDF2_ITERATIONS,
-            hash: HASH_ALGORITHM,
-        },
-        key,
-        256
-    );
-    
-    const newHashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
-    
-    // Constant-time comparison to prevent timing attacks
-    if (newHashHex.length !== hashHex.length) {
-        return false;
-    }
-    let diff = 0;
-    for (let i = 0; i < newHashHex.length; i++) {
-        diff |= newHashHex.charCodeAt(i) ^ hashHex.charCodeAt(i);
-    }
-    return diff === 0;
-}
-
 
 // --- Utility Functions ---
 
