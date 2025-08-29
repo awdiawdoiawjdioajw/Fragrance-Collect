@@ -223,12 +223,17 @@ async function handleLogin(request, env) {
     // 5. Set the session token in a secure, HttpOnly cookie
     headers['Set-Cookie'] = `session_token=${token}; Expires=${expiresAt.toUTCString()}; Path=/; HttpOnly; Secure; SameSite=Strict`;
     
-    // 6. Redirect the user back to the auth page. The browser will have the cookie.
+    // 6. Redirect the user back to the auth page with success status and user's first name.
+    const firstName = name.split(' ')[0];
+    const successRedirectUrl = new URL(redirectUrl);
+    successRedirectUrl.searchParams.set('status', 'success');
+    successRedirectUrl.searchParams.set('name', firstName);
+
     return new Response(null, {
         status: 302,
         headers: {
             ...headers,
-            'Location': redirectUrl,
+            'Location': successRedirectUrl.toString(),
         }
     });
 
@@ -406,10 +411,22 @@ async function handleEmailLogin(request, env) {
 
         headers['Set-Cookie'] = `session_token=${token}; Expires=${expiresAt.toUTCString()}; Path=/; HttpOnly; Secure; SameSite=Strict`;
         
-        return jsonResponse({ success: true, user: { id: user.id, name: user.name, email: user.email, picture: user.picture } }, 200, headers);
+        // Redirect the user back to the auth page with success status and user's first name.
+        const firstName = user.name.split(' ')[0];
+        const successRedirectUrl = new URL(redirectUrl);
+        successRedirectUrl.searchParams.set('status', 'success');
+        successRedirectUrl.searchParams.set('name', firstName);
+
+        return new Response(null, {
+            status: 302,
+            headers: {
+                ...headers,
+                'Location': successRedirectUrl.toString(),
+            }
+        });
 
     } catch (error) {
-        console.error('Error during email login:', error);
+        console.error('Error during email login:', error.message);
         return jsonResponse({ error: 'Login failed.', details: error.message }, 500, headers);
     }
 }

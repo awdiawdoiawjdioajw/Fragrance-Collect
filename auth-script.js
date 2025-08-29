@@ -304,6 +304,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Check user status on page load
     checkUserStatus();
 
+    // Handle post-login redirect messages
+    handlePostLogin();
+
     // Tab switching logic
     ui.authTabs.forEach(tab => {
         tab.addEventListener('click', () => {
@@ -388,4 +391,26 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-}); 
+});
+
+/**
+ * Checks for URL parameters on page load to show success messages
+ * and then redirects to the main page.
+ */
+function handlePostLogin() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const status = urlParams.get('status');
+    const name = urlParams.get('name');
+
+    if (status === 'success' && name) {
+        showStatus(`Welcome, ${name}! Redirecting you now...`);
+        
+        // Update the UI immediately for a smoother experience
+        checkUserStatus();
+
+        // Redirect to the main page after a short delay
+        setTimeout(() => {
+            window.location.href = 'main.html';
+        }, 2500); // 2.5-second delay
+    }
+} 
