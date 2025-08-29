@@ -635,10 +635,6 @@ function addEventListeners() {
     if (brandFilter) {
         brandFilter.addEventListener('change', () => applyFilters(true));
     }
-    
-    if (ratingFilter) {
-        ratingFilter.addEventListener('change', () => applyFilters(false));
-    }
 
     if (shippingFilter) {
         shippingFilter.addEventListener('change', () => applyFilters(false));
@@ -662,12 +658,11 @@ function addEventListeners() {
     }
     
     if (mainSearch) {
+        
         // Remove input event listener to disable search-as-you-type
         // mainSearch.addEventListener('input', (e) => {
         //     debouncedSearch(e.target.value);
         // });
-
-        // Add Enter key support for search
         mainSearch.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
