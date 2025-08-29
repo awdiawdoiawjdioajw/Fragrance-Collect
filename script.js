@@ -331,10 +331,10 @@ function clearAllFilters() {
     if (sortByFilter) sortByFilter.value = 'revenue';
     if (priceRangeFilter) priceRangeFilter.value = 'all';
     if (shippingFilter) shippingFilter.value = 'all';
-    if (searchInput) searchInput.value = '';
+    if (searchInput) searchInput.value = config.DEFAULT_SEARCH_TERM;
 
-    // Apply the cleared filters
-    applyFilters();
+    // Perform search with default term
+    performSearch(config.DEFAULT_SEARCH_TERM);
 }
 
 async function applyFilters(isServerSide = false) {
