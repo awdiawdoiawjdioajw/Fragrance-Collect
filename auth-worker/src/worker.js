@@ -169,11 +169,23 @@ function verifyClaims(payload, audience) {
  * Handles user login after Google JWT verification and creates a secure session.
  */
 async function handleLogin(request, env) {
-  const origin = request.headers.get('Origin');
-  const headers = getSecurityHeaders(origin);
+  const headers = getSecurityHeaders(env.ALLOWED_ORIGIN || 'https://fragrancecollect.com');
+  const redirectUrl = `${env.ALLOWED_ORIGIN || 'https://fragrancecollect.com'}/auth.html`;
 
   try {
-    const { credential } = await request.json();
+    const contentType = request.headers.get('content-type') || '';
+    let credential;
+
+    if (contentType.includes('application/json')) {
+        // Handles calls from the frontend if needed
+        const body = await request.json();
+        credential = body.credential;
+    } else if (contentType.includes('application/x-www-form-urlencoded')) {
+        // Handles the redirect POST from Google
+        const formData = await request.formData();
+        credential = formData.get('credential');
+    }
+
     if (!credential) {
         return jsonResponse({ error: 'Google credential is required' }, 400, headers);
     }
@@ -211,11 +223,25 @@ async function handleLogin(request, env) {
     // 5. Set the session token in a secure, HttpOnly cookie
     headers['Set-Cookie'] = `session_token=${token}; Expires=${expiresAt.toUTCString()}; Path=/; HttpOnly; Secure; SameSite=Strict`;
     
-    return jsonResponse({ success: true, user: { id, email, name, picture } }, 200, headers);
+    // 6. Redirect the user back to the auth page. The browser will have the cookie.
+    return new Response(null, {
+        status: 302,
+        headers: {
+            ...headers,
+            'Location': redirectUrl,
+        }
+    });
 
   } catch (error) {
     console.error('Error during login:', error.message);
-    return jsonResponse({ error: 'Login failed', details: error.message }, 500, headers);
+    const errorRedirectUrl = new URL(redirectUrl);
+    errorRedirectUrl.searchParams.set('error', 'login_failed');
+    return new Response(null, {
+        status: 302,
+        headers: {
+            'Location': errorRedirectUrl.toString(),
+        }
+    });
   }
 }
 
