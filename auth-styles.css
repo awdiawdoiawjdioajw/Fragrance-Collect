@@ -453,6 +453,31 @@
 .social-buttons .g_id_signin iframe {
     min-height: 60px !important;
     height: 60px !important;
+    border-radius: 12px !important;
+}
+
+/* Stronger overrides for Google button styling */
+.social-buttons .g_id_signin,
+.social-buttons .g_id_signin iframe,
+.social-buttons .g_id_signin > div,
+.social-buttons .g_id_signin > div > div {
+    height: 60px !important;
+    min-height: 60px !important;
+    max-height: 60px !important;
+    border-radius: 12px !important;
+}
+
+/* Override Google's button container styles */
+.social-buttons .g_id_signin .S9gUrf-YoZ4jf {
+    height: 60px !important;
+    min-height: 60px !important;
+}
+
+/* Ensure proper button element height */
+.social-buttons .nsm7Bb-HzV7m-LgbsSe {
+    height: 60px !important;
+    min-height: 60px !important;
+    border-radius: 12px !important;
 }
 
 .social-btn {
