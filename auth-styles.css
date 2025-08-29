@@ -421,7 +421,8 @@
     flex-direction: column; /* Stack buttons vertically */
     justify-content: center;
     gap: 1rem;
-    margin-top: 1rem;
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
     width: 100%; /* Ensure the container takes full width */
 }
 
@@ -430,20 +431,28 @@
     display: flex;
     justify-content: center;
     width: 100%;
-    min-height: 50px; /* Match button height */
+    min-height: 60px; /* Match submit button height more closely */
 }
 
 .social-buttons .g_id_signin,
 .social-buttons .g_id_signin > div {
     width: 100% !important;
-    min-height: 50px;
-    display: flex;       /* Use flexbox to center the button content */
-    justify-content: center; /* Center horizontally */
-    align-items: center;     /* Center vertically */
+    min-height: 60px !important; /* Match submit button padding (1.25rem * 2 + font height ≈ 60px) */
+    display: flex !important;       /* Use flexbox to center the button content */
+    justify-content: center !important; /* Center horizontally */
+    align-items: center !important;     /* Center vertically */
+    border-radius: 12px !important; /* Match submit button border radius */
 }
 
 .social-buttons iframe {
     margin: 0 auto;
+    border-radius: 12px !important; /* Match submit button border radius */
+}
+
+/* Additional styling to ensure Google button content is properly spaced */
+.social-buttons .g_id_signin iframe {
+    min-height: 60px !important;
+    height: 60px !important;
 }
 
 .social-btn {
