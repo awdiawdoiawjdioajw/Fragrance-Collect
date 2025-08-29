@@ -98,6 +98,97 @@ const config = {
     ]
 };
 
+// --- AUTHENTICATION ---
+const authUI = {
+    loginBtn: document.getElementById('login-btn'),
+    userWelcome: document.getElementById('user-welcome'),
+    userNameDisplay: document.getElementById('user-name-display'),
+    logoutLink: document.getElementById('logout-link')
+};
+
+async function checkUserStatus() {
+    try {
+        const response = await fetch('https://auth-worker.joshuablaszczyk.workers.dev/status', {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.user) {
+                updateNavUI(data.user);
+            } else {
+                updateNavUI(null);
+            }
+        } else {
+             updateNavUI(null);
+        }
+    } catch (error) {
+        console.error('Error checking status:', error);
+        updateNavUI(null);
+    }
+}
+
+function updateNavUI(user) {
+    if (user) {
+        // User is logged in
+        if (authUI.loginBtn) authUI.loginBtn.style.display = 'none';
+        if (authUI.userWelcome) authUI.userWelcome.style.display = 'flex';
+        if (authUI.userNameDisplay) authUI.userNameDisplay.textContent = user.name.split(' ')[0];
+    } else {
+        // User is logged out
+        if (authUI.loginBtn) authUI.loginBtn.style.display = 'flex';
+        if (authUI.userWelcome) authUI.userWelcome.style.display = 'none';
+    }
+}
+
+async function handleLogout() {
+    try {
+        await fetch('https://auth-worker.joshuablaszczyk.workers.dev/logout', {
+            method: 'POST',
+        });
+    } finally {
+        // Always update UI and redirect, even if server call fails
+        updateNavUI(null);
+        window.location.href = 'auth.html';
+    }
+}
+
+// --- INITIALIZATION ---
+document.addEventListener('DOMContentLoaded', () => {
+    
+    // Check auth status when page loads
+    checkUserStatus();
+
+    if (authUI.logoutLink) {
+        authUI.logoutLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            handleLogout();
+        });
+    }
+
+    // Initialize the application
+    initModal();
+    checkMobileMenu();
+    initHamburgerMenu();
+
+    // Load initial products for the main grid
+    const initialSearchTerm = getUrlParameter('q') || 'fragrance perfume';
+    const searchInput = document.getElementById('main-search');
+    if (searchInput) {
+        searchInput.value = initialSearchTerm;
+    }
+    loadCJProducts(initialSearchTerm);
+
+    // Load recommendation sections with their specific queries
+    loadPopularPicks(); // Use a featured brand for popular picks
+    loadTikTokFinds(); // Specific query for TikTok section
+
+    // Initialize event listeners after all functions are defined
+    initializeDropdowns();
+    addEventListeners();
+});
+
 // Lightweight performance metrics for optional UI cards
 if (typeof window !== 'undefined' && !window.performanceMetrics) {
   window.performanceMetrics = {
@@ -1228,28 +1319,7 @@ function getUrlParameter(name) {
 }
 
 // Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    // Initialize the application
-    initModal();
-    checkMobileMenu();
-    initHamburgerMenu();
-
-    // Load initial products for the main grid
-    const initialSearchTerm = getUrlParameter('q') || 'fragrance perfume';
-    const searchInput = document.getElementById('main-search');
-    if (searchInput) {
-        searchInput.value = initialSearchTerm;
-    }
-    loadCJProducts(initialSearchTerm);
-
-    // Load recommendation sections with their specific queries
-    loadPopularPicks(); // Use a featured brand for popular picks
-    loadTikTokFinds(); // Specific query for TikTok section
-
-    // Initialize event listeners after all functions are defined
-    initializeDropdowns();
-    addEventListeners();
-});
+// The DOMContentLoaded listener is now handled by the new_code, so this block is removed.
 
 // Check mobile menu on window resize
 window.addEventListener('resize', checkMobileMenu); 
@@ -1343,3 +1413,36 @@ async function loadTikTokFinds() {
 } 
 
 // --------------------------------- 
+
+async function toggleFavorite(button) {
+    if (!authUI.userWelcome.style.display.includes('flex')) {
+        // If user is not logged in, redirect to login
+        window.location.href = 'auth.html';
+        return;
+    }
+
+    const fragranceId = button.dataset.id;
+    const isFavorited = button.classList.contains('favorited');
+
+    try {
+        if (isFavorited) {
+            // Unfavorite logic
+            await fetch(`/api/user/favorites/${fragranceId}`, { method: 'DELETE' });
+            button.classList.remove('favorited');
+        } else {
+            // Favorite logic
+            await fetch('/api/user/favorites', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    fragrance_id: fragranceId,
+                    fragrance_name: button.dataset.name,
+                    fragrance_image_url: button.dataset.image,
+                }),
+            });
+            button.classList.add('favorited');
+        }
+    } catch (error) {
+        console.error('Error toggling favorite:', error);
+    }
+}

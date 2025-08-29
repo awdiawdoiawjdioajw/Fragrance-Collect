@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Account - Fragrance Collect</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="account-styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <!-- (Navbar content will be loaded dynamically by account.js) -->
+    </nav>
+
+    <main class="account-container">
+        <header class="account-header">
+            <h1>My Account</h1>
+            <p>Manage your profile, preferences, and favorites.</p>
+        </header>
+
+        <div class="account-content">
+            <!-- Sidebar Navigation -->
+            <aside class="account-sidebar">
+                <nav>
+                    <a href="#profile" class="active"><i class="fas fa-user-circle"></i> Profile & Settings</a>
+                    <a href="#preferences"><i class="fas fa-sliders-h"></i> Fragrance Preferences</a>
+                    <a href="#favorites"><i class="fas fa-heart"></i> My Favorites</a>
+                    <a href="#recommendations"><i class="fas fa-star"></i> For You</a>
+                    <a href="#orders"><i class="fas fa-box"></i> Order History</a>
+                </nav>
+            </aside>
+
+            <!-- Main Content Area -->
+            <section class="account-main">
+                <!-- Profile & Settings Panel -->
+                <div id="profile" class="account-panel active">
+                    <h2>Profile & Settings</h2>
+                    <form id="profile-form">
+                        <!-- Profile content here -->
+                    </form>
+                </div>
+
+                <!-- Fragrance Preferences Panel -->
+                <div id="preferences" class="account-panel">
+                    <h2>Fragrance Preferences</h2>
+                    <p>Tailor your recommendations by telling us what you love.</p>
+                    <form id="preferences-form">
+                        <!-- Scent Categories -->
+                        <div class="form-group">
+                            <label>Favorite Scent Families</label>
+                            <div class="checkbox-group">
+                                <label><input type="checkbox" name="scent_categories" value="woody"> Woody</label>
+                                <label><input type="checkbox" name="scent_categories" value="floral"> Floral</label>
+                                <label><input type="checkbox" name="scent_categories" value="citrus"> Citrus</label>
+                                <label><input type="checkbox" name="scent_categories" value="oriental"> Oriental</label>
+                                <label><input type="checkbox" name="scent_categories" value="fresh"> Fresh</label>
+                            </div>
+                        </div>
+                        <!-- Intensity -->
+                        <div class="form-group">
+                            <label for="intensity">Preferred Intensity</label>
+                            <select id="intensity" name="intensity">
+                                <option value="">Select...</option>
+                                <option value="light">Light</option>
+                                <option value="moderate">Moderate</option>
+                                <option value="strong">Strong</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn">Save Preferences</button>
+                    </form>
+                </div>
+
+                <!-- My Favorites Panel -->
+                <div id="favorites" class="account-panel">
+                    <h2>My Favorites</h2>
+                    <div id="favorites-grid" class="favorites-grid">
+                        <!-- Favorite items will be loaded here by JS -->
+                    </div>
+                </div>
+
+                <!-- Recommendations Panel -->
+                <div id="recommendations" class="account-panel">
+                    <h2>Recommended For You</h2>
+                    <!-- Recommendation content here -->
+                </div>
+
+                <!-- Order History Panel -->
+                <div id="orders" class="account-panel">
+                    <h2>Order History</h2>
+                    <p>This feature is coming soon!</p>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script src="account.js"></script>
+</body>
+</html>

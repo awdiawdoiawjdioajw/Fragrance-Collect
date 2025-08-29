@@ -51,10 +51,17 @@
             </div>
             
             <div class="nav-right">
-                <!-- Login button on the right -->
-                <a href="auth.html" class="login-btn" aria-label="Login or Sign up">
+                <!-- Logged Out View -->
+                <a href="auth.html" class="login-btn" id="login-btn" aria-label="Login or Sign up">
                     <i class="fas fa-user"></i>
                 </a>
+
+                <!-- Logged In View (Hidden by default) -->
+                <div class="user-welcome" id="user-welcome" style="display: none;">
+                    <span>Welcome, <span id="user-name-display"></span></span>
+                    <a href="account.html" class="account-link" aria-label="My Account"><i class="fas fa-user-cog"></i></a>
+                    <a href="#" id="logout-link" class="logout-link" aria-label="Logout"><i class="fas fa-sign-out-alt"></i></a>
+                </div>
             </div>
             
             <!-- Search and dropdown row -->

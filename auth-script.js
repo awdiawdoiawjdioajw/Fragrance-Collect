@@ -17,6 +17,10 @@ const ui = {
     authTabs: document.querySelectorAll('.tab-btn'),
     authForms: document.querySelectorAll('.auth-form'),
     tabsContainer: document.querySelector('.auth-tabs'),
+    // Success Modal
+    successModal: document.getElementById('success-modal'),
+    successUserName: document.getElementById('success-user-name'),
+    continueToHomeBtn: document.getElementById('continue-to-home-btn'),
     // Email/Password Form Elements
     signinForm: document.getElementById('signin-form-element'),
     signupForm: document.getElementById('signup-form-element'),
@@ -381,14 +385,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 const data = await res.json();
                 if (res.ok && data.success) {
-                    showStatus('Account created successfully!');
-                    updateUI(data.user);
+                    showSuccessModal(data.user.name);
                 } else {
                     throw new Error(data.error || 'Failed to sign up.');
                 }
             } catch (error) {
                 showStatus(error.message, true);
             }
+        });
+    }
+
+    if (ui.continueToHomeBtn) {
+        ui.continueToHomeBtn.addEventListener('click', () => {
+            window.location.href = 'main.html';
         });
     }
 });
@@ -403,14 +412,67 @@ function handlePostLogin() {
     const name = urlParams.get('name');
 
     if (status === 'success' && name) {
-        showStatus(`Welcome, ${name}! Redirecting you now...`);
-        
-        // Update the UI immediately for a smoother experience
-        checkUserStatus();
+        // For Google redirect, show the success modal
+        showSuccessModal(name);
+    }
+}
 
-        // Redirect to the main page after a short delay
-        setTimeout(() => {
-            window.location.href = 'main.html';
-        }, 2500); // 2.5-second delay
+/**
+ * Displays the success modal with the user's name.
+ * @param {string} name - The user's name to display.
+ */
+function showSuccessModal(name) {
+    // Hide all auth forms
+    ui.loggedOutView.style.display = 'none';
+
+    // Set the user's name
+    if (ui.successUserName) {
+        ui.successUserName.textContent = name.split(' ')[0]; // Show first name
+    }
+
+    // Show the modal
+    if (ui.successModal) {
+        ui.successModal.classList.add('show');
+    }
+}
+
+/**
+ * Initializes Google Sign-In services.
+ * This function should be called after the Google script has loaded.
+ */
+function initializeGoogleSignIn() {
+    if (typeof google === 'undefined') {
+        console.error('Google GSI script not loaded.');
+        showStatus('Could not load Google Sign-In.', true);
+        return;
+    }
+
+    google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleCredentialResponse
+    });
+
+    // Render the Sign In button
+    const signInButton = document.getElementById('g_id_signin');
+    if (signInButton) {
+        google.accounts.id.renderButton(signInButton, { 
+            theme: "filled_black", 
+            size: "large", 
+            text: "continue_with", 
+            shape: "rectangular",
+            width: "380"
+        });
+    }
+    
+    // Render the Sign Up button
+    const signUpButton = document.getElementById('g_id_signup');
+    if (signUpButton) {
+         google.accounts.id.renderButton(signUpButton, { 
+            theme: "filled_black", 
+            size: "large", 
+            text: "signup_with", 
+            shape: "rectangular",
+            width: "380"
+        });
     }
 } 

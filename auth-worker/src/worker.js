@@ -38,6 +38,23 @@ export default {
       return handleEmailLogin(request, env);
     }
 
+    // --- NEW ACCOUNT FEATURE ENDPOINTS ---
+    if (url.pathname === '/api/user/preferences' && request.method === 'GET') {
+        return handleGetPreferences(request, env);
+    }
+    if (url.pathname === '/api/user/preferences' && request.method === 'POST') {
+        return handleUpdatePreferences(request, env);
+    }
+    if (url.pathname === '/api/user/favorites' && request.method === 'GET') {
+        return handleGetFavorites(request, env);
+    }
+    if (url.pathname === '/api/user/favorites' && request.method === 'POST') {
+        return handleAddFavorite(request, env);
+    }
+    if (url.pathname.startsWith('/api/user/favorites/') && request.method === 'DELETE') {
+        return handleDeleteFavorite(request, env);
+    }
+
     const headers = getSecurityHeaders(request.headers.get('Origin'));
     return new Response('Not Found', { status: 404, headers });
   },
@@ -319,6 +336,109 @@ async function handleGetStatus(request, env) {
         return jsonResponse({ error: 'Failed to get user status' }, 500, headers);
     }
 }
+
+// --- NEW ACCOUNT FEATURE HANDLERS ---
+
+/**
+ * Middleware to get the authenticated user from a session token.
+ */
+async function getAuthenticatedUser(request, env) {
+    const cookieHeader = request.headers.get('Cookie') || '';
+    const cookies = Object.fromEntries(cookieHeader.split(';').map(c => c.trim().split('=')));
+    const token = cookies.session_token;
+
+    if (!token) {
+        return null;
+    }
+
+    const session = await env.DB.prepare(
+        `SELECT u.id, u.email, u.name 
+         FROM user_sessions s JOIN users u ON s.user_id = u.id 
+         WHERE s.token = ? AND s.expires_at > CURRENT_TIMESTAMP`
+    ).bind(token).first();
+
+    return session; // Returns user object or null
+}
+
+async function handleGetPreferences(request, env) {
+    const user = await getAuthenticatedUser(request, env);
+    if (!user) return jsonResponse({ error: 'Unauthorized' }, 401);
+
+    const prefs = await env.DB.prepare('SELECT * FROM user_preferences WHERE user_id = ?').bind(user.id).first();
+    
+    return jsonResponse({ success: true, preferences: prefs || {} });
+}
+
+async function handleUpdatePreferences(request, env) {
+    const user = await getAuthenticatedUser(request, env);
+    if (!user) return jsonResponse({ error: 'Unauthorized' }, 401);
+
+    const prefs = await request.json();
+    
+    await env.DB.prepare(
+        `INSERT INTO user_preferences (user_id, scent_categories, intensity, season, occasion, budget_range, sensitivities) 
+         VALUES (?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(user_id) DO UPDATE SET
+           scent_categories=excluded.scent_categories,
+           intensity=excluded.intensity,
+           season=excluded.season,
+           occasion=excluded.occasion,
+           budget_range=excluded.budget_range,
+           sensitivities=excluded.sensitivities,
+           updated_at=CURRENT_TIMESTAMP`
+    ).bind(user.id, JSON.stringify(prefs.scent_categories || []), prefs.intensity, prefs.season, prefs.occasion, prefs.budget_range, prefs.sensitivities).run();
+
+    return jsonResponse({ success: true, message: 'Preferences updated.' });
+}
+
+async function handleGetFavorites(request, env) {
+    const user = await getAuthenticatedUser(request, env);
+    if (!user) return jsonResponse({ error: 'Unauthorized' }, 401);
+
+    const { results } = await env.DB.prepare('SELECT fragrance_id, fragrance_name, fragrance_image_url FROM user_favorites WHERE user_id = ? ORDER BY added_at DESC').bind(user.id).all();
+
+    return jsonResponse({ success: true, favorites: results || [] });
+}
+
+async function handleAddFavorite(request, env) {
+    const user = await getAuthenticatedUser(request, env);
+    if (!user) return jsonResponse({ error: 'Unauthorized' }, 401);
+
+    const { fragrance_id, fragrance_name, fragrance_image_url } = await request.json();
+    if (!fragrance_id) return jsonResponse({ error: 'Fragrance ID is required' }, 400);
+
+    const favoriteId = crypto.randomUUID();
+
+    try {
+        await env.DB.prepare(
+            'INSERT INTO user_favorites (id, user_id, fragrance_id, fragrance_name, fragrance_image_url) VALUES (?, ?, ?, ?, ?)'
+        ).bind(favoriteId, user.id, fragrance_id, fragrance_name, fragrance_image_url).run();
+    } catch (e) {
+        if (e.message.includes('UNIQUE constraint failed')) {
+            return jsonResponse({ success: true, message: 'Already in favorites.' });
+        }
+        throw e;
+    }
+    
+    return jsonResponse({ success: true, message: 'Added to favorites.', favorite_id: favoriteId }, 201);
+}
+
+async function handleDeleteFavorite(request, env) {
+    const user = await getAuthenticatedUser(request, env);
+    if (!user) return jsonResponse({ error: 'Unauthorized' }, 401);
+
+    const url = new URL(request.url);
+    const fragranceId = url.pathname.split('/').pop();
+
+    if (!fragranceId) return jsonResponse({ error: 'Fragrance ID is required in URL' }, 400);
+
+    await env.DB.prepare(
+        'DELETE FROM user_favorites WHERE user_id = ? AND fragrance_id = ?'
+    ).bind(user.id, fragranceId).run();
+
+    return jsonResponse({ success: true, message: 'Removed from favorites.' });
+}
+
 
 /**
  * Handles user sign-up with email and password.
