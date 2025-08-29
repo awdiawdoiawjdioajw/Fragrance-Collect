@@ -258,6 +258,9 @@ async function handleLogin(request, env) {
     console.error('Error during login:', error.message);
     const errorRedirectUrl = new URL(redirectUrl);
     errorRedirectUrl.searchParams.set('error', 'login_failed');
+    // Sanitize and pass the specific error reason for debugging
+    const reason = error.message.replace(/[^a-zA-Z0-9_]/g, '_');
+    errorRedirectUrl.searchParams.set('reason', reason);
     return new Response(null, {
         status: 302,
         headers: {
@@ -395,7 +398,7 @@ async function handleGetFavorites(request, env) {
     const user = await getAuthenticatedUser(request, env);
     if (!user) return jsonResponse({ error: 'Unauthorized' }, 401);
 
-    const { results } = await env.DB.prepare('SELECT fragrance_id, fragrance_name, fragrance_image_url FROM user_favorites WHERE user_id = ? ORDER BY added_at DESC').bind(user.id).all();
+    const { results } = await env.DB.prepare('SELECT * FROM user_favorites WHERE user_id = ? ORDER BY added_at DESC').bind(user.id).all();
 
     return jsonResponse({ success: true, favorites: results || [] });
 }
@@ -404,20 +407,28 @@ async function handleAddFavorite(request, env) {
     const user = await getAuthenticatedUser(request, env);
     if (!user) return jsonResponse({ error: 'Unauthorized' }, 401);
 
-    const { fragrance_id, fragrance_name, fragrance_image_url } = await request.json();
-    if (!fragrance_id) return jsonResponse({ error: 'Fragrance ID is required' }, 400);
+    const fav = await request.json();
+    if (!fav || !fav.fragrance_id || !fav.name) {
+        return jsonResponse({ error: 'Fragrance ID and name are required' }, 400);
+    }
 
     const favoriteId = crypto.randomUUID();
 
     try {
         await env.DB.prepare(
-            'INSERT INTO user_favorites (id, user_id, fragrance_id, fragrance_name, fragrance_image_url) VALUES (?, ?, ?, ?, ?)'
-        ).bind(favoriteId, user.id, fragrance_id, fragrance_name, fragrance_image_url).run();
+            `INSERT INTO user_favorites (id, user_id, fragrance_id, name, advertiserName, description, imageUrl, productUrl, price, currency, shipping_availability) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        ).bind(
+            favoriteId, user.id, fav.fragrance_id, fav.name, fav.advertiserName, 
+            fav.description, fav.imageUrl, fav.productUrl, fav.price, 
+            fav.currency, fav.shipping_availability
+        ).run();
     } catch (e) {
         if (e.message.includes('UNIQUE constraint failed')) {
             return jsonResponse({ success: true, message: 'Already in favorites.' });
         }
-        throw e;
+        console.error('Failed to add favorite:', e);
+        return jsonResponse({ error: 'Failed to add favorite.' }, 500);
     }
     
     return jsonResponse({ success: true, message: 'Added to favorites.', favorite_id: favoriteId }, 201);

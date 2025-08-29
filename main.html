@@ -43,7 +43,7 @@
                 <!-- Navigation menu in center -->
                 <ul class="nav-menu">
                     <li><a href="#home" class="nav-link">Home</a></li>
-                    <li><a href="#brands" class="nav-link">Brands</a></li>
+                    <li id="favorites-nav-link" style="display: none;"><a href="#favorites" class="nav-link">Favorites</a></li>
                     <li><a href="#collections" class="nav-link">Collections</a></li>
                     <li><a href="#top-rated" class="nav-link">Top Rated</a></li>
                     <li><a href="#shop" class="nav-link">Shop</a></li>
@@ -120,7 +120,20 @@
         </div>
     </section>
 
-    <!-- Filter Section -->
+    <!-- Favorites Section -->
+    <section id="favorites" class="favorites-section" style="display: none;">
+        <div class="container">
+            <h2 class="section-title">My Favorite Fragrances</h2>
+            <div id="favorites-grid" class="product-grid">
+                <!-- Favorite items will be loaded here -->
+            </div>
+            <div id="favorites-empty-state" style="display: none; text-align: center;">
+                <p>You haven't added any favorites yet. Click the heart on any fragrance to save it here.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Brands Section -->
     <section class="filter-section" id="brands">
         <div class="container">
             <div class="filter-container">

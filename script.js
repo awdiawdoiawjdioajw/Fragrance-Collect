@@ -74,6 +74,7 @@ let currentFilters = {
 let cjProducts = [];
 let filteredPerfumes = [];
 let availableFeeds = [];
+let userFavorites = new Set(); // Stores IDs of favorited fragrances
 let currentPage = 1;
 let totalPages = 1;
 
@@ -103,7 +104,11 @@ const authUI = {
     loginBtn: document.getElementById('login-btn'),
     userWelcome: document.getElementById('user-welcome'),
     userNameDisplay: document.getElementById('user-name-display'),
-    logoutLink: document.getElementById('logout-link')
+    logoutLink: document.getElementById('logout-link'),
+    favoritesNavLink: document.getElementById('favorites-nav-link'),
+    favoritesSection: document.getElementById('favorites'),
+    favoritesGrid: document.getElementById('favorites-grid'),
+    favoritesEmptyState: document.getElementById('favorites-empty-state')
 };
 
 async function checkUserStatus() {
@@ -117,6 +122,7 @@ async function checkUserStatus() {
             const data = await response.json();
             if (data.success && data.user) {
                 updateNavUI(data.user);
+                loadUserFavorites(); // Load favorites if user is logged in
             } else {
                 updateNavUI(null);
             }
@@ -135,10 +141,12 @@ function updateNavUI(user) {
         if (authUI.loginBtn) authUI.loginBtn.style.display = 'none';
         if (authUI.userWelcome) authUI.userWelcome.style.display = 'flex';
         if (authUI.userNameDisplay) authUI.userNameDisplay.textContent = user.name.split(' ')[0];
+        if (authUI.favoritesNavLink) authUI.favoritesNavLink.style.display = 'block';
     } else {
         // User is logged out
         if (authUI.loginBtn) authUI.loginBtn.style.display = 'flex';
         if (authUI.userWelcome) authUI.userWelcome.style.display = 'none';
+        if (authUI.favoritesNavLink) authUI.favoritesNavLink.style.display = 'none';
     }
 }
 
@@ -1414,35 +1422,99 @@ async function loadTikTokFinds() {
 
 // --------------------------------- 
 
-async function toggleFavorite(button) {
+async function toggleFavorite(button, perfume) {
     if (!authUI.userWelcome.style.display.includes('flex')) {
         // If user is not logged in, redirect to login
         window.location.href = 'auth.html';
         return;
     }
 
-    const fragranceId = button.dataset.id;
-    const isFavorited = button.classList.contains('favorited');
+    const fragranceId = perfume.productId;
+    const isFavorited = userFavorites.has(fragranceId);
 
     try {
         if (isFavorited) {
             // Unfavorite logic
             await fetch(`/api/user/favorites/${fragranceId}`, { method: 'DELETE' });
+            userFavorites.delete(fragranceId);
             button.classList.remove('favorited');
         } else {
             // Favorite logic
+            const favoriteData = {
+                fragrance_id: perfume.productId,
+                name: perfume.name,
+                advertiserName: perfume.advertiserName,
+                description: perfume.description,
+                imageUrl: perfume.imageUrl,
+                productUrl: perfume.productUrl,
+                price: perfume.price,
+                currency: perfume.currency,
+                shipping_availability: perfume.shipping ? 'available' : 'unavailable',
+            };
             await fetch('/api/user/favorites', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    fragrance_id: fragranceId,
-                    fragrance_name: button.dataset.name,
-                    fragrance_image_url: button.dataset.image,
-                }),
+                body: JSON.stringify(favoriteData),
             });
+            userFavorites.add(fragranceId);
             button.classList.add('favorited');
         }
+        // Refresh the favorites display
+        loadUserFavorites();
     } catch (error) {
         console.error('Error toggling favorite:', error);
     }
+}
+
+async function loadUserFavorites() {
+    if (authUI.favoritesSection) authUI.favoritesSection.style.display = 'block';
+
+    try {
+        const response = await fetch('/api/user/favorites');
+        const data = await response.json();
+        if (data.success && data.favorites) {
+            userFavorites = new Set(data.favorites.map(fav => fav.fragrance_id));
+            displayFavorites(data.favorites);
+            updateAllFavoriteIcons();
+        }
+    } catch (error) {
+        console.error('Error loading user favorites:', error);
+    }
+}
+
+function displayFavorites(favorites) {
+    if (!authUI.favoritesGrid || !authUI.favoritesEmptyState) return;
+
+    authUI.favoritesGrid.innerHTML = '';
+    if (favorites.length === 0) {
+        authUI.favoritesEmptyState.style.display = 'block';
+    } else {
+        authUI.favoritesEmptyState.style.display = 'none';
+        favorites.forEach(fav => {
+            // Re-purposing createPerfumeCard for favorites
+            const card = createPerfumeCard({
+                productId: fav.fragrance_id,
+                name: fav.name,
+                advertiserName: fav.advertiserName,
+                description: fav.description,
+                imageUrl: fav.imageUrl,
+                productUrl: fav.productUrl,
+                price: fav.price,
+                currency: fav.currency,
+                shipping: fav.shipping_availability === 'available',
+            });
+            authUI.favoritesGrid.appendChild(card);
+        });
+    }
+}
+
+function updateAllFavoriteIcons() {
+    document.querySelectorAll('.favorite-btn').forEach(btn => {
+        const fragranceId = btn.dataset.id;
+        if (userFavorites.has(fragranceId)) {
+            btn.classList.add('favorited');
+        } else {
+            btn.classList.remove('favorited');
+        }
+    });
 }

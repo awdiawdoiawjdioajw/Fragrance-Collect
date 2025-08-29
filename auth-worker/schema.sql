@@ -41,16 +41,26 @@ CREATE TABLE IF NOT EXISTS user_preferences (
 );
 
 -- User favorites table
+DROP TABLE IF EXISTS user_favorites;
 CREATE TABLE IF NOT EXISTS user_favorites (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
     fragrance_id TEXT NOT NULL, -- Corresponds to a product ID from the CJ API
-    fragrance_name TEXT,
-    fragrance_image_url TEXT,
+    name TEXT NOT NULL,
+    advertiserName TEXT,
+    description TEXT,
+    imageUrl TEXT,
+    productUrl TEXT,
+    price REAL,
+    currency TEXT,
+    shipping_availability TEXT,
+    user_notes TEXT,
     added_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id),
     UNIQUE(user_id, fragrance_id)
 );
 
 -- Indexes for new tables
+DROP INDEX IF EXISTS idx_user_favorites_user_id;
 CREATE INDEX IF NOT EXISTS idx_user_favorites_user_id ON user_favorites(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_favorites_added_at ON user_favorites(added_at);

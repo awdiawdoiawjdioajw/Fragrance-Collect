@@ -428,10 +428,13 @@
     display: flex;
     justify-content: center;
     width: 100%;
+    min-height: 50px; /* Match button height */
 }
 
-.social-buttons .g_id_signin {
+.social-buttons .g_id_signin,
+.social-buttons .g_id_signin > div {
     width: 100% !important;
+    min-height: 50px;
 }
 
 .social-buttons iframe {
