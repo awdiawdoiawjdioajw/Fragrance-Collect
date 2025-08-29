@@ -480,6 +480,11 @@
     border-radius: 12px !important;
 }
 
+/* Hide the Google Sign-In configuration div so it doesn't take up space */
+#g_id_onload {
+    display: none;
+}
+
 .social-btn {
     flex: 1;
     background: transparent;
