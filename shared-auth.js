@@ -30,11 +30,22 @@ async function getSessionToken() {
             method: 'GET',
             credentials: 'include'
         });
-        
+
         console.log('Token response status:', response.status);
+        console.log('Token response headers:', [...response.headers.entries()]);
+
         const data = await response.json();
         console.log('Token response data:', data);
-        
+
+        if (response.status === 401) {
+            console.log('401 Unauthorized - No valid session token found');
+            console.log('This could mean:');
+            console.log('1. User is not logged in');
+            console.log('2. Session has expired');
+            console.log('3. Cookie was not set properly during login');
+            return null;
+        }
+
         if (data.success && data.token) {
             sessionToken = data.token;
             console.log('Session token retrieved successfully');
