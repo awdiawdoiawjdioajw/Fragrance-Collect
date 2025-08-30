@@ -61,8 +61,8 @@ h1, h2, h3, h4, h5, h6 {
 .nav-left {
     display: flex;
     align-items: center;
-    gap: 1rem; /* Reduced gap for tighter layout */
-    flex: 1; /* Take up available space */
+    flex-grow: 1;
+    gap: 1.5rem;
 }
 
 .nav-logo {
@@ -421,24 +421,16 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .login-btn {
-    background: var(--soft-black);
+    background-color: var(--soft-black);
     color: var(--antique-gold);
-    border: 2px solid var(--antique-gold);
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-decoration: none;
-    transition: all 0.3s ease-in-out;
-    font-size: 1.1rem;
+    border-color: var(--antique-gold);
 }
 
 .login-btn:hover {
-    background: var(--antique-gold);
+    background-color: var(--antique-gold);
     color: var(--soft-black);
-    transform: scale(1.05);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(201, 166, 70, 0.3);
 }
 
 /* Hero Section */
