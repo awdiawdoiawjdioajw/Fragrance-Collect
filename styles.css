@@ -157,12 +157,12 @@ h1, h2, h3, h4, h5, h6 {
 
 /* User actions consolidated - nav-right section removed */
 
-/* Menu actions buttons positioned at the end of nav-left */
+/* Menu actions buttons positioned closer to menu dropdown */
 .menu-actions {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    margin-left: auto; /* Push to the right side of nav-left */
+    margin-left: 0.5rem; /* Small margin to create tight spacing with menu */
     margin-right: 0;
 }
 
@@ -206,7 +206,7 @@ h1, h2, h3, h4, h5, h6 {
     }
 
     .menu-actions {
-        margin-left: 0.5rem; /* Less margin on mobile */
+        margin-left: 0.25rem; /* Even tighter margin on mobile for close proximity */
         gap: 0.25rem; /* Tighter button spacing */
     }
 
