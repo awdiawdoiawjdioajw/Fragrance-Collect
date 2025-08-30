@@ -93,7 +93,15 @@
                     </ul>
                 </div>
                 
-                <!-- Login button on the right -->
+                <!-- Account settings on the right (when logged in) -->
+                <div class="search-row-actions" id="search-row-actions" style="display: none;">
+                    <a href="account.html" class="account-btn" aria-label="Account Settings" title="Account Settings">
+                        <i class="fas fa-cog"></i>
+                    </a>
+                    <a href="#" id="search-logout-link" class="logout-btn" aria-label="Logout" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </a>
+                </div>
             </div>
             
             <!-- Hamburger menu for mobile -->
@@ -118,6 +126,9 @@
         <div class="hero-overlay"></div>
         <div class="hero-content">
             <div class="hero-header">
+                <div class="hero-greeting" id="hero-greeting" style="display: none;">
+                    <span class="greeting-text">Good evening, Test!</span>
+                </div>
                 <h1 class="hero-title">Discover your signature scent</h1>
                 <div class="hero-title-accent"></div>
             </div>

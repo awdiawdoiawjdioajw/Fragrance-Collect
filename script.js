@@ -203,6 +203,8 @@ function updateDynamicGreeting(firstName) {
     const hour = new Date().getHours();
     const greetingElement = document.getElementById('dynamic-greeting');
     const subtitleElement = document.getElementById('welcome-subtitle');
+    const heroGreeting = document.getElementById('hero-greeting');
+    const heroGreetingText = heroGreeting?.querySelector('.greeting-text');
     
     let greeting, subtitle;
     
@@ -231,8 +233,28 @@ function updateDynamicGreeting(firstName) {
         subtitle = personalizedMessages[Math.floor(Math.random() * personalizedMessages.length)];
     }
     
+    // Update navigation greeting
     if (greetingElement) greetingElement.textContent = greeting;
     if (subtitleElement) subtitleElement.textContent = subtitle;
+    
+    // Update hero section greeting
+    if (heroGreetingText && firstName) {
+        heroGreetingText.textContent = `${greeting}, ${firstName}!`;
+        heroGreeting.style.display = 'block';
+        // Add animation class after a short delay
+        setTimeout(() => {
+            heroGreeting.classList.add('show');
+        }, 100);
+    }
+    
+    // Show search row actions
+    const searchRowActions = document.getElementById('search-row-actions');
+    if (searchRowActions) {
+        searchRowActions.style.display = 'flex';
+        setTimeout(() => {
+            searchRowActions.classList.add('show');
+        }, 200);
+    }
 }
 
 // Logout is now handled by shared-auth.js handleSharedLogout function
@@ -261,6 +283,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 500);
 
     // Logout handling is now in shared-auth.js
+    // Add event listener for the search row logout button
+    const searchLogoutLink = document.getElementById('search-logout-link');
+    if (searchLogoutLink) {
+        searchLogoutLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            handleSharedLogout();
+        });
+    }
 
     if (authUI.favoritesLink) {
         authUI.favoritesLink.addEventListener('click', (e) => {

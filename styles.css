@@ -138,13 +138,50 @@ h1, h2, h3, h4, h5, h6 {
 .search-row {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: space-between;
     gap: 1rem; /* Space between menu and profile button */
     position: relative;
     margin: 0;
-    width: auto;
+    width: 100%;
     max-width: none;
-    /* margin-left: auto; */ /* Removed to stop it from pushing to the far right */
+}
+
+.search-row-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    opacity: 0;
+    transform: translateX(10px);
+    transition: all 0.3s ease;
+}
+
+.search-row-actions.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.account-btn,
+.logout-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: rgba(201, 166, 70, 0.1);
+    border: 1px solid rgba(201, 166, 70, 0.3);
+    border-radius: 50%;
+    color: var(--antique-gold);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.account-btn:hover,
+.logout-btn:hover {
+    background: rgba(201, 166, 70, 0.2);
+    border-color: var(--antique-gold);
+    color: var(--warm-white);
+    transform: translateY(-1px);
 }
 
 .nav-right {
@@ -454,6 +491,27 @@ h1, h2, h3, h4, h5, h6 {
 .hero-header {
     text-align: center;
     margin-bottom: 30px;
+}
+
+.hero-greeting {
+    margin-bottom: 15px;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+}
+
+.hero-greeting.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.greeting-text {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem;
+    font-weight: 500;
+    color: var(--antique-gold);
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    letter-spacing: 0.02em;
 }
 
 .hero-title-accent {
@@ -1518,6 +1576,21 @@ textarea:focus {
         font-size: 0.9rem;
     }
     
+    .greeting-text {
+        font-size: 1.4rem;
+    }
+    
+    .search-row-actions {
+        gap: 0.3rem;
+    }
+    
+    .account-btn,
+    .logout-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 0.8rem;
+    }
+    
     .contact-title,
     .service-title,
     .size-guide-title {
@@ -1684,6 +1757,21 @@ textarea:focus {
     
     .hero-subtitle {
         font-size: 0.8rem;
+    }
+    
+    .greeting-text {
+        font-size: 1.2rem;
+    }
+    
+    .search-row-actions {
+        gap: 0.2rem;
+    }
+    
+    .account-btn,
+    .logout-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 0.7rem;
     }
     
     .contact-title,
