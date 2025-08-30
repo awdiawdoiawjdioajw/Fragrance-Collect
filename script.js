@@ -105,15 +105,14 @@ const authUI = {
     userWelcome: document.getElementById('user-welcome'),
     userNameDisplay: document.getElementById('user-name-display'),
     logoutLink: document.getElementById('logout-link'),
-    favoritesNavLink: document.getElementById('favorites-nav-link'),
     favoritesSection: document.getElementById('favorites'),
     favoritesGrid: document.getElementById('favorites-grid'),
     favoritesEmptyState: document.getElementById('favorites-empty-state'),
     // Main content sections to hide when showing favorites
     mainContentSections: document.querySelectorAll('.main-content'),
-    favoritesBtn: document.getElementById('favorites-btn'),
     homeLinks: document.querySelectorAll('.home-link'),
-    shopLinks: document.querySelectorAll('.shop-link')
+    shopLinks: document.querySelectorAll('.shop-link'),
+    favoritesLink: document.querySelector('a[href="#favorites"]')
 };
 
 async function checkUserStatus() {
@@ -146,12 +145,10 @@ function updateNavUI(user) {
         if (authUI.loginBtn) authUI.loginBtn.style.display = 'none';
         if (authUI.userWelcome) authUI.userWelcome.style.display = 'flex';
         if (authUI.userNameDisplay) authUI.userNameDisplay.textContent = user.name.split(' ')[0];
-        if (authUI.favoritesNavLink) authUI.favoritesNavLink.style.display = 'block';
     } else {
         // User is logged out
         if (authUI.loginBtn) authUI.loginBtn.style.display = 'flex';
         if (authUI.userWelcome) authUI.userWelcome.style.display = 'none';
-        if (authUI.favoritesNavLink) authUI.favoritesNavLink.style.display = 'none';
     }
 }
 
@@ -180,8 +177,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    if (authUI.favoritesBtn) {
-        authUI.favoritesBtn.addEventListener('click', () => {
+    if (authUI.favoritesLink) {
+        authUI.favoritesLink.addEventListener('click', (e) => {
+            e.preventDefault();
             showFavoritesView();
         });
     }
@@ -1559,6 +1557,13 @@ async function toggleFavorite(button, perfume) {
 }
 
 function showFavoritesView() {
+    // Check if user is logged in
+    if (!authUI.userWelcome || authUI.userWelcome.style.display === 'none') {
+        // User is not logged in, redirect to auth page
+        window.location.href = 'auth.html';
+        return;
+    }
+    
     authUI.mainContentSections.forEach(section => {
         section.style.display = 'none';
     });
