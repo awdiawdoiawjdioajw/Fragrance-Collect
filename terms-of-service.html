@@ -27,9 +27,21 @@
                 </ul>
             </div>
             <div class="nav-right">
-                <a href="auth.html" class="login-btn">
+                <!-- Logged Out View -->
+                <a href="auth.html" class="login-btn" id="login-btn" aria-label="Login or Sign up">
                     <i class="fas fa-user"></i>
                 </a>
+
+                <!-- Logged In View (Hidden by default) -->
+                <div class="user-welcome" id="user-welcome" style="display: none;">
+                    <div class="welcome-text">
+                        <span>Welcome, <span id="user-name-display" class="user-name"></span></span>
+                    </div>
+                    <div class="user-actions">
+                        <a href="account.html" class="account-link" aria-label="My Account"><i class="fas fa-user-cog"></i></a>
+                        <a href="#" id="logout-link" class="logout-link" aria-label="Logout"><i class="fas fa-sign-out-alt"></i></a>
+                    </div>
+                </div>
             </div>
         </div>
     </nav>
@@ -121,6 +133,6 @@
         </div>
     </footer>
 
-    <script src="script.js"></script>
+    <script src="shared-auth.js"></script>
 </body>
 </html>

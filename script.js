@@ -100,7 +100,7 @@ const config = {
 };
 
 // --- AUTHENTICATION ---
-let isUserLoggedIn = false; // Global authentication state
+// Note: isUserLoggedIn and currentUser are now managed by shared-auth.js
 
 const authUI = {
     loginBtn: document.getElementById('login-btn'),
@@ -215,15 +215,15 @@ async function handleLogout() {
 // --- INITIALIZATION ---
 document.addEventListener('DOMContentLoaded', () => {
     
-    // Check auth status when page loads
-    checkUserStatus();
+    // Authentication is now handled by shared-auth.js
+    // Check if user is logged in after shared auth initializes
+    setTimeout(() => {
+        if (isAuthenticated()) {
+            loadUserFavorites();
+        }
+    }, 100);
 
-    if (authUI.logoutLink) {
-        authUI.logoutLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            handleLogout();
-        });
-    }
+    // Logout handling is now in shared-auth.js
 
     if (authUI.favoritesLink) {
         authUI.favoritesLink.addEventListener('click', (e) => {
