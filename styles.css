@@ -201,10 +201,7 @@ h1, h2, h3, h4, h5, h6 {
     font-size: 0.9rem;
 }
 
-.user-name-compact {
-    color: var(--warm-white);
-    font-weight: 500;
-}
+/* User name display removed - no longer needed */
 
 .logout-link-compact {
     color: var(--warm-white);
@@ -219,12 +216,13 @@ h1, h2, h3, h4, h5, h6 {
     color: var(--antique-gold);
 }
 
-/* Menu actions buttons next to menu */
+/* Menu actions buttons moved to nav-left (further left position) */
 .menu-actions {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    margin-left: 1rem;
+    margin-left: 2rem; /* Increased margin for more left positioning */
+    margin-right: 1rem;
 }
 
 .menu-profile-btn,
@@ -259,7 +257,8 @@ h1, h2, h3, h4, h5, h6 {
 /* Mobile responsive adjustments */
 @media (max-width: 768px) {
     .menu-actions {
-        margin-left: 0.5rem;
+        margin-left: 1rem; /* Adjusted for mobile */
+        margin-right: 0.5rem;
     }
 
     .menu-profile-btn,

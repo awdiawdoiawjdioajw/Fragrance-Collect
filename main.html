@@ -48,6 +48,16 @@
                     <li><a href="#top-rated" class="nav-link">Top Rated</a></li>
                     <li><a href="#shop" class="nav-link shop-link">Shop</a></li>
                 </ul>
+
+                <!-- Menu actions moved to the left -->
+                <div class="menu-actions">
+                    <a href="#" class="menu-profile-btn" id="menu-profile-btn" aria-label="Profile Settings" title="Profile Settings">
+                        <i class="fas fa-user-cog"></i>
+                    </a>
+                    <a href="#" class="menu-logout-btn" id="menu-logout-btn" aria-label="Sign Out" title="Sign Out">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </a>
+                </div>
             </div>
             
             <div class="nav-right">
@@ -60,7 +70,6 @@
 
                     <!-- Logged In View (Hidden by default) -->
                     <div class="user-welcome-compact" id="user-welcome" style="display: none;">
-                        <span id="user-name-display" class="user-name-compact"></span>
                         <a href="#" id="logout-link" class="logout-link-compact" aria-label="Logout">
                             <i class="fas fa-sign-out-alt"></i>
                         </a>
@@ -91,15 +100,7 @@
                     </ul>
                 </div>
 
-                <!-- Profile settings and sign out buttons next to menu -->
-                <div class="menu-actions">
-                    <a href="account.html" class="menu-profile-btn" id="menu-profile-btn" aria-label="Profile Settings" title="Profile Settings">
-                        <i class="fas fa-user-cog"></i>
-                    </a>
-                    <a href="#" class="menu-logout-btn" id="menu-logout-btn" aria-label="Sign Out" title="Sign Out">
-                        <i class="fas fa-sign-out-alt"></i>
-                    </a>
-                </div>
+                <!-- Menu actions moved to nav-left section -->
             </div>
             
             <!-- Hamburger menu for mobile -->

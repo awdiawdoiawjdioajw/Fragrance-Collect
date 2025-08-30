@@ -10,7 +10,6 @@ let sessionToken = null;
 const sharedAuthUI = {
     loginBtn: null,
     userWelcome: null,
-    userNameDisplay: null,
     logoutLink: null,
     menuActions: null,
     menuProfileBtn: null,
@@ -20,7 +19,6 @@ const sharedAuthUI = {
     init() {
         this.loginBtn = document.getElementById('login-btn');
         this.userWelcome = document.getElementById('user-welcome');
-        this.userNameDisplay = document.getElementById('user-name-display');
         this.logoutLink = document.getElementById('logout-link');
         this.menuActions = document.querySelector('.menu-actions');
         this.menuProfileBtn = document.getElementById('menu-profile-btn');
@@ -158,13 +156,10 @@ function updateSharedNavUI(user) {
         if (sharedAuthUI.loginBtn) sharedAuthUI.loginBtn.style.display = 'none';
         if (sharedAuthUI.userWelcome) sharedAuthUI.userWelcome.style.display = 'flex';
         if (sharedAuthUI.menuActions) sharedAuthUI.menuActions.style.display = 'flex';
-        if (sharedAuthUI.userNameDisplay) {
+        // Name display removed - only call updateDynamicGreeting if it exists
+        if (typeof updateDynamicGreeting === 'function') {
             const firstName = user.name.split(' ')[0];
-            sharedAuthUI.userNameDisplay.textContent = firstName;
-            // Only call updateDynamicGreeting if it exists (main.html specific)
-            if (typeof updateDynamicGreeting === 'function') {
-                updateDynamicGreeting(firstName);
-            }
+            updateDynamicGreeting(firstName);
         }
     } else {
         // User is logged out
