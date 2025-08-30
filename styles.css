@@ -61,7 +61,12 @@ h1, h2, h3, h4, h5, h6 {
 .nav-left {
     display: flex;
     align-items: center;
-    flex-grow: 1;
+    gap: 1.5rem;
+}
+
+.nav-right {
+    display: flex;
+    align-items: center;
     gap: 1.5rem;
 }
 
@@ -102,6 +107,8 @@ h1, h2, h3, h4, h5, h6 {
     align-items: center;
     margin: 0;
     padding: 0;
+    flex-grow: 1;
+    justify-content: center;
 }
 
 .nav-link {
