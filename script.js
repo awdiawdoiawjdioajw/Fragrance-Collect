@@ -117,49 +117,23 @@ const authUI = {
     favoritesLink: document.querySelector('a[href="#favorites"]')
 };
 
+// Authentication status checking is now handled by shared-auth.js
+// This function is kept for backward compatibility but delegates to shared auth
 async function checkUserStatus() {
-    try {
-        const response = await fetch('https://auth-worker.joshuablaszczyk.workers.dev/status', {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            if (data.success && data.user) {
-                updateNavUI(data.user);
-                loadUserFavorites(); // Load favorites if user is logged in
-            } else {
-                updateNavUI(null);
-            }
-        } else {
-             updateNavUI(null);
-        }
-    } catch (error) {
-        console.error('Error checking status:', error);
-        updateNavUI(null);
-    }
+    await checkSharedUserStatus();
 }
 
+// UI updates are now handled by shared-auth.js updateSharedNavUI function
+// This function is kept for backward compatibility but delegates to shared auth
 function updateNavUI(user) {
     console.log('updateNavUI called with user:', user);
-    if (user) {
-        // User is logged in
-        isUserLoggedIn = true;
-        console.log('Setting isUserLoggedIn to true');
-        if (authUI.loginBtn) authUI.loginBtn.style.display = 'none';
-        if (authUI.userWelcome) authUI.userWelcome.style.display = 'flex';
-        if (authUI.userNameDisplay) {
-            const firstName = user.name.split(' ')[0];
-            authUI.userNameDisplay.textContent = firstName;
-            updateDynamicGreeting(firstName);
-        }
-    } else {
-        // User is logged out
-        isUserLoggedIn = false;
-        console.log('Setting isUserLoggedIn to false');
-        if (authUI.loginBtn) authUI.loginBtn.style.display = 'flex';
-        if (authUI.userWelcome) authUI.userWelcome.style.display = 'none';
+    // Delegate to the shared auth system
+    updateSharedNavUI(user);
+    
+    // Handle any page-specific UI updates
+    if (user && authUI.userNameDisplay) {
+        const firstName = user.name.split(' ')[0];
+        updateDynamicGreeting(firstName);
     }
 }
 
@@ -199,17 +173,10 @@ function updateDynamicGreeting(firstName) {
     if (subtitleElement) subtitleElement.textContent = subtitle;
 }
 
+// Logout is now handled by shared-auth.js handleSharedLogout function
+// This function is kept for backward compatibility but delegates to shared auth
 async function handleLogout() {
-    try {
-        await fetch('https://auth-worker.joshuablaszczyk.workers.dev/logout', {
-            method: 'POST',
-        });
-    } finally {
-        // Always update UI and redirect, even if server call fails
-        isUserLoggedIn = false;
-        updateNavUI(null);
-        window.location.href = 'auth.html';
-    }
+    await handleSharedLogout();
 }
 
 // --- INITIALIZATION ---
@@ -1561,15 +1528,15 @@ async function loadTikTokFinds() {
 // --------------------------------- 
 
 async function toggleFavorite(button, perfume) {
-    console.log('Toggle favorite clicked, isUserLoggedIn:', isUserLoggedIn);
+    console.log('Toggle favorite clicked, checking authentication...');
     
-    // Double-check authentication status before proceeding
-    if (!isUserLoggedIn) {
-        console.log('Initial check: User not logged in, re-checking status...');
-        await checkUserStatus();
+    // Use the shared authentication system to check status
+    if (!isAuthenticated()) {
+        console.log('User not authenticated, re-checking status...');
+        await checkSharedUserStatus();
         
         // Check again after status update
-        if (!isUserLoggedIn) {
+        if (!isAuthenticated()) {
             console.log('User confirmed not logged in, redirecting to auth page');
             window.location.href = 'auth.html';
             return;
@@ -1618,8 +1585,8 @@ async function toggleFavorite(button, perfume) {
 }
 
 function showFavoritesView() {
-    // Check if user is logged in
-    if (!isUserLoggedIn) {
+    // Check if user is logged in using shared auth system
+    if (!isAuthenticated()) {
         // User is not logged in, redirect to auth page
         window.location.href = 'auth.html';
         return;
