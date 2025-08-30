@@ -3,15 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign In / Sign Up - Fragrance Collect</title>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <title>Fragrance Collect - Discover Your Signature Scent</title>
+    <link rel="icon" href="data:,">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="auth-styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- GitHub Pages Performance Optimizations -->
+    <meta http-equiv="Cache-Control" content="public, max-age=3600">
+    <meta http-equiv="Expires" content="3600">
+    <link rel="dns-prefetch" href="//weathered-mud-6ed5.joshuablaszczyk.workers.dev">
+    <link rel="preconnect" href="//weathered-mud-6ed5.joshuablaszczyk.workers.dev" crossorigin>
+    <script>
+        // Force HTTPS redirect
+        if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+            location.replace(`https:${location.href.substring(location.protocol.length)}`);
+        }
+        // Use Cloudflare Worker API
+        window.API_BASE = 'https://weathered-mud-6ed5.joshuablaszczyk.workers.dev';
+    </script>
 </head>
 <body>
-    <!-- Navigation Bar -->
+    <div id="search-loading-bar" class="search-loading-bar" style="display: none;">
+        <div class="loading-progress"></div>
+        <span class="loading-text">Searching...</span>
+    </div>
+    <!-- Navigation -->
     <nav class="navbar">
         <div class="nav-container">
             <div class="nav-left">
@@ -23,11 +43,11 @@
 
                 <!-- Navigation menu in center -->
                 <ul class="nav-menu">
-                    <li><a href="main.html#home" class="nav-link">Home</a></li>
+                    <li><a href="main.html#home" class="nav-link home-link">Home</a></li>
                     <li><a href="main.html#favorites" class="nav-link">Favorites</a></li>
                     <li><a href="main.html#collections" class="nav-link">Collections</a></li>
                     <li><a href="main.html#top-rated" class="nav-link">Top Rated</a></li>
-                    <li><a href="main.html#shop" class="nav-link">Shop</a></li>
+                    <li><a href="main.html#shop" class="nav-link shop-link">Shop</a></li>
                 </ul>
 
                 <!-- Menu dropdown moved to nav-left -->
@@ -286,7 +306,7 @@
                     <h3 class="footer-title">Fragrance Collect</h3>
                     <p>Discover the world's finest fragrances curated for the discerning connoisseur.</p>
                     <div class="social-links">
-                        <a href="https://www.tiktok.com/@the.cologne.archi" class="social-link" target="_blank" rel="noopener noreferrer"><i class="fab fa-tiktok"></i></a>
+                        <a href="https://www.tiktok.com/@the.cologne.archi" class="social-link" target="_blank" rel="noopener noreferrer" aria-label="Visit our TikTok profile"><i class="fab fa-tiktok"></i></a>
                     </div>
                 </div>
                 
@@ -308,6 +328,8 @@
                         <li><a href="contact.html">Contact Us</a></li>
                         <li><a href="size-guide.html">Size Guide</a></li>
                         <li><a href="faq.html">FAQ</a></li>
+                        <li><a href="terms-of-service.html">Terms of Service</a></li>
+                        <li><a href="privacy-policy.html">Privacy Policy</a></li>
                     </ul>
                 </div>
                 
@@ -326,8 +348,27 @@
         </div>
     </footer>
 
+    <!-- Perfume Details Modal -->
+    <div class="modal" id="perfume-modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div class="modal-body">
+                <div class="modal-image">
+                    <img id="modal-perfume-image" src="" alt="">
+                </div>
+                <div class="modal-info">
+                    <h2 id="modal-perfume-name"></h2>
+                    <p class="modal-brand" id="modal-perfume-brand"></p>
+                    <div class="modal-rating" id="modal-perfume-rating"></div>
+                    <p class="modal-description" id="modal-perfume-description"></p>
+                    <div class="modal-price" id="modal-perfume-price"></div>
+                    <button class="modal-btn">Add to Cart</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="shared-auth.js"></script>
     <script src="auth-script.js"></script>
-
 </body>
 </html> 
