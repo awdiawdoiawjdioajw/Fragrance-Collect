@@ -852,18 +852,27 @@ function getSecurityHeaders(origin) {
         "form-action 'self'",
     ].join('; ');
 
-    return {
+    const headers = {
         'Content-Security-Policy': csp,
         'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
         'X-Content-Type-Options': 'nosniff',
         'X-Frame-Options': 'SAMEORIGIN',
         'Referrer-Policy': 'strict-origin-when-cross-origin',
         'Permissions-Policy': 'geolocation=(), microphone=(), camera=()',
-        'Access-Control-Allow-Origin': isOriginAllowed(origin) ? origin : 'null',
         'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         'Access-Control-Allow-Credentials': 'true',
     };
+
+    // Only set Access-Control-Allow-Origin if origin is allowed
+    if (isOriginAllowed(origin)) {
+        headers['Access-Control-Allow-Origin'] = origin;
+    } else if (origin && origin !== 'null' && origin !== 'undefined') {
+        // For disallowed origins, don't set the header (browser will block)
+        console.log('Origin not allowed for CORS:', origin);
+    }
+
+    return headers;
 }
 
 /**
