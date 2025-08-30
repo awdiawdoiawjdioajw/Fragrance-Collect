@@ -769,9 +769,21 @@ function isOriginAllowed(origin) {
     }
     
     // In development, allow localhost and 127.0.0.1 with any port
-    if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:') || 
+    if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:') ||
         origin.startsWith('https://localhost:') || origin.startsWith('https://127.0.0.1:')) {
         console.log('Localhost origin allowed:', origin);
+        return true;
+    }
+
+    // Allow file:// protocol for local file testing
+    if (origin.startsWith('file://')) {
+        console.log('File protocol allowed for local testing:', origin);
+        return true;
+    }
+
+    // Allow any port on 127.0.0.1 for development
+    if (origin.includes('127.0.0.1')) {
+        console.log('127.0.0.1 origin allowed:', origin);
         return true;
     }
     
