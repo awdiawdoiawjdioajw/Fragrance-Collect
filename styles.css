@@ -433,6 +433,14 @@ h1, h2, h3, h4, h5, h6 {
     box-shadow: 0 4px 12px rgba(201, 166, 70, 0.3);
 }
 
+.login-btn i,
+.menu-profile-btn i,
+.menu-logout-btn i {
+    margin: 0;
+    padding: 0;
+    line-height: 1; /* Prevents extra vertical space from line height */
+}
+
 /* Hero Section */
 .hero {
     height: 100vh;
