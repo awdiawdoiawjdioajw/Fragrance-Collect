@@ -2748,7 +2748,7 @@ select option {
     border: 1px solid rgba(201, 166, 70, 0.2);
     border-radius: 50%;
     color: var(--warm-white);
-    font-size: 1.1rem;
+    font-size: 1.0rem; /* Reduced size to prevent icon clipping */
     text-decoration: none;
     transition: all 0.3s ease-in-out;
     position: relative;
