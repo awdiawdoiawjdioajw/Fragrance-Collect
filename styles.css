@@ -147,12 +147,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .search-row-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    opacity: 0;
-    transform: translateX(10px);
-    transition: all 0.3s ease;
+    display: none !important; /* Completely hidden - removed from HTML */
 }
 
 .search-row-actions.show {
@@ -191,6 +186,37 @@ h1, h2, h3, h4, h5, h6 {
     gap: 0.5rem;
     flex-shrink: 0;
     margin-left: 0.5rem;
+}
+
+.user-actions-compact {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.user-welcome-compact {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.user-name-compact {
+    color: var(--warm-white);
+    font-weight: 500;
+}
+
+.logout-link-compact {
+    color: var(--warm-white);
+    text-decoration: none;
+    padding: 0.25rem;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.logout-link-compact:hover {
+    background-color: rgba(201, 166, 70, 0.1);
+    color: var(--antique-gold);
 }
 
 /* Hamburger Menu */

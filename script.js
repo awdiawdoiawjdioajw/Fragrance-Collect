@@ -216,7 +216,7 @@ function updateDynamicGreeting(firstName) {
         subtitle = 'Discover new fragrances today';
     } else {
         greeting = 'Good evening';
-        subtitle = 'Unwind with luxurious scents';
+        subtitle = 'Discover your perfect evening scent';
     }
     
     // Add some personalized variety
@@ -247,14 +247,7 @@ function updateDynamicGreeting(firstName) {
         }, 100);
     }
     
-    // Show search row actions
-    const searchRowActions = document.getElementById('search-row-actions');
-    if (searchRowActions) {
-        searchRowActions.style.display = 'flex';
-        setTimeout(() => {
-            searchRowActions.classList.add('show');
-        }, 200);
-    }
+    // Search row actions removed - user actions now consolidated in navigation
 }
 
 // Logout is now handled by shared-auth.js handleSharedLogout function
@@ -282,15 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }, 500);
 
-    // Logout handling is now in shared-auth.js
-    // Add event listener for the search row logout button
-    const searchLogoutLink = document.getElementById('search-logout-link');
-    if (searchLogoutLink) {
-        searchLogoutLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            handleSharedLogout();
-        });
-    }
+    // Logout handling is now in shared-auth.js - search row logout removed
 
     if (authUI.favoritesLink) {
         authUI.favoritesLink.addEventListener('click', (e) => {

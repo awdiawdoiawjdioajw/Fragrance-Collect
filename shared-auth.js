@@ -12,7 +12,7 @@ const sharedAuthUI = {
     userWelcome: null,
     userNameDisplay: null,
     logoutLink: null,
-    
+
     // Initialize UI elements (call this from each page)
     init() {
         this.loginBtn = document.getElementById('login-btn');

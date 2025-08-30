@@ -51,21 +51,19 @@
             </div>
             
             <div class="nav-right">
-                <!-- Logged Out View -->
-                <a href="auth.html" class="login-btn" id="login-btn" aria-label="Login or Sign up">
-                    <i class="fas fa-user"></i>
-                </a>
+                <!-- Consolidated user actions moved closer to nav menu -->
+                <div class="user-actions-compact">
+                    <!-- Logged Out View -->
+                    <a href="auth.html" class="login-btn" id="login-btn" aria-label="Login or Sign up">
+                        <i class="fas fa-user"></i>
+                    </a>
 
-                <!-- Logged In View (Hidden by default) -->
-                <div class="user-welcome" id="user-welcome" style="display: none;">
-                    <div class="welcome-text">
-                        <span class="greeting" id="dynamic-greeting">Hello</span>, 
-                        <span id="user-name-display" class="user-name"></span>!
-                        <span class="welcome-sub" id="welcome-subtitle">Discover your perfect scent</span>
-                    </div>
-                    <div class="user-actions">
-                        <a href="account.html" class="account-link" aria-label="My Account"><i class="fas fa-user-cog"></i></a>
-                        <a href="#" id="logout-link" class="logout-link" aria-label="Logout"><i class="fas fa-sign-out-alt"></i></a>
+                    <!-- Logged In View (Hidden by default) -->
+                    <div class="user-welcome-compact" id="user-welcome" style="display: none;">
+                        <span id="user-name-display" class="user-name-compact"></span>
+                        <a href="#" id="logout-link" class="logout-link-compact" aria-label="Logout">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -93,15 +91,7 @@
                     </ul>
                 </div>
                 
-                <!-- Account settings on the right (when logged in) -->
-                <div class="search-row-actions" id="search-row-actions" style="display: none;">
-                    <a href="account.html" class="account-btn" aria-label="Account Settings" title="Account Settings">
-                        <i class="fas fa-cog"></i>
-                    </a>
-                    <a href="#" id="search-logout-link" class="logout-btn" aria-label="Logout" title="Logout">
-                        <i class="fas fa-sign-out-alt"></i>
-                    </a>
-                </div>
+                <!-- Removed duplicate account settings - now consolidated in nav -->
             </div>
             
             <!-- Hamburger menu for mobile -->
