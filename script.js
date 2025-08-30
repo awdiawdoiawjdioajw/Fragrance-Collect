@@ -1525,7 +1525,10 @@ async function toggleFavorite(button, perfume) {
     try {
         if (isFavorited) {
             // Unfavorite logic
-            await fetch(`/api/user/favorites/${fragranceId}`, { method: 'DELETE' });
+            await fetch(`https://auth-worker.joshuablaszczyk.workers.dev/api/user/favorites/${fragranceId}`, { 
+                method: 'DELETE',
+                credentials: 'include'
+            });
             userFavorites.delete(fragranceId);
             button.classList.remove('favorited');
         } else {
@@ -1539,12 +1542,13 @@ async function toggleFavorite(button, perfume) {
                 productUrl: perfume.productUrl,
                 price: perfume.price,
                 currency: perfume.currency,
-                shipping_availability: perfume.shipping ? 'available' : 'unavailable',
+                shipping_availability: perfume.shipping_availability || (perfume.shipping ? 'available' : 'unavailable'),
             };
-            await fetch('/api/user/favorites', {
+            await fetch('https://auth-worker.joshuablaszczyk.workers.dev/api/user/favorites', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(favoriteData),
+                credentials: 'include'
             });
             userFavorites.add(fragranceId);
             button.classList.add('favorited');
@@ -1585,7 +1589,9 @@ async function loadUserFavorites() {
     }
 
     try {
-        const response = await fetch('/api/user/favorites');
+        const response = await fetch('https://auth-worker.joshuablaszczyk.workers.dev/api/user/favorites', {
+            credentials: 'include'
+        });
         const data = await response.json();
         if (data.success && data.favorites) {
             userFavorites = new Set(data.favorites.map(fav => fav.fragrance_id));
