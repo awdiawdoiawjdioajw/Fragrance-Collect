@@ -4,6 +4,280 @@ const keyCache = new Map();
 let lastKeyFetchTime = 0;
 const KEY_CACHE_TTL = 3600 * 1000; // 1 hour in milliseconds
 
+// Revenue optimization constants
+const REVENUE_CONFIG = {
+  TIKTOK_PARTNER_ID: '7563286',
+  CJ_WEIGHT: 0.7, // CJ products get 70% weight
+  TIKTOK_WEIGHT: 0.3, // TikTok products get 30% weight
+  MIN_COMMISSION_RATE: 0.05, // 5% minimum commission
+  OPTIMAL_PRICE_RANGE: { min: 50, max: 300 },
+  TRENDING_CACHE_DURATION: 300, // 5 minutes for trending
+  HOT_SEARCH_CACHE_DURATION: 600, // 10 minutes for hot searches
+  BRAND_CACHE_DURATION: 7200, // 2 hours for brand searches
+  GENERIC_CACHE_DURATION: 1800, // 30 minutes for generic terms
+  SEASONAL_CACHE_DURATION: 3600 // 1 hour for seasonal searches
+};
+
+// Commission rates by brand category (example - adjust based on your CJ data)
+const COMMISSION_RATES = {
+  'luxury': { rate: 0.12, weight: 1.0 },
+  'designer': { rate: 0.10, weight: 0.9 },
+  'niche': { rate: 0.08, weight: 0.8 },
+  'celebrity': { rate: 0.09, weight: 0.85 },
+  'seasonal': { rate: 0.07, weight: 0.75 },
+  'default': { rate: 0.06, weight: 0.7 }
+};
+
+// Helper functions for revenue optimization
+function calculateRevenueScore(product, query, REVENUE_CONFIG, COMMISSION_RATES) {
+  let score = 0;
+
+  const commissionRate = getCommissionRate(product, COMMISSION_RATES);
+  score += commissionRate * 100;
+
+  const price = parseFloat(product.price?.amount || 0);
+  if (price >= REVENUE_CONFIG.OPTIMAL_PRICE_RANGE.min && price <= REVENUE_CONFIG.OPTIMAL_PRICE_RANGE.max) {
+    score += 50;
+  }
+
+  const brandCategory = getBrandCategory(product);
+  const categoryWeight = COMMISSION_RATES[brandCategory]?.weight || COMMISSION_RATES.default.weight;
+  score *= categoryWeight;
+
+  if (query) {
+    const relevance = calculateRelevance(product, query);
+    score += relevance * 0.3;
+  }
+
+  if (product.advertiserName?.includes('TikTok')) {
+    score *= REVENUE_CONFIG.TIKTOK_WEIGHT;
+  } else {
+    score *= REVENUE_CONFIG.CJ_WEIGHT;
+  }
+
+  return score;
+}
+
+function getCommissionRate(product, COMMISSION_RATES) {
+  if (!product.linkCode?.clickUrl) {
+    return 0;
+  }
+  const brandCategory = getBrandCategory(product);
+  return COMMISSION_RATES[brandCategory]?.rate || COMMISSION_RATES.default.rate;
+}
+
+function getBrandCategory(product) {
+  const brand = product.brand?.toLowerCase() || '';
+  const title = product.title?.toLowerCase() || '';
+
+  if (brand.includes('luxury') || title.includes('luxury')) return 'luxury';
+  if (brand.includes('designer') || title.includes('designer')) return 'designer';
+  if (brand.includes('niche') || title.includes('niche')) return 'niche';
+  if (brand.includes('celebrity') || title.includes('celebrity')) return 'celebrity';
+  if (title.includes('limited') || title.includes('seasonal')) return 'seasonal';
+
+  return 'default';
+}
+
+function calculateTrendingScore(product) {
+  let score = 0;
+  const title = product.title?.toLowerCase() || '';
+
+  if (title.includes('viral') || title.includes('trending')) score += 30;
+  if (title.includes('tiktok') || title.includes('social media')) score += 25;
+  if (title.includes('limited edition')) score += 20;
+  if (title.includes('new') || title.includes('2024')) score += 15;
+
+  return score;
+}
+
+function calculateRelevance(product, query) {
+  if (!query) return 0;
+
+  const queryLower = query.toLowerCase();
+  const titleLower = product.title?.toLowerCase() || '';
+  const brandLower = product.brand?.toLowerCase() || '';
+
+  let score = 0;
+
+  if (titleLower.includes(queryLower)) score += 100;
+  if (brandLower.includes(queryLower)) score += 80;
+
+  const queryWords = queryLower.split(/\s+/);
+  queryWords.forEach(word => {
+    if (titleLower.includes(word)) score += 20;
+    if (brandLower.includes(word)) score += 15;
+  });
+
+  return score;
+}
+
+function optimizeForRevenue(products, query, sortBy, brandFilter, REVENUE_CONFIG, COMMISSION_RATES) {
+  let filtered = products.filter(p => {
+    if (brandFilter && p.brand?.toLowerCase() !== brandFilter.toLowerCase()) return false;
+    return true;
+  });
+
+  filtered = filtered.map(p => ({
+    ...p,
+    revenueScore: calculateRevenueScore(p, query, REVENUE_CONFIG, COMMISSION_RATES),
+    commissionRate: getCommissionRate(p, COMMISSION_RATES),
+    trendingScore: calculateTrendingScore(p)
+  }));
+
+  switch (sortBy) {
+    case 'revenue':
+      return filtered.sort((a, b) => b.revenueScore - a.revenueScore);
+    case 'commission':
+      return filtered.sort((a, b) => b.commissionRate - a.commissionRate);
+    case 'trending':
+      return filtered.sort((a, b) => b.trendingScore - a.trendingScore);
+    case 'price_low':
+      return filtered.sort((a, b) => parseFloat(a.price?.amount || 0) - parseFloat(b.price?.amount || 0));
+    case 'price_high':
+      return filtered.sort((a, b) => parseFloat(b.price?.amount || 0) - parseFloat(a.price?.amount || 0));
+    case 'relevance':
+    default:
+      return filtered.sort((a, b) => parseFloat(a.price?.amount || 0) - parseFloat(b.price?.amount || 0));
+  }
+}
+
+function formatProductForRevenue(p, query, REVENUE_CONFIG, COMMISSION_RATES) {
+  const cjLink = p.linkCode?.clickUrl || p.link;
+
+  if (!cjLink || !p.imageLink) {
+    return null;
+  }
+
+  const price = parseFloat(p.price?.amount || 0);
+  const commissionRate = getCommissionRate(p, COMMISSION_RATES);
+  const estimatedCommission = price * commissionRate;
+
+  return {
+    id: p.id,
+    name: p.title,
+    brand: p.brand || p.advertiserName,
+    price: price,
+    image: p.imageLink,
+    shippingCost: parseFloat(p.shipping?.price?.amount || 0),
+    cjLink: cjLink,
+    advertiser: p.advertiserName,
+    currency: p.price?.currency || 'USD',
+    revenue: {
+      commissionRate: commissionRate,
+      estimatedCommission: estimatedCommission,
+      revenueScore: calculateRevenueScore(p, query, REVENUE_CONFIG, COMMISSION_RATES)
+    },
+    relevance: calculateRelevance(p, query)
+  };
+}
+
+function calculateRevenueMetrics(products, cjCount, tiktokCount) {
+  const totalProducts = products.length;
+  const totalValue = products.reduce((sum, p) => sum + (p.price || 0), 0);
+  const avgCommission = products.reduce((sum, p) => sum + (p.revenue?.commissionRate || 0), 0) / totalProducts;
+  const estimatedTotalCommission = products.reduce((sum, p) => sum + (p.revenue?.estimatedCommission || 0), 0);
+
+  return {
+    totalProducts,
+    totalValue: totalValue.toFixed(2),
+    avgCommissionRate: (avgCommission * 100).toFixed(2) + '%',
+    estimatedTotalCommission: estimatedTotalCommission.toFixed(2),
+    sources: {
+      cj: cjCount,
+      tiktok: tiktokCount
+    }
+  };
+}
+
+function determineCacheDuration(query, sortBy, REVENUE_CONFIG) {
+  if (!query) return REVENUE_CONFIG.GENERIC_CACHE_DURATION;
+  
+  const queryLower = query.toLowerCase();
+  
+  if (sortBy === 'trending' || queryLower.includes('viral') || queryLower.includes('trending')) {
+    return REVENUE_CONFIG.TRENDING_CACHE_DURATION;
+  }
+  
+  if (queryLower.includes('creed') || queryLower.includes('tom ford') || queryLower.includes('chanel')) {
+    return REVENUE_CONFIG.BRAND_CACHE_DURATION;
+  }
+  
+  if (queryLower.includes('christmas') || queryLower.includes('valentine') || queryLower.includes('summer')) {
+    return REVENUE_CONFIG.SEASONAL_CACHE_DURATION;
+  }
+  
+  if (queryLower.includes('baccarat rouge') || queryLower.includes('sauvage') || queryLower.includes('black opium')) {
+    return REVENUE_CONFIG.HOT_SEARCH_CACHE_DURATION;
+  }
+  
+  return REVENUE_CONFIG.GENERIC_CACHE_DURATION;
+}
+
+function deduplicateProducts(products) {
+  const seen = new Map();
+  const unique = [];
+
+  products.forEach(product => {
+    const key = `${product.title?.toLowerCase()}-${product.brand?.toLowerCase()}-${product.price?.amount}`;
+
+    if (!seen.has(key)) {
+      seen.set(key, true);
+      unique.push(product);
+    }
+  });
+
+  return unique;
+}
+
+async function fetchCJProducts(gqlQuery, variables, env) {
+  const gqlRes = await fetch('https://ads.api.cj.com/query', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${env.CJ_DEV_KEY}`, 'Content-Type': 'application/json', 'Accept': 'application/json, */*' },
+    body: JSON.stringify({ query: gqlQuery, variables })
+  });
+
+  if (!gqlRes.ok) {
+    const errorText = await gqlRes.text();
+    console.error('CJ API HTTP Error:', errorText);
+    throw new Error(`CJ API Error ${gqlRes.status}: ${errorText}`);
+  }
+
+  const gqlData = await gqlRes.json();
+  if (gqlData.errors) {
+    console.error('CJ GraphQL Errors:', gqlData.errors);
+    throw new Error(`CJ GraphQL Error: ${JSON.stringify(gqlData.errors)}`);
+  }
+  return gqlData;
+}
+
+function buildShoppingProductsQuery(includePartnerIds) {
+  const varDecl = includePartnerIds
+    ? ", $partnerIds: [ID!]"
+    : "";
+  const argUse = includePartnerIds
+    ? ", partnerIds: $partnerIds"
+    : "";
+  return `
+    query shoppingProducts($companyId: ID!, $keywords: [String!], $limit: Int!, $offset: Int!, $websiteId: ID!, $lowPrice: Float, $highPrice: Float${varDecl}) {
+      shoppingProducts(companyId: $companyId, keywords: $keywords, limit: $limit, offset: $offset, lowPrice: $lowPrice, highPrice: $highPrice${argUse}) {
+        totalCount
+        resultList {
+          id
+          title
+          brand
+          price { amount currency }
+          imageLink
+          advertiserName
+          shipping { price { amount currency } }
+          linkCode(pid: $websiteId) { clickUrl }
+          link
+        }
+      }
+    }
+  `;
+}
+
 export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') {
@@ -1219,6 +1493,26 @@ async function handleFeedsRequest(env) {
 }
 
 async function handleProductsRequest(request, url, env) {
+  const REVENUE_CONFIG = {
+    TIKTOK_PARTNER_ID: '7563286',
+    CJ_WEIGHT: 0.7,
+    TIKTOK_WEIGHT: 0.3,
+    MIN_COMMISSION_RATE: 0.05,
+    OPTIMAL_PRICE_RANGE: { min: 50, max: 300 },
+    TRENDING_CACHE_DURATION: 300,
+    HOT_SEARCH_CACHE_DURATION: 600,
+    BRAND_CACHE_DURATION: 7200,
+    GENERIC_CACHE_DURATION: 1800,
+    SEASONAL_CACHE_DURATION: 3600
+  };
+  const COMMISSION_RATES = {
+    'luxury': { rate: 0.12, weight: 1.0 },
+    'designer': { rate: 0.10, weight: 0.9 },
+    'niche': { rate: 0.08, weight: 0.8 },
+    'celebrity': { rate: 0.09, weight: 0.85 },
+    'seasonal': { rate: 0.07, weight: 0.75 },
+    'default': { rate: 0.06, weight: 0.7 }
+  };
   const { searchParams } = new URL(url);
   const query = searchParams.get('q') || '';
   const limit = parseInt(searchParams.get('limit') || '50', 10);
@@ -1256,8 +1550,8 @@ async function handleProductsRequest(request, url, env) {
 
     const allProducts = [...cjProducts, ...tiktokProducts];
     const deduplicatedProducts = deduplicateProducts(allProducts);
-    const optimizedProducts = optimizeForRevenue(deduplicatedProducts, query, sortBy, brandFilter);
-    const products = optimizedProducts.map(p => formatProductForRevenue(p, query)).filter(Boolean);
+    const optimizedProducts = optimizeForRevenue(deduplicatedProducts, query, sortBy, brandFilter, REVENUE_CONFIG, COMMISSION_RATES);
+    const products = optimizedProducts.map(p => formatProductForRevenue(p, query, REVENUE_CONFIG, COMMISSION_RATES)).filter(Boolean);
 
     const total = products.length;
     const paginatedProducts = products.slice(offset, offset + limit);
@@ -1286,7 +1580,7 @@ async function handleProductsRequest(request, url, env) {
 
     response = json(jsonResponse, env);
 
-    const cacheDuration = determineCacheDuration(query, sortBy);
+    const cacheDuration = determineCacheDuration(query, sortBy, REVENUE_CONFIG);
     const cacheResponse = response.clone();
     cacheResponse.headers.set('Cache-Control', `s-maxage=${cacheDuration}`);
     await cache.put(new Request(`https://cache/${cacheKey}`), cacheResponse);
@@ -1589,277 +1883,9 @@ async function searchTikTokStore(query, limit, offset, lowPrice, highPrice, env)
   }
 }
 
-function optimizeForRevenue(products, query, sortBy, brandFilter) {
-  let filtered = products.filter(p => {
-    if (brandFilter && p.brand?.toLowerCase() !== brandFilter.toLowerCase()) return false;
-    return true;
-  });
-
-  filtered = filtered.map(p => ({
-    ...p,
-    revenueScore: calculateRevenueScore(p, query),
-    commissionRate: getCommissionRate(p),
-    trendingScore: calculateTrendingScore(p)
-  }));
-
-  switch (sortBy) {
-    case 'revenue':
-      return filtered.sort((a, b) => b.revenueScore - a.revenueScore);
-    case 'commission':
-      return filtered.sort((a, b) => b.commissionRate - a.commissionRate);
-    case 'trending':
-      return filtered.sort((a, b) => b.trendingScore - a.trendingScore);
-    case 'price_low':
-      return filtered.sort((a, b) => parseFloat(a.price?.amount || 0) - parseFloat(b.price?.amount || 0));
-    case 'price_high':
-      return filtered.sort((a, b) => parseFloat(b.price?.amount || 0) - parseFloat(a.price?.amount || 0));
-    case 'relevance':
-    default:
-      return filtered.sort((a, b) => parseFloat(a.price?.amount || 0) - parseFloat(b.price?.amount || 0));
-  }
-}
-
-function calculateRevenueScore(product, query) {
-  let score = 0;
-
-  const commissionRate = getCommissionRate(product);
-  score += commissionRate * 100;
-
-  const price = parseFloat(product.price?.amount || 0);
-  if (price >= REVENUE_CONFIG.OPTIMAL_PRICE_RANGE.min && price <= REVENUE_CONFIG.OPTIMAL_PRICE_RANGE.max) {
-    score += 50;
-  }
-
-  const brandCategory = getBrandCategory(product);
-  const categoryWeight = COMMISSION_RATES[brandCategory]?.weight || COMMISSION_RATES.default.weight;
-  score *= categoryWeight;
-
-  if (query) {
-    const relevance = calculateRelevance(product, query);
-    score += relevance * 0.3;
-  }
-
-  if (product.advertiserName?.includes('TikTok')) {
-    score *= REVENUE_CONFIG.TIKTOK_WEIGHT;
-  } else {
-    score *= REVENUE_CONFIG.CJ_WEIGHT;
-  }
-
-  return score;
-}
-
-function getCommissionRate(product) {
-  if (!product.linkCode?.clickUrl) {
-    return 0;
-  }
-  const brandCategory = getBrandCategory(product);
-  return COMMISSION_RATES[brandCategory]?.rate || COMMISSION_RATES.default.rate;
-}
-
-function getBrandCategory(product) {
-  const brand = product.brand?.toLowerCase() || '';
-  const title = product.title?.toLowerCase() || '';
-
-  if (brand.includes('luxury') || title.includes('luxury')) return 'luxury';
-  if (brand.includes('designer') || title.includes('designer')) return 'designer';
-  if (brand.includes('niche') || title.includes('niche')) return 'niche';
-  if (brand.includes('celebrity') || title.includes('celebrity')) return 'celebrity';
-  if (title.includes('limited') || title.includes('seasonal')) return 'seasonal';
-
-  return 'default';
-}
-
-function calculateTrendingScore(product) {
-  let score = 0;
-  const title = product.title?.toLowerCase() || '';
-
-  if (title.includes('viral') || title.includes('trending')) score += 30;
-  if (title.includes('tiktok') || title.includes('social media')) score += 25;
-  if (title.includes('limited edition')) score += 20;
-  if (title.includes('new') || title.includes('2024')) score += 15;
-
-  return score;
-}
-
-function formatProductForRevenue(p, query) {
-  const cjLink = p.linkCode?.clickUrl || p.link;
-
-  if (!cjLink || !p.imageLink) {
-    return null;
-  }
-
-  const price = parseFloat(p.price?.amount || 0);
-  const commissionRate = getCommissionRate(p);
-  const estimatedCommission = price * commissionRate;
-
-  return {
-    id: p.id,
-    name: p.title,
-    brand: p.brand || p.advertiserName,
-    price: price,
-    image: p.imageLink,
-    shippingCost: parseFloat(p.shipping?.price?.amount || 0),
-    cjLink: cjLink,
-    advertiser: p.advertiserName,
-    currency: p.price?.currency || 'USD',
-    source: p.advertiserName?.includes('TikTok') ? 'TikTok Shop' : 'CJ Store',
-    revenue: {
-      commissionRate: commissionRate,
-      estimatedCommission: estimatedCommission,
-      commissionDisplay: `Earn $${estimatedCommission.toFixed(2)} per click`,
-      category: getBrandCategory(p)
-    },
-    trending: {
-      score: calculateTrendingScore(p),
-      isTrending: calculateTrendingScore(p) > 20,
-      badges: generateTrendingBadges(p)
-    },
-    relevance: calculateRelevance(p, query)
-  };
-}
-
-function generateTrendingBadges(product) {
-  const badges = [];
-  const title = product.title?.toLowerCase() || '';
-
-  if (title.includes('limited edition')) badges.push('Limited Edition');
-  if (title.includes('viral') || title.includes('trending')) badges.push('Trending');
-  if (title.includes('tiktok')) badges.push('TikTok Viral');
-  if (title.includes('luxury')) badges.push('Luxury');
-  if (title.includes('designer')) badges.push('Designer');
-
-  return badges;
-}
-
-function calculateRelevance(product, query) {
-  if (!query) return 0;
-
-  const queryLower = query.toLowerCase();
-  const titleLower = product.title?.toLowerCase() || '';
-  const brandLower = product.brand?.toLowerCase() || '';
-
-  let score = 0;
-
-  if (titleLower.includes(queryLower)) score += 100;
-  if (brandLower.includes(queryLower)) score += 80;
-
-  const queryWords = queryLower.split(/\s+/);
-  queryWords.forEach(word => {
-    if (titleLower.includes(word)) score += 20;
-    if (brandLower.includes(word)) score += 15;
-  });
-
-  return score;
-}
-
-function calculateRevenueMetrics(products, cjCount, tiktokCount) {
-  const totalProducts = products.length;
-  const totalValue = products.reduce((sum, p) => sum + (p.price || 0), 0);
-  const avgCommission = products.reduce((sum, p) => sum + (p.revenue?.commissionRate || 0), 0) / totalProducts;
-  const estimatedTotalCommission = products.reduce((sum, p) => sum + (p.revenue?.estimatedCommission || 0), 0);
-
-  return {
-    totalProducts,
-    totalValue: totalValue.toFixed(2),
-    averageCommission: avgCommission.toFixed(3),
-    estimatedTotalCommission: estimatedTotalCommission.toFixed(2),
-    cjContribution: cjCount / totalProducts,
-    tiktokContribution: tiktokCount / totalProducts,
-    revenueOptimization: 'active'
-  };
-}
-
 function generateCacheKey(params) {
   const { query, limit, page, lowPrice, highPrice, partnerId, includeTikTok, sortBy, brandFilter } = params;
   return `products:${query}:${limit}:${page}:${lowPrice}:${highPrice}:${partnerId}:${includeTikTok}:${sortBy}:${brandFilter}`;
-}
-
-function determineCacheDuration(query, sortBy) {
-  if (!query) return REVENUE_CONFIG.GENERIC_CACHE_DURATION;
-
-  const queryLower = query.toLowerCase();
-
-  if (queryLower.includes('viral') || queryLower.includes('trending') || queryLower.includes('new')) {
-    return REVENUE_CONFIG.TRENDING_CACHE_DURATION;
-  }
-
-  if (queryLower.includes('chanel') || queryLower.includes('dior') || queryLower.includes('gucci')) {
-    return REVENUE_CONFIG.BRAND_CACHE_DURATION;
-  }
-
-  if (queryLower.includes('christmas') || queryLower.includes('holiday') || queryLower.includes('summer')) {
-    return REVENUE_CONFIG.SEASONAL_CACHE_DURATION;
-  }
-
-  if (queryLower.includes('perfume') || queryLower.includes('fragrance')) {
-    return REVENUE_CONFIG.HOT_SEARCH_CACHE_DURATION;
-  }
-
-  return REVENUE_CONFIG.GENERIC_CACHE_DURATION;
-}
-
-function deduplicateProducts(products) {
-  const seen = new Map();
-  const unique = [];
-
-  products.forEach(product => {
-    const key = `${product.title?.toLowerCase()}-${product.brand?.toLowerCase()}-${product.price?.amount}`;
-
-    if (!seen.has(key)) {
-      seen.set(key, true);
-      unique.push(product);
-    }
-  });
-
-  return unique;
-}
-
-async function fetchCJProducts(gqlQuery, variables, env) {
-  const gqlRes = await fetch('https://ads.api.cj.com/query', {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${env.CJ_DEV_KEY}`, 'Content-Type': 'application/json', 'Accept': 'application/json, */*' },
-    body: JSON.stringify({ query: gqlQuery, variables })
-  });
-
-  if (!gqlRes.ok) {
-    const errorText = await gqlRes.text();
-    console.error('CJ API HTTP Error:', errorText);
-    throw new Error(`CJ API Error ${gqlRes.status}: ${errorText}`);
-  }
-
-  const gqlData = await gqlRes.json();
-  if (gqlData.errors) {
-    console.error('CJ GraphQL Errors:', gqlData.errors);
-    throw new Error(`CJ GraphQL Error: ${JSON.stringify(gqlData.errors)}`);
-  }
-  return gqlData;
-}
-
-function buildShoppingProductsQuery(includePartnerIds) {
-  const varDecl = includePartnerIds
-    ? ", $partnerIds: [ID!]"
-    : "";
-  const argUse = includePartnerIds
-    ? ", partnerIds: $partnerIds"
-    : "";
-  return `
-    query shoppingProducts($companyId: ID!, $keywords: [String!], $limit: Int!, $offset: Int!, $websiteId: ID!, $lowPrice: Float, $highPrice: Float${varDecl}) {
-      shoppingProducts(companyId: $companyId, keywords: $keywords, limit: $limit, offset: $offset, lowPrice: $lowPrice, highPrice: $highPrice${argUse}) {
-        totalCount
-        resultList {
-          id
-          title
-          brand
-          price { amount currency }
-          imageLink
-          advertiserName
-          shipping { price { amount currency } }
-          linkCode(pid: $websiteId) { clickUrl }
-          link
-        }
-      }
-    }
-  `;
 }
 
 function corsHeaders(env) {
