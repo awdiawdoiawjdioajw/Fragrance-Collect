@@ -258,7 +258,37 @@ async function handleLogin(request, env) {
     ).bind(sessionId, id, token, expiresAt.toISOString(), clientIP, userAgent, sessionFingerprint).run();
 
     // 5. Set the session token in a secure, HttpOnly cookie
-    headers['Set-Cookie'] = `session_token=${token}; Expires=${expiresAt.toUTCString()}; Path=/; HttpOnly; Secure; SameSite=Lax`;
+    // **FIX:** Configure cookie properly for both local development and production
+    const originUrl = request.headers.get('Origin') ? new URL(request.headers.get('Origin')) : null;
+    let cookieString = `session_token=${token}; Expires=${expiresAt.toUTCString()}; Path=/; HttpOnly`;
+
+    if (originUrl) {
+        // For local development, set domain to match the requesting origin
+        if (originUrl.hostname === '127.0.0.1' || originUrl.hostname === 'localhost') {
+            cookieString += `; Domain=${originUrl.hostname}; SameSite=Lax`;
+        } else if (originUrl.hostname.includes('workers.dev')) {
+            // For Cloudflare Workers, don't set domain to avoid conflicts
+            if (originUrl.protocol === 'https:') {
+                cookieString += '; Secure; SameSite=None';
+            } else {
+                cookieString += '; SameSite=Lax';
+            }
+        } else {
+            // For production domains, set appropriate SameSite
+            if (originUrl.protocol === 'https:') {
+                cookieString += '; Secure; SameSite=None';
+            } else {
+                cookieString += '; SameSite=Lax';
+            }
+        }
+    } else {
+        // Fallback for requests without Origin header (e.g., file://, direct API calls)
+        // For cross-origin requests from file:// or unknown origins, use Secure + SameSite=None
+        // This allows cookies to be sent to HTTPS domains from file:// origins
+        cookieString += '; Secure; SameSite=None';
+    }
+
+    headers['Set-Cookie'] = cookieString;
     
     // 6. Redirect the user back to the auth page with success status and user's first name.
     const firstName = name.split(' ')[0];
@@ -622,7 +652,37 @@ async function handleEmailSignup(request, env) {
             `INSERT INTO user_sessions (id, user_id, token, expires_at, client_ip, user_agent, fingerprint, last_activity) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
         ).bind(sessionId, userId, token, expiresAt.toISOString(), clientIP, userAgent, sessionFingerprint).run();
 
-        headers['Set-Cookie'] = `session_token=${token}; Expires=${expiresAt.toUTCString()}; Path=/; HttpOnly; Secure; SameSite=Lax`;
+            // **FIX:** Configure cookie properly for both local development and production
+    const originUrl = request.headers.get('Origin') ? new URL(request.headers.get('Origin')) : null;
+    let cookieString = `session_token=${token}; Expires=${expiresAt.toUTCString()}; Path=/; HttpOnly`;
+
+    if (originUrl) {
+        // For local development, set domain to match the requesting origin
+        if (originUrl.hostname === '127.0.0.1' || originUrl.hostname === 'localhost') {
+            cookieString += `; Domain=${originUrl.hostname}; SameSite=Lax`;
+        } else if (originUrl.hostname.includes('workers.dev')) {
+            // For Cloudflare Workers, don't set domain to avoid conflicts
+            if (originUrl.protocol === 'https:') {
+                cookieString += '; Secure; SameSite=None';
+            } else {
+                cookieString += '; SameSite=Lax';
+            }
+        } else {
+            // For production domains, set appropriate SameSite
+            if (originUrl.protocol === 'https:') {
+                cookieString += '; Secure; SameSite=None';
+            } else {
+                cookieString += '; SameSite=Lax';
+            }
+        }
+    } else {
+        // Fallback for requests without Origin header (e.g., file://, direct API calls)
+        // For cross-origin requests from file:// or unknown origins, use Secure + SameSite=None
+        // This allows cookies to be sent to HTTPS domains from file:// origins
+        cookieString += '; Secure; SameSite=None';
+    }
+
+        headers['Set-Cookie'] = cookieString;
 
         return jsonResponse({ success: true, user: { id: userId, name, email } }, 201, headers);
 
@@ -690,36 +750,52 @@ async function handleEmailLogin(request, env) {
             `INSERT INTO user_sessions (id, user_id, token, expires_at, client_ip, user_agent, fingerprint, last_activity) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
         ).bind(sessionId, user.id, token, expiresAt.toISOString(), clientIP, userAgent, sessionFingerprint).run();
 
-        headers['Set-Cookie'] = `session_token=${token}; Expires=${expiresAt.toUTCString()}; Path=/; HttpOnly; Secure; SameSite=Lax`;
-        
-        // Redirect the user back to the auth page with success status and user's first name.
-        const firstName = user.name.split(' ')[0];
-        const successRedirectUrl = new URL(redirectUrl);
-        successRedirectUrl.searchParams.set('status', 'success');
-        successRedirectUrl.searchParams.set('name', firstName);
+            // **FIX:** Configure cookie properly for both local development and production
+    const originUrl = request.headers.get('Origin') ? new URL(request.headers.get('Origin')) : null;
+    let cookieString = `session_token=${token}; Expires=${expiresAt.toUTCString()}; Path=/; HttpOnly`;
 
-        return new Response(null, {
-            status: 302,
-            headers: {
-                ...headers,
-                'Location': successRedirectUrl.toString(),
+    if (originUrl) {
+        // For local development, set domain to match the requesting origin
+        if (originUrl.hostname === '127.0.0.1' || originUrl.hostname === 'localhost') {
+            cookieString += `; Domain=${originUrl.hostname}; SameSite=Lax`;
+        } else if (originUrl.hostname.includes('workers.dev')) {
+            // For Cloudflare Workers, don't set domain to avoid conflicts
+            if (originUrl.protocol === 'https:') {
+                cookieString += '; Secure; SameSite=None';
+            } else {
+                cookieString += '; SameSite=Lax';
             }
-        });
+        } else {
+            // For production domains, set appropriate SameSite
+            if (originUrl.protocol === 'https:') {
+                cookieString += '; Secure; SameSite=None';
+            } else {
+                cookieString += '; SameSite=Lax';
+            }
+        }
+    } else {
+        // Fallback for requests without Origin header (e.g., file://, direct API calls)
+        // For cross-origin requests from file:// or unknown origins, use Secure + SameSite=None
+        // This allows cookies to be sent to HTTPS domains from file:// origins
+        cookieString += '; Secure; SameSite=None';
+    }
+
+        headers['Set-Cookie'] = cookieString;
+
+        // **FIX:** Return a JSON response instead of a redirect
+        return jsonResponse({
+            success: true,
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                picture: user.picture
+            }
+        }, 200, headers);
 
     } catch (error) {
         console.error('Error during email login:', error.message);
-        const errorRedirectUrl = new URL(redirectUrl);
-        errorRedirectUrl.searchParams.set('error', 'login_failed');
-        // Sanitize and pass the specific error reason for debugging
-        const reason = error.message.replace(/[^a-zA-Z0-9_]/g, '_');
-        errorRedirectUrl.searchParams.set('reason', reason);
-        return new Response(null, {
-            status: 302,
-            headers: {
-                ...headers,
-                'Location': errorRedirectUrl.toString(),
-            }
-        });
+        return jsonResponse({ error: 'Login failed.', details: error.message }, 500, headers);
     }
 }
 
@@ -870,13 +946,22 @@ function getSecurityHeaders(origin) {
         'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Max-Age': '86400',
+        'Vary': 'Origin'
     };
 
-    // Only set Access-Control-Allow-Origin if origin is allowed
-    if (isOriginAllowed(origin)) {
-        headers['Access-Control-Allow-Origin'] = origin;
-    } else if (origin && origin !== 'null' && origin !== 'undefined') {
-        // For disallowed origins, don't set the header (browser will block)
+    // Determine allowed origin value
+    let allowedOrigin = null;
+    if (!origin || origin === 'null' || origin === 'undefined') {
+        // Support file:// and other null-origin contexts
+        allowedOrigin = 'null';
+    } else if (isOriginAllowed(origin)) {
+        allowedOrigin = origin;
+    }
+
+    if (allowedOrigin) {
+        headers['Access-Control-Allow-Origin'] = allowedOrigin;
+    } else if (origin) {
         console.log('Origin not allowed for CORS:', origin);
     }
 
