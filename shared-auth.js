@@ -145,28 +145,20 @@ function updateSharedNavUI(user) {
         // User is logged in
         isUserLoggedIn = true;
         currentUser = user;
-        console.log('Setting isUserLoggedIn to true');
+        document.body.classList.add('user-logged-in');
+        console.log('Setting isUserLoggedIn to true and adding .user-logged-in class');
 
-        if (sharedAuthUI.menuActions) sharedAuthUI.menuActions.style.display = 'flex';
         // Call updateDynamicGreeting if it exists (for hero greeting)
         if (typeof updateDynamicGreeting === 'function') {
             const firstName = user.name.split(' ')[0];
             updateDynamicGreeting(firstName);
         }
-        // Also hide login button if it exists
-        const loginBtn = document.getElementById('login-btn');
-        if (loginBtn) loginBtn.style.display = 'none';
     } else {
         // User is logged out
         isUserLoggedIn = false;
         currentUser = null;
-        console.log('Setting isUserLoggedIn to false');
-
-        if (sharedAuthUI.menuActions) sharedAuthUI.menuActions.style.display = 'none';
-        
-        // Also show login button if it exists
-        const loginBtn = document.getElementById('login-btn');
-        if (loginBtn) loginBtn.style.display = 'block';
+        document.body.classList.remove('user-logged-in');
+        console.log('Setting isUserLoggedIn to false and removing .user-logged-in class');
     }
 }
 

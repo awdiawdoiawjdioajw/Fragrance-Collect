@@ -2764,3 +2764,28 @@ select option {
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(201, 166, 70, 0.3);
 }
+
+/* Authentication State Styling */
+/* By default, show login btn, hide menu actions */
+.menu-actions {
+    display: none;
+}
+.login-btn {
+    display: flex; /* Or inline-flex */
+}
+
+/* When user is logged in, hide login btn, show menu actions */
+body.user-logged-in .login-btn {
+    display: none;
+}
+body.user-logged-in .menu-actions {
+    display: flex;
+}
+
+.login-btn i,
+.menu-profile-btn i,
+.menu-logout-btn i {
+    margin: 0;
+    padding: 0;
+    line-height: 1; /* Prevents extra vertical space from line height */
+}
