@@ -2496,16 +2496,32 @@ select option {
 
 .product-card .favorite-btn {
     position: absolute;
-    top: 10px;
+    bottom: 10px;
     left: 10px;
-    background: none;
+    background: rgba(0, 0, 0, 0.5);
     border: none;
     color: var(--warm-white);
     font-size: 1.5rem;
     cursor: pointer;
-    transition: color 0.2s ease;
+    transition: all 0.2s ease;
+    z-index: 10;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .product-card .favorite-btn.favorited {
     color: var(--antique-gold);
+}
+
+.product-card .favorite-btn:hover {
+    background: rgba(0, 0, 0, 0.7);
+    transform: scale(1.1);
+}
+
+.product-card .favorite-btn.favorited:hover {
+    color: #D4B85E;
 }
