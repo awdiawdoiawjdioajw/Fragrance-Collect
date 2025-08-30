@@ -662,24 +662,41 @@ const ALLOWED_ORIGINS = [
     'https://fragrancecollect.com',
     'https://www.fragrancecollect.com',
     'https://fragrance-collect.pages.dev', // Cloudflare Pages preview
+    'https://fragrance-collect.github.io', // GitHub Pages
+    'https://heart.github.io', // GitHub Pages user domain
     'http://localhost:3000', // Local development
     'http://localhost:8080', // Local development
+    'http://localhost:5000', // Local development
+    'http://localhost:8000', // Local development
     'http://127.0.0.1:3000', // Local development
-    'http://127.0.0.1:8080'  // Local development
+    'http://127.0.0.1:8080', // Local development
+    'http://127.0.0.1:5000', // Local development
+    'http://127.0.0.1:8000', // Local development
+    'file://', // For local file testing
+    null, // For direct navigation
+    undefined // For direct navigation
 ];
 
 /**
  * Validates if the origin is allowed to make requests
  */
 function isOriginAllowed(origin) {
-    if (!origin) return false;
+    if (!origin || origin === 'null' || origin === 'undefined') {
+        console.log('No origin provided, allowing for direct navigation');
+        return true; // Allow direct navigation
+    }
     
-    // In development, allow localhost and 127.0.0.1
-    if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
+    // In development, allow localhost and 127.0.0.1 with any port
+    if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:') || 
+        origin.startsWith('https://localhost:') || origin.startsWith('https://127.0.0.1:')) {
+        console.log('Localhost origin allowed:', origin);
         return true;
     }
     
-    return ALLOWED_ORIGINS.includes(origin);
+    // Check against allowed origins list
+    const isAllowed = ALLOWED_ORIGINS.includes(origin);
+    console.log('Origin check result:', origin, 'allowed:', isAllowed);
+    return isAllowed;
 }
 
 /**
@@ -689,24 +706,31 @@ function validateSiteOrigin(request) {
     const origin = request.headers.get('Origin');
     const referer = request.headers.get('Referer');
     
+    // Log for debugging
+    console.log('Origin validation - Origin:', origin, 'Referer:', referer);
+    
     // For non-CORS requests, check referer
     if (!origin && referer) {
         try {
             const refererUrl = new URL(referer);
             const refererOrigin = `${refererUrl.protocol}//${refererUrl.host}`;
+            console.log('Checking referer origin:', refererOrigin);
             return isOriginAllowed(refererOrigin);
-        } catch {
+        } catch (e) {
+            console.log('Failed to parse referer:', e.message);
             return false;
         }
     }
     
     // For CORS requests, check origin
     if (origin) {
+        console.log('Checking origin:', origin, 'Allowed:', isOriginAllowed(origin));
         return isOriginAllowed(origin);
     }
     
-    // No origin or referer - potentially suspicious
-    return false;
+    // No origin or referer - allow for direct navigation
+    console.log('No origin or referer - allowing for direct navigation');
+    return true; // More permissive for now
 }
 
 /**
