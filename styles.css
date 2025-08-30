@@ -2725,6 +2725,7 @@ select option {
 .nav-right {
     display: flex;
     align-items: center;
+    gap: 1.5rem; /* Same spacing as nav-menu */
 }
 
 .login-btn,
@@ -2736,17 +2737,23 @@ select option {
     width: 40px;
     height: 40px;
     background-color: transparent;
-    border: 1px solid #ddd;
+    border: 1px solid rgba(201, 166, 70, 0.2);
     border-radius: 50%;
-    color: #333;
-    font-size: 1.2rem;
-    margin-left: 10px;
-    transition: all 0.3s ease;
+    color: var(--warm-white);
+    font-size: 1.1rem;
+    text-decoration: none;
+    transition: all 0.3s ease-in-out;
+    position: relative;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .login-btn:hover,
 .menu-profile-btn:hover,
 .menu-logout-btn:hover {
-    background-color: #f5f5f5;
-    color: #000;
+    background-color: var(--antique-gold);
+    color: var(--soft-black);
+    border-color: var(--antique-gold);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(201, 166, 70, 0.3);
 }
