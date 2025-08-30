@@ -153,6 +153,9 @@ function updateSharedNavUI(user) {
             const firstName = user.name.split(' ')[0];
             updateDynamicGreeting(firstName);
         }
+        // Also hide login button if it exists
+        const loginBtn = document.getElementById('login-btn');
+        if (loginBtn) loginBtn.style.display = 'none';
     } else {
         // User is logged out
         isUserLoggedIn = false;
@@ -160,6 +163,10 @@ function updateSharedNavUI(user) {
         console.log('Setting isUserLoggedIn to false');
 
         if (sharedAuthUI.menuActions) sharedAuthUI.menuActions.style.display = 'none';
+        
+        // Also show login button if it exists
+        const loginBtn = document.getElementById('login-btn');
+        if (loginBtn) loginBtn.style.display = 'block';
     }
 }
 
@@ -180,6 +187,10 @@ async function handleSharedLogout() {
         localStorage.removeItem('session_token');
         
         updateSharedNavUI(null);
+        // Call page-specific UI update if it exists
+        if (typeof updateNavUI === 'function') {
+            updateNavUI(null);
+        }
         window.location.href = 'auth.html';
     }
 }

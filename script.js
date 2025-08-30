@@ -188,14 +188,20 @@ async function checkUserStatus() {
 // UI updates are now handled by shared-auth.js updateSharedNavUI function
 // This function is kept for backward compatibility but delegates to shared auth
 function updateNavUI(user) {
-    console.log('updateNavUI called with user:', user);
-    // Delegate to the shared auth system
-    updateSharedNavUI(user);
-    
-    // Handle any page-specific UI updates
-    if (user && authUI.userNameDisplay) {
-        const firstName = user.name.split(' ')[0];
-        updateDynamicGreeting(firstName);
+    const loginBtn = document.getElementById('login-btn');
+    if (user) {
+        if (authUI.userWelcome) authUI.userWelcome.style.display = 'flex';
+        if (authUI.loginBtn) authUI.loginBtn.style.display = 'none';
+        if (loginBtn) loginBtn.style.display = 'none';
+        
+        if (authUI.userNameDisplay) {
+            const firstName = user.name.split(' ')[0];
+            updateDynamicGreeting(firstName);
+        }
+    } else {
+        if (authUI.userWelcome) authUI.userWelcome.style.display = 'none';
+        if (authUI.loginBtn) authUI.loginBtn.style.display = 'block';
+        if (loginBtn) loginBtn.style.display = 'block';
     }
 }
 
