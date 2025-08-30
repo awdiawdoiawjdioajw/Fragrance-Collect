@@ -8,18 +8,12 @@ let sessionToken = null;
 
 // Common UI elements for authentication (adjust selectors per page as needed)
 const sharedAuthUI = {
-    loginBtn: null,
-    userWelcome: null,
-    logoutLink: null,
     menuActions: null,
     menuProfileBtn: null,
     menuLogoutBtn: null,
 
     // Initialize UI elements (call this from each page)
     init() {
-        this.loginBtn = document.getElementById('login-btn');
-        this.userWelcome = document.getElementById('user-welcome');
-        this.logoutLink = document.getElementById('logout-link');
         this.menuActions = document.querySelector('.menu-actions');
         this.menuProfileBtn = document.getElementById('menu-profile-btn');
         this.menuLogoutBtn = document.getElementById('menu-logout-btn');
@@ -146,17 +140,15 @@ async function checkSharedUserStatus() {
 // Update navigation UI based on authentication status
 function updateSharedNavUI(user) {
     console.log('updateSharedNavUI called with user:', user);
-    
+
     if (user) {
         // User is logged in
         isUserLoggedIn = true;
         currentUser = user;
         console.log('Setting isUserLoggedIn to true');
 
-        if (sharedAuthUI.loginBtn) sharedAuthUI.loginBtn.style.display = 'none';
-        if (sharedAuthUI.userWelcome) sharedAuthUI.userWelcome.style.display = 'flex';
         if (sharedAuthUI.menuActions) sharedAuthUI.menuActions.style.display = 'flex';
-        // Name display removed - only call updateDynamicGreeting if it exists
+        // Call updateDynamicGreeting if it exists (for hero greeting)
         if (typeof updateDynamicGreeting === 'function') {
             const firstName = user.name.split(' ')[0];
             updateDynamicGreeting(firstName);
@@ -167,8 +159,6 @@ function updateSharedNavUI(user) {
         currentUser = null;
         console.log('Setting isUserLoggedIn to false');
 
-        if (sharedAuthUI.loginBtn) sharedAuthUI.loginBtn.style.display = 'flex';
-        if (sharedAuthUI.userWelcome) sharedAuthUI.userWelcome.style.display = 'none';
         if (sharedAuthUI.menuActions) sharedAuthUI.menuActions.style.display = 'none';
     }
 }

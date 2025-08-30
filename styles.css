@@ -55,13 +55,14 @@ h1, h2, h3, h4, h5, h6 {
     display: flex;
     justify-content: flex-start; /* Align all items to the left */
     align-items: center;
-    gap: 2rem; /* Creates symmetrical spacing between element groups */
+    gap: 1.5rem; /* Reduced gap for tighter layout */
 }
 
 .nav-left {
     display: flex;
     align-items: center;
-    gap: 2rem; /* Space between logo and nav menu */
+    gap: 1rem; /* Reduced gap for tighter layout */
+    flex: 1; /* Take up available space */
 }
 
 .nav-logo {
@@ -146,83 +147,23 @@ h1, h2, h3, h4, h5, h6 {
     max-width: none;
 }
 
-.search-row-actions {
-    display: none !important; /* Completely hidden - removed from HTML */
-}
+/* Search row actions removed from HTML */
 
-.search-row-actions.show {
-    opacity: 1;
-    transform: translateX(0);
-}
+/* Search row actions removed */
 
-.account-btn,
-.logout-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    background: rgba(201, 166, 70, 0.1);
-    border: 1px solid rgba(201, 166, 70, 0.3);
-    border-radius: 50%;
-    color: var(--antique-gold);
-    text-decoration: none;
-    transition: all 0.3s ease;
-    font-size: 0.9rem;
-}
+/* Account and logout buttons removed - using menu-actions instead */
 
-.account-btn:hover,
-.logout-btn:hover {
-    background: rgba(201, 166, 70, 0.2);
-    border-color: var(--antique-gold);
-    color: var(--warm-white);
-    transform: translateY(-1px);
-}
+/* nav-right removed - consolidated into nav-left */
 
-.nav-right {
-    position: static;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-shrink: 0;
-    margin-left: 0.5rem;
-}
+/* User actions consolidated - nav-right section removed */
 
-.user-actions-compact {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.user-welcome-compact {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.9rem;
-}
-
-/* User name display removed - no longer needed */
-
-.logout-link-compact {
-    color: var(--warm-white);
-    text-decoration: none;
-    padding: 0.25rem;
-    border-radius: 4px;
-    transition: all 0.3s ease;
-}
-
-.logout-link-compact:hover {
-    background-color: rgba(201, 166, 70, 0.1);
-    color: var(--antique-gold);
-}
-
-/* Menu actions buttons moved to nav-left (further left position) */
+/* Menu actions buttons positioned at the end of nav-left */
 .menu-actions {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    margin-left: 2rem; /* Increased margin for more left positioning */
-    margin-right: 1rem;
+    margin-left: auto; /* Push to the right side of nav-left */
+    margin-right: 0;
 }
 
 .menu-profile-btn,
@@ -256,9 +197,17 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Mobile responsive adjustments */
 @media (max-width: 768px) {
+    .nav-container {
+        gap: 1rem; /* Tighter spacing on mobile */
+    }
+
+    .nav-left {
+        gap: 0.5rem; /* Reduced gap on mobile */
+    }
+
     .menu-actions {
-        margin-left: 1rem; /* Adjusted for mobile */
-        margin-right: 0.5rem;
+        margin-left: 0.5rem; /* Less margin on mobile */
+        gap: 0.25rem; /* Tighter button spacing */
     }
 
     .menu-profile-btn,
