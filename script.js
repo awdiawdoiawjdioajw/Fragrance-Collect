@@ -277,6 +277,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Logout handling is now in shared-auth.js - search row logout removed
 
+    // Add event listener for the menu logout button
+    const menuLogoutBtn = document.getElementById('menu-logout-btn');
+    if (menuLogoutBtn) {
+        menuLogoutBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            handleSharedLogout();
+        });
+    }
+
     if (authUI.favoritesLink) {
         authUI.favoritesLink.addEventListener('click', (e) => {
             e.preventDefault();

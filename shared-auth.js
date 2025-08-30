@@ -12,6 +12,9 @@ const sharedAuthUI = {
     userWelcome: null,
     userNameDisplay: null,
     logoutLink: null,
+    menuActions: null,
+    menuProfileBtn: null,
+    menuLogoutBtn: null,
 
     // Initialize UI elements (call this from each page)
     init() {
@@ -19,6 +22,9 @@ const sharedAuthUI = {
         this.userWelcome = document.getElementById('user-welcome');
         this.userNameDisplay = document.getElementById('user-name-display');
         this.logoutLink = document.getElementById('logout-link');
+        this.menuActions = document.querySelector('.menu-actions');
+        this.menuProfileBtn = document.getElementById('menu-profile-btn');
+        this.menuLogoutBtn = document.getElementById('menu-logout-btn');
     }
 };
 
@@ -148,9 +154,10 @@ function updateSharedNavUI(user) {
         isUserLoggedIn = true;
         currentUser = user;
         console.log('Setting isUserLoggedIn to true');
-        
+
         if (sharedAuthUI.loginBtn) sharedAuthUI.loginBtn.style.display = 'none';
         if (sharedAuthUI.userWelcome) sharedAuthUI.userWelcome.style.display = 'flex';
+        if (sharedAuthUI.menuActions) sharedAuthUI.menuActions.style.display = 'flex';
         if (sharedAuthUI.userNameDisplay) {
             const firstName = user.name.split(' ')[0];
             sharedAuthUI.userNameDisplay.textContent = firstName;
@@ -164,9 +171,10 @@ function updateSharedNavUI(user) {
         isUserLoggedIn = false;
         currentUser = null;
         console.log('Setting isUserLoggedIn to false');
-        
+
         if (sharedAuthUI.loginBtn) sharedAuthUI.loginBtn.style.display = 'flex';
         if (sharedAuthUI.userWelcome) sharedAuthUI.userWelcome.style.display = 'none';
+        if (sharedAuthUI.menuActions) sharedAuthUI.menuActions.style.display = 'none';
     }
 }
 

@@ -219,6 +219,61 @@ h1, h2, h3, h4, h5, h6 {
     color: var(--antique-gold);
 }
 
+/* Menu actions buttons next to menu */
+.menu-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: 1rem;
+}
+
+.menu-profile-btn,
+.menu-logout-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    background-color: rgba(18, 18, 18, 0.8);
+    color: var(--warm-white);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(201, 166, 70, 0.2);
+}
+
+.menu-profile-btn:hover,
+.menu-logout-btn:hover {
+    background-color: var(--antique-gold);
+    color: var(--soft-black);
+    border-color: var(--antique-gold);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(201, 166, 70, 0.3);
+}
+
+.menu-profile-btn i,
+.menu-logout-btn i {
+    font-size: 1rem;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+    .menu-actions {
+        margin-left: 0.5rem;
+    }
+
+    .menu-profile-btn,
+    .menu-logout-btn {
+        width: 32px;
+        height: 32px;
+    }
+
+    .menu-profile-btn i,
+    .menu-logout-btn i {
+        font-size: 0.9rem;
+    }
+}
+
 /* Hamburger Menu */
 .hamburger {
     display: none;
