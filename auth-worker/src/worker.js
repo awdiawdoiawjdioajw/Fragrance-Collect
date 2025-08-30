@@ -440,21 +440,27 @@ async function handleUpdatePreferences(request, env) {
 }
 
 async function handleGetFavorites(request, env) {
+    const origin = request.headers.get('Origin');
+    const headers = getSecurityHeaders(origin);
+    
     const user = await getAuthenticatedUser(request, env);
-    if (!user) return jsonResponse({ error: 'Unauthorized' }, 401);
+    if (!user) return jsonResponse({ error: 'Unauthorized' }, 401, headers);
 
     const { results } = await env.DB.prepare('SELECT * FROM user_favorites WHERE user_id = ? ORDER BY added_at DESC').bind(user.id).all();
 
-    return jsonResponse({ success: true, favorites: results || [] });
+    return jsonResponse({ success: true, favorites: results || [] }, 200, headers);
 }
 
 async function handleAddFavorite(request, env) {
+    const origin = request.headers.get('Origin');
+    const headers = getSecurityHeaders(origin);
+    
     const user = await getAuthenticatedUser(request, env);
-    if (!user) return jsonResponse({ error: 'Unauthorized' }, 401);
+    if (!user) return jsonResponse({ error: 'Unauthorized' }, 401, headers);
 
     const fav = await request.json();
     if (!fav || !fav.fragrance_id || !fav.name) {
-        return jsonResponse({ error: 'Fragrance ID and name are required' }, 400);
+        return jsonResponse({ error: 'Fragrance ID and name are required' }, 400, headers);
     }
 
     const favoriteId = crypto.randomUUID();
@@ -470,29 +476,32 @@ async function handleAddFavorite(request, env) {
         ).run();
     } catch (e) {
         if (e.message.includes('UNIQUE constraint failed')) {
-            return jsonResponse({ success: true, message: 'Already in favorites.' });
+            return jsonResponse({ success: true, message: 'Already in favorites.' }, 200, headers);
         }
         console.error('Failed to add favorite:', e);
-        return jsonResponse({ error: 'Failed to add favorite.' }, 500);
+        return jsonResponse({ error: 'Failed to add favorite.' }, 500, headers);
     }
     
-    return jsonResponse({ success: true, message: 'Added to favorites.', favorite_id: favoriteId }, 201);
+    return jsonResponse({ success: true, message: 'Added to favorites.', favorite_id: favoriteId }, 201, headers);
 }
 
 async function handleDeleteFavorite(request, env) {
+    const origin = request.headers.get('Origin');
+    const headers = getSecurityHeaders(origin);
+    
     const user = await getAuthenticatedUser(request, env);
-    if (!user) return jsonResponse({ error: 'Unauthorized' }, 401);
+    if (!user) return jsonResponse({ error: 'Unauthorized' }, 401, headers);
 
     const url = new URL(request.url);
     const fragranceId = url.pathname.split('/').pop();
 
-    if (!fragranceId) return jsonResponse({ error: 'Fragrance ID is required in URL' }, 400);
+    if (!fragranceId) return jsonResponse({ error: 'Fragrance ID is required in URL' }, 400, headers);
 
     await env.DB.prepare(
         'DELETE FROM user_favorites WHERE user_id = ? AND fragrance_id = ?'
     ).bind(user.id, fragranceId).run();
 
-    return jsonResponse({ success: true, message: 'Removed from favorites.' });
+    return jsonResponse({ success: true, message: 'Removed from favorites.' }, 200, headers);
 }
 
 
@@ -662,8 +671,10 @@ const ALLOWED_ORIGINS = [
     'https://fragrancecollect.com',
     'https://www.fragrancecollect.com',
     'https://fragrance-collect.pages.dev', // Cloudflare Pages preview
-    'https://fragrance-collect.github.io', // GitHub Pages
+    'https://fragrance-collect.github.io', // GitHub Pages repo
     'https://heart.github.io', // GitHub Pages user domain
+    'https://heart.github.io/Fragrance-Collect', // GitHub Pages project
+    'https://heart.github.io/fragrance-collect', // GitHub Pages project (lowercase)
     'http://localhost:3000', // Local development
     'http://localhost:8080', // Local development
     'http://localhost:5000', // Local development
@@ -690,6 +701,12 @@ function isOriginAllowed(origin) {
     if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:') || 
         origin.startsWith('https://localhost:') || origin.startsWith('https://127.0.0.1:')) {
         console.log('Localhost origin allowed:', origin);
+        return true;
+    }
+    
+    // Allow any GitHub Pages domain
+    if (origin.includes('.github.io')) {
+        console.log('GitHub Pages origin allowed:', origin);
         return true;
     }
     
