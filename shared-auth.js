@@ -25,16 +25,22 @@ const sharedAuthUI = {
 // Get session token for cross-origin requests
 async function getSessionToken() {
     try {
+        console.log('Attempting to get session token...');
         const response = await fetch('https://auth-worker.joshuablaszczyk.workers.dev/token', {
             method: 'GET',
             credentials: 'include'
         });
         
+        console.log('Token response status:', response.status);
         const data = await response.json();
+        console.log('Token response data:', data);
         
         if (data.success && data.token) {
             sessionToken = data.token;
+            console.log('Session token retrieved successfully');
             return data.token;
+        } else {
+            console.log('Failed to get session token:', data.error);
         }
     } catch (error) {
         console.error('Error getting session token:', error);
@@ -45,32 +51,49 @@ async function getSessionToken() {
 // Check user authentication status
 async function checkSharedUserStatus() {
     try {
-        // First try to get the session token
-        if (!sessionToken) {
-            await getSessionToken();
-        }
-
-        const headers = { 'Content-Type': 'application/json' };
+        console.log('Checking shared user status...');
         
-        // Add Authorization header if we have a token (for cross-origin)
-        if (sessionToken) {
-            headers['Authorization'] = `Bearer ${sessionToken}`;
-        }
-
-        const response = await fetch('https://auth-worker.joshuablaszczyk.workers.dev/status', {
+        // First try direct status check with cookies (for same-origin or if cookies work)
+        let response = await fetch('https://auth-worker.joshuablaszczyk.workers.dev/status', {
             method: 'GET',
-            headers,
+            headers: { 'Content-Type': 'application/json' },
             credentials: 'include'
         });
         
-        const data = await response.json();
+        console.log('Initial status response:', response.status);
+        let data = await response.json();
+        console.log('Initial status data:', data);
+        
+        // If that fails, try to get session token and retry
+        if (!data.success && !sessionToken) {
+            console.log('Initial status failed, trying to get session token...');
+            await getSessionToken();
+            
+            if (sessionToken) {
+                console.log('Retrying status check with token...');
+                const headers = { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${sessionToken}`
+                };
+                
+                response = await fetch('https://auth-worker.joshuablaszczyk.workers.dev/status', {
+                    method: 'GET',
+                    headers,
+                    credentials: 'include'
+                });
+                
+                console.log('Token-based status response:', response.status);
+                data = await response.json();
+                console.log('Token-based status data:', data);
+            }
+        }
         
         if (data.success && data.user) {
             console.log('User is logged in:', data.user.name);
             currentUser = data.user;
             updateSharedNavUI(data.user);
         } else {
-            console.log('User is not logged in');
+            console.log('User is not logged in:', data.error);
             sessionToken = null; // Clear invalid token
             updateSharedNavUI(null);
         }

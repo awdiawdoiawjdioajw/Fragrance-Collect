@@ -387,11 +387,16 @@ async function handleGetToken(request, env) {
     const headers = getSecurityHeaders(origin);
 
     try {
+        console.log('handleGetToken called from origin:', origin);
         const cookieHeader = request.headers.get('Cookie') || '';
+        console.log('Cookie header:', cookieHeader);
+        
         const cookies = Object.fromEntries(cookieHeader.split(';').map(c => c.trim().split('=')));
         const token = cookies.session_token;
+        console.log('Extracted token:', token ? 'present' : 'missing');
 
         if (!token) {
+            console.log('No session token found in cookies');
             return jsonResponse({ error: 'Not authenticated' }, 401, headers);
         }
 
@@ -401,9 +406,11 @@ async function handleGetToken(request, env) {
         ).bind(token).first();
 
         if (!session || new Date(session.expires_at) < new Date()) {
+            console.log('Session invalid or expired');
             return jsonResponse({ error: 'Invalid or expired session' }, 401, headers);
         }
 
+        console.log('Token retrieved successfully');
         return jsonResponse({ success: true, token }, 200, headers);
 
     } catch (error) {
