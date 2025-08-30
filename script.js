@@ -1549,8 +1549,14 @@ async function toggleFavorite(button, perfume) {
     try {
         if (isFavorited) {
             // Unfavorite logic
+            const headers = {};
+            if (sessionToken) {
+                headers['Authorization'] = `Bearer ${sessionToken}`;
+            }
+            
             await fetch(`https://auth-worker.joshuablaszczyk.workers.dev/api/user/favorites/${fragranceId}`, { 
                 method: 'DELETE',
+                headers,
                 credentials: 'include'
             });
             userFavorites.delete(fragranceId);
@@ -1568,9 +1574,14 @@ async function toggleFavorite(button, perfume) {
                 currency: perfume.currency,
                 shipping_availability: perfume.shipping_availability || (perfume.shipping ? 'available' : 'unavailable'),
             };
+            const headers = { 'Content-Type': 'application/json' };
+            if (sessionToken) {
+                headers['Authorization'] = `Bearer ${sessionToken}`;
+            }
+            
             await fetch('https://auth-worker.joshuablaszczyk.workers.dev/api/user/favorites', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers,
                 body: JSON.stringify(favoriteData),
                 credentials: 'include'
             });
@@ -1613,7 +1624,13 @@ async function loadUserFavorites() {
     }
 
     try {
+        const headers = {};
+        if (sessionToken) {
+            headers['Authorization'] = `Bearer ${sessionToken}`;
+        }
+        
         const response = await fetch('https://auth-worker.joshuablaszczyk.workers.dev/api/user/favorites', {
+            headers,
             credentials: 'include'
         });
         const data = await response.json();

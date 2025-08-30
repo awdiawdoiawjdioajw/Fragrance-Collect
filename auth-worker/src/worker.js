@@ -26,8 +26,11 @@ export default {
       return handleLogout(request, env);
     }
     
-    if (url.pathname === '/status' && request.method === 'GET') {
-      return handleGetStatus(request, env);
+        if (url.pathname === '/status' && request.method === 'GET') {
+        return handleGetStatus(request, env);
+    }
+    if (url.pathname === '/token' && request.method === 'GET') {
+        return handleGetToken(request, env);
     }
 
     if (url.pathname === '/signup/email' && request.method === 'POST') {
@@ -320,7 +323,15 @@ async function handleGetStatus(request, env) {
     try {
         const cookieHeader = request.headers.get('Cookie') || '';
         const cookies = Object.fromEntries(cookieHeader.split(';').map(c => c.trim().split('=')));
-        const token = cookies.session_token;
+        let token = cookies.session_token;
+
+        // If no cookie token, try Authorization header (cross-origin requests)
+        if (!token) {
+            const authHeader = request.headers.get('Authorization');
+            if (authHeader && authHeader.startsWith('Bearer ')) {
+                token = authHeader.substring(7);
+            }
+        }
 
         if (!token) {
             return jsonResponse({ error: 'Not authenticated' }, 401, headers);
@@ -368,15 +379,57 @@ async function handleGetStatus(request, env) {
     }
 }
 
+/**
+ * Gets the session token for cross-origin requests (using cookies)
+ */
+async function handleGetToken(request, env) {
+    const origin = request.headers.get('Origin');
+    const headers = getSecurityHeaders(origin);
+
+    try {
+        const cookieHeader = request.headers.get('Cookie') || '';
+        const cookies = Object.fromEntries(cookieHeader.split(';').map(c => c.trim().split('=')));
+        const token = cookies.session_token;
+
+        if (!token) {
+            return jsonResponse({ error: 'Not authenticated' }, 401, headers);
+        }
+
+        // Validate the session exists and is valid
+        const session = await env.DB.prepare(
+            `SELECT s.expires_at FROM user_sessions s WHERE s.token = ?`
+        ).bind(token).first();
+
+        if (!session || new Date(session.expires_at) < new Date()) {
+            return jsonResponse({ error: 'Invalid or expired session' }, 401, headers);
+        }
+
+        return jsonResponse({ success: true, token }, 200, headers);
+
+    } catch (error) {
+        console.error('Error getting token:', error);
+        return jsonResponse({ error: 'Failed to get token' }, 500, headers);
+    }
+}
+
 // --- NEW ACCOUNT FEATURE HANDLERS ---
 
 /**
  * Middleware to get the authenticated user from a session token.
  */
 async function getAuthenticatedUser(request, env) {
+    // Try to get token from cookie first (same-origin requests)
     const cookieHeader = request.headers.get('Cookie') || '';
     const cookies = Object.fromEntries(cookieHeader.split(';').map(c => c.trim().split('=')));
-    const token = cookies.session_token;
+    let token = cookies.session_token;
+
+    // If no cookie token, try Authorization header (cross-origin requests)
+    if (!token) {
+        const authHeader = request.headers.get('Authorization');
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            token = authHeader.substring(7);
+        }
+    }
 
     if (!token) {
         return null;

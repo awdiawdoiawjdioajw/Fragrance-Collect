@@ -4,6 +4,7 @@
 // Global authentication state
 let isUserLoggedIn = false;
 let currentUser = null;
+let sessionToken = null;
 
 // Common UI elements for authentication (adjust selectors per page as needed)
 const sharedAuthUI = {
@@ -21,12 +22,44 @@ const sharedAuthUI = {
     }
 };
 
+// Get session token for cross-origin requests
+async function getSessionToken() {
+    try {
+        const response = await fetch('https://auth-worker.joshuablaszczyk.workers.dev/token', {
+            method: 'GET',
+            credentials: 'include'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.token) {
+            sessionToken = data.token;
+            return data.token;
+        }
+    } catch (error) {
+        console.error('Error getting session token:', error);
+    }
+    return null;
+}
+
 // Check user authentication status
 async function checkSharedUserStatus() {
     try {
+        // First try to get the session token
+        if (!sessionToken) {
+            await getSessionToken();
+        }
+
+        const headers = { 'Content-Type': 'application/json' };
+        
+        // Add Authorization header if we have a token (for cross-origin)
+        if (sessionToken) {
+            headers['Authorization'] = `Bearer ${sessionToken}`;
+        }
+
         const response = await fetch('https://auth-worker.joshuablaszczyk.workers.dev/status', {
             method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             credentials: 'include'
         });
         
@@ -38,10 +71,12 @@ async function checkSharedUserStatus() {
             updateSharedNavUI(data.user);
         } else {
             console.log('User is not logged in');
+            sessionToken = null; // Clear invalid token
             updateSharedNavUI(null);
         }
     } catch (error) {
         console.error('Error checking authentication status:', error);
+        sessionToken = null; // Clear token on error
         updateSharedNavUI(null);
     }
 }
