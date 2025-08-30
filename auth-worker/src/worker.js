@@ -700,7 +700,18 @@ async function handleEmailLogin(request, env) {
 
     } catch (error) {
         console.error('Error during email login:', error.message);
-        return jsonResponse({ error: 'Login failed.', details: error.message }, 500, headers);
+        const errorRedirectUrl = new URL(redirectUrl);
+        errorRedirectUrl.searchParams.set('error', 'login_failed');
+        // Sanitize and pass the specific error reason for debugging
+        const reason = error.message.replace(/[^a-zA-Z0-9_]/g, '_');
+        errorRedirectUrl.searchParams.set('reason', reason);
+        return new Response(null, {
+            status: 302,
+            headers: {
+                ...headers,
+                'Location': errorRedirectUrl.toString(),
+            }
+        });
     }
 }
 

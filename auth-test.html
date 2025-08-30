@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        .success { color: green; }
+        .error { color: red; }
+        button { padding: 10px 20px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Authentication Test Page</h1>
+
+    <div class="test-section">
+        <h2>Current Authentication Status</h2>
+        <div id="auth-status">Checking...</div>
+        <button onclick="checkAuthStatus()">Refresh Status</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Authentication Flow</h2>
+        <button onclick="testFavoriteFlow()">Test Favorite Flow (should redirect to auth if not logged in)</button>
+        <button onclick="testFavoritesView()">Test Favorites View (should redirect to auth if not logged in)</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Manual Navigation</h2>
+        <button onclick="goToMain()">Go to Main Page</button>
+        <button onclick="goToAuth()">Go to Auth Page</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Debug Info</h2>
+        <div id="debug-info">Loading...</div>
+    </div>
+
+    <script src="shared-auth.js"></script>
+    <script>
+        // Test functions
+        function updateAuthStatus() {
+            const statusDiv = document.getElementById('auth-status');
+            const debugDiv = document.getElementById('debug-info');
+
+            const isLoggedIn = isAuthenticated();
+            const user = getCurrentUser();
+
+            statusDiv.innerHTML = `
+                <div class="${isLoggedIn ? 'success' : 'error'}">
+                    Status: ${isLoggedIn ? 'LOGGED IN' : 'NOT LOGGED IN'}
+                </div>
+                ${user ? `<div>User: ${user.name} (${user.email})</div>` : '<div>No user data</div>'}
+            `;
+
+            debugDiv.innerHTML = `
+                <div>isUserLoggedIn: ${isUserLoggedIn}</div>
+                <div>currentUser: ${JSON.stringify(currentUser, null, 2)}</div>
+                <div>sessionToken: ${sessionToken ? 'Present' : 'None'}</div>
+            `;
+        }
+
+        async function checkAuthStatus() {
+            document.getElementById('auth-status').textContent = 'Checking...';
+            await checkSharedUserStatus();
+            updateAuthStatus();
+        }
+
+        async function testFavoriteFlow() {
+            console.log('Testing favorite flow...');
+            // Simulate clicking a favorite button
+            const mockPerfume = {
+                productId: 'test123',
+                name: 'Test Perfume',
+                advertiserName: 'Test Brand'
+            };
+
+            // This should redirect to auth.html if not logged in
+            const mockButton = { dataset: { id: 'test123' } };
+            toggleFavorite(mockButton, mockPerfume);
+        }
+
+        function testFavoritesView() {
+            console.log('Testing favorites view...');
+            showFavoritesView();
+        }
+
+        function goToMain() {
+            window.location.href = 'main.html';
+        }
+
+        function goToAuth() {
+            window.location.href = 'auth.html';
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('Test page loaded, checking auth status...');
+            await checkAuthStatus();
+        });
+
+        // Update status every 5 seconds
+        setInterval(updateAuthStatus, 5000);
+    </script>
+</body>
+</html>

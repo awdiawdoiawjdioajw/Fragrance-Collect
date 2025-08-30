@@ -43,7 +43,7 @@ function updateUI(user) {
         // User is logged in
         ui.loggedOutView.style.display = 'none';
         ui.loggedInView.style.display = 'block';
-        
+
         ui.userPicture.src = user.picture || 'emblem.png'; // Fallback image
         ui.userPicture.alt = `${user.name || 'User'}'s profile picture`;
         ui.userName.textContent = user.name || 'Welcome';
@@ -53,6 +53,10 @@ function updateUI(user) {
         if (ui.tabsContainer) {
             ui.tabsContainer.style.display = 'none';
         }
+
+        // Update shared auth state
+        isUserLoggedIn = true;
+        currentUser = user;
     } else {
         // User is logged out
         ui.loggedOutView.style.display = 'block';
@@ -61,6 +65,10 @@ function updateUI(user) {
         if (ui.tabsContainer) {
             ui.tabsContainer.style.display = 'flex';
         }
+
+        // Update shared auth state
+        isUserLoggedIn = false;
+        currentUser = null;
     }
 }
 
@@ -135,7 +143,7 @@ async function checkUserStatus() {
         // The browser automatically sends the secure cookie with this request
         const res = await fetch(`${WORKER_URL}/status`);
         const data = await res.json();
-        
+
         if (res.ok && data.success) {
             updateUI(data.user);
         } else {
@@ -332,6 +340,13 @@ function initializeGoogleSignIn() {
 // --- EVENT LISTENERS ---
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize shared auth UI elements (even though auth page doesn't show them)
+    // This ensures shared auth variables are available
+    sharedAuthUI.loginBtn = null; // Auth page doesn't have a login button
+    sharedAuthUI.userWelcome = null; // Auth page doesn't have user welcome section
+    sharedAuthUI.userNameDisplay = null; // Auth page doesn't have user name display
+    sharedAuthUI.logoutLink = null; // Auth page doesn't have logout link
+
     // Check user status on page load
     checkUserStatus();
 
@@ -440,16 +455,20 @@ document.addEventListener('DOMContentLoaded', () => {
             // Add loading state to button
             ui.continueToHomeBtn.disabled = true;
             ui.continueToHomeBtn.textContent = 'Loading...';
-            
+
             // Wait a moment for the session to be fully established
             await new Promise(resolve => setTimeout(resolve, 500));
-            
+
             // Verify the session is working before redirecting
             try {
                 const statusCheck = await fetch(`${WORKER_URL}/status`);
                 const statusData = await statusCheck.json();
-                
+
                 if (statusData.success && statusData.user) {
+                    // Update shared auth state before redirect
+                    isUserLoggedIn = true;
+                    currentUser = statusData.user;
+
                     // Session verified, safe to redirect
                     window.location.href = 'main.html';
                 } else {

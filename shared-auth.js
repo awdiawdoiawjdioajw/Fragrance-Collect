@@ -90,16 +90,21 @@ async function checkSharedUserStatus() {
         
         if (data.success && data.user) {
             console.log('User is logged in:', data.user.name);
+            isUserLoggedIn = true;
             currentUser = data.user;
             updateSharedNavUI(data.user);
         } else {
             console.log('User is not logged in:', data.error);
+            isUserLoggedIn = false;
             sessionToken = null; // Clear invalid token
+            currentUser = null;
             updateSharedNavUI(null);
         }
     } catch (error) {
         console.error('Error checking authentication status:', error);
+        isUserLoggedIn = false;
         sessionToken = null; // Clear token on error
+        currentUser = null;
         updateSharedNavUI(null);
     }
 }
@@ -140,11 +145,13 @@ async function handleSharedLogout() {
     try {
         await fetch('https://auth-worker.joshuablaszczyk.workers.dev/logout', {
             method: 'POST',
+            credentials: 'include'
         });
     } finally {
         // Always update UI and redirect, even if server call fails
         isUserLoggedIn = false;
         currentUser = null;
+        sessionToken = null;
         updateSharedNavUI(null);
         window.location.href = 'auth.html';
     }

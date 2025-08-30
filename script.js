@@ -181,14 +181,22 @@ async function handleLogout() {
 
 // --- INITIALIZATION ---
 document.addEventListener('DOMContentLoaded', () => {
-    
+
     // Authentication is now handled by shared-auth.js
     // Check if user is logged in after shared auth initializes
-    setTimeout(() => {
+    // Increased timeout to ensure shared auth has fully initialized
+    setTimeout(async () => {
+        console.log('Main page: Checking authentication status...');
+        console.log('isUserLoggedIn:', isUserLoggedIn);
+        console.log('currentUser:', currentUser);
+
         if (isAuthenticated()) {
+            console.log('Main page: User is authenticated, loading favorites...');
             loadUserFavorites();
+        } else {
+            console.log('Main page: User is not authenticated');
         }
-    }, 100);
+    }, 500);
 
     // Logout handling is now in shared-auth.js
 
@@ -1529,12 +1537,13 @@ async function loadTikTokFinds() {
 
 async function toggleFavorite(button, perfume) {
     console.log('Toggle favorite clicked, checking authentication...');
-    
+    console.log('Current auth state - isUserLoggedIn:', isUserLoggedIn, 'currentUser:', currentUser);
+
     // Use the shared authentication system to check status
     if (!isAuthenticated()) {
         console.log('User not authenticated, re-checking status...');
         await checkSharedUserStatus();
-        
+
         // Check again after status update
         if (!isAuthenticated()) {
             console.log('User confirmed not logged in, redirecting to auth page');
@@ -1597,7 +1606,11 @@ async function toggleFavorite(button, perfume) {
 
 function showFavoritesView() {
     // Check if user is logged in using shared auth system
+    console.log('showFavoritesView called - checking auth status...');
+    console.log('isUserLoggedIn:', isUserLoggedIn, 'currentUser:', currentUser);
+
     if (!isAuthenticated()) {
+        console.log('User not authenticated, redirecting to auth page');
         // User is not logged in, redirect to auth page
         window.location.href = 'auth.html';
         return;
