@@ -186,6 +186,12 @@ function verifyClaims(payload, audience) {
  * Handles user login after Google JWT verification and creates a secure session.
  */
 async function handleLogin(request, env) {
+  // Validate request origin for security
+  if (!validateSiteOrigin(request)) {
+    console.warn('Login attempt from unauthorized origin:', request.headers.get('Origin') || request.headers.get('Referer'));
+    return jsonResponse({ error: 'Unauthorized origin' }, 403, {});
+  }
+
   const headers = getSecurityHeaders(env.ALLOWED_ORIGIN || 'https://fragrancecollect.com');
   const redirectUrl = `${env.ALLOWED_ORIGIN || 'https://fragrancecollect.com'}/auth.html`;
 
@@ -228,14 +234,22 @@ async function handleLogin(request, env) {
        ON CONFLICT(id) DO UPDATE SET name=excluded.name, picture=excluded.picture, updated_at=CURRENT_TIMESTAMP`
     ).bind(id, email, name, picture).run();
 
-    // 4. Create a secure session
+    // 4. Create a secure session with fingerprinting
     const sessionId = crypto.randomUUID();
     const token = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    
+    // Get client fingerprinting data for session security
+    const clientIP = request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || 'unknown';
+    const userAgent = request.headers.get('User-Agent') || 'unknown';
+    const sessionFingerprint = await generateSessionFingerprint(clientIP, userAgent);
+
+    // Clean up old sessions before creating new one
+    await cleanupUserSessions(env, id, token);
 
     await env.DB.prepare(
-        `INSERT INTO user_sessions (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)`
-    ).bind(sessionId, id, token, expiresAt.toISOString()).run();
+        `INSERT INTO user_sessions (id, user_id, token, expires_at, client_ip, user_agent, fingerprint, last_activity) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
+    ).bind(sessionId, id, token, expiresAt.toISOString(), clientIP, userAgent, sessionFingerprint).run();
 
     // 5. Set the session token in a secure, HttpOnly cookie
     headers['Set-Cookie'] = `session_token=${token}; Expires=${expiresAt.toUTCString()}; Path=/; HttpOnly; Secure; SameSite=Lax`;
@@ -313,7 +327,7 @@ async function handleGetStatus(request, env) {
         }
 
         const session = await env.DB.prepare(
-            `SELECT s.expires_at, u.id, u.email, u.name, u.picture 
+            `SELECT s.*, u.id, u.email, u.name, u.picture 
              FROM user_sessions s JOIN users u ON s.user_id = u.id 
              WHERE s.token = ?`
         ).bind(token).first();
@@ -323,6 +337,20 @@ async function handleGetStatus(request, env) {
             headers['Set-Cookie'] = `session_token=; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/; HttpOnly; Secure; SameSite=Lax`;
             return jsonResponse({ error: 'Invalid or expired session' }, 401, headers);
         }
+
+        // Validate session security (check for potential hijacking)
+        if (!validateSessionSecurity(session, request)) {
+            console.warn(`Session security validation failed for user ${session.id} in status check`);
+            // Invalidate the suspicious session and clear cookie
+            await env.DB.prepare(`DELETE FROM user_sessions WHERE token = ?`).bind(token).run();
+            headers['Set-Cookie'] = `session_token=; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/; HttpOnly; Secure; SameSite=Lax`;
+            return jsonResponse({ error: 'Session security validation failed' }, 401, headers);
+        }
+
+        // Update last activity timestamp
+        await env.DB.prepare(
+            `UPDATE user_sessions SET last_activity = CURRENT_TIMESTAMP WHERE token = ?`
+        ).bind(token).run();
 
         return jsonResponse({
             success: true,
@@ -355,12 +383,29 @@ async function getAuthenticatedUser(request, env) {
     }
 
     const session = await env.DB.prepare(
-        `SELECT u.id, u.email, u.name 
+        `SELECT s.*, u.id, u.email, u.name 
          FROM user_sessions s JOIN users u ON s.user_id = u.id 
          WHERE s.token = ? AND s.expires_at > CURRENT_TIMESTAMP`
     ).bind(token).first();
 
-    return session; // Returns user object or null
+    if (!session) {
+        return null;
+    }
+
+    // Validate session security (check for potential hijacking)
+    if (!validateSessionSecurity(session, request)) {
+        console.warn(`Session security validation failed for user ${session.id}`);
+        // Invalidate the suspicious session
+        await env.DB.prepare(`DELETE FROM user_sessions WHERE token = ?`).bind(token).run();
+        return null;
+    }
+
+    // Update last activity timestamp
+    await env.DB.prepare(
+        `UPDATE user_sessions SET last_activity = CURRENT_TIMESTAMP WHERE token = ?`
+    ).bind(token).run();
+
+    return { id: session.id, email: session.email, name: session.name }; // Returns user object or null
 }
 
 async function handleGetPreferences(request, env) {
@@ -455,6 +500,12 @@ async function handleDeleteFavorite(request, env) {
  * Handles user sign-up with email and password.
  */
 async function handleEmailSignup(request, env) {
+    // Validate request origin for security
+    if (!validateSiteOrigin(request)) {
+        console.warn('Email signup attempt from unauthorized origin:', request.headers.get('Origin') || request.headers.get('Referer'));
+        return jsonResponse({ error: 'Unauthorized origin' }, 403, {});
+    }
+
     const origin = request.headers.get('Origin');
     const headers = getSecurityHeaders(origin);
     try {
@@ -484,9 +535,17 @@ async function handleEmailSignup(request, env) {
         const token = crypto.randomUUID();
         const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
+        // Get client fingerprinting data for session security
+        const clientIP = request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || 'unknown';
+        const userAgent = request.headers.get('User-Agent') || 'unknown';
+        const sessionFingerprint = await generateSessionFingerprint(clientIP, userAgent);
+
+        // Clean up old sessions before creating new one
+        await cleanupUserSessions(env, userId, token);
+
         await env.DB.prepare(
-            `INSERT INTO user_sessions (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)`
-        ).bind(sessionId, userId, token, expiresAt.toISOString()).run();
+            `INSERT INTO user_sessions (id, user_id, token, expires_at, client_ip, user_agent, fingerprint, last_activity) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
+        ).bind(sessionId, userId, token, expiresAt.toISOString(), clientIP, userAgent, sessionFingerprint).run();
 
         headers['Set-Cookie'] = `session_token=${token}; Expires=${expiresAt.toUTCString()}; Path=/; HttpOnly; Secure; SameSite=Lax`;
 
@@ -502,6 +561,12 @@ async function handleEmailSignup(request, env) {
  * Handles user login with email and password.
  */
 async function handleEmailLogin(request, env) {
+    // Validate request origin for security
+    if (!validateSiteOrigin(request)) {
+        console.warn('Email login attempt from unauthorized origin:', request.headers.get('Origin') || request.headers.get('Referer'));
+        return jsonResponse({ error: 'Unauthorized origin' }, 403, {});
+    }
+
     const origin = request.headers.get('Origin');
     const headers = getSecurityHeaders(origin);
     try {
@@ -536,9 +601,17 @@ async function handleEmailLogin(request, env) {
         const token = crypto.randomUUID();
         const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
+        // Get client fingerprinting data for session security
+        const clientIP = request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || 'unknown';
+        const userAgent = request.headers.get('User-Agent') || 'unknown';
+        const sessionFingerprint = await generateSessionFingerprint(clientIP, userAgent);
+
+        // Clean up old sessions before creating new one
+        await cleanupUserSessions(env, user.id, token);
+
         await env.DB.prepare(
-            `INSERT INTO user_sessions (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)`
-        ).bind(sessionId, user.id, token, expiresAt.toISOString()).run();
+            `INSERT INTO user_sessions (id, user_id, token, expires_at, client_ip, user_agent, fingerprint, last_activity) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
+        ).bind(sessionId, user.id, token, expiresAt.toISOString(), clientIP, userAgent, sessionFingerprint).run();
 
         headers['Set-Cookie'] = `session_token=${token}; Expires=${expiresAt.toUTCString()}; Path=/; HttpOnly; Secure; SameSite=Lax`;
         
@@ -583,6 +656,60 @@ async function sha512(str) {
 // --- Utility Functions ---
 
 /**
+ * Allowed origins for CORS - only these domains can make requests to the auth worker
+ */
+const ALLOWED_ORIGINS = [
+    'https://fragrancecollect.com',
+    'https://www.fragrancecollect.com',
+    'https://fragrance-collect.pages.dev', // Cloudflare Pages preview
+    'http://localhost:3000', // Local development
+    'http://localhost:8080', // Local development
+    'http://127.0.0.1:3000', // Local development
+    'http://127.0.0.1:8080'  // Local development
+];
+
+/**
+ * Validates if the origin is allowed to make requests
+ */
+function isOriginAllowed(origin) {
+    if (!origin) return false;
+    
+    // In development, allow localhost and 127.0.0.1
+    if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
+        return true;
+    }
+    
+    return ALLOWED_ORIGINS.includes(origin);
+}
+
+/**
+ * Validates the request origin and referrer for additional security
+ */
+function validateSiteOrigin(request) {
+    const origin = request.headers.get('Origin');
+    const referer = request.headers.get('Referer');
+    
+    // For non-CORS requests, check referer
+    if (!origin && referer) {
+        try {
+            const refererUrl = new URL(referer);
+            const refererOrigin = `${refererUrl.protocol}//${refererUrl.host}`;
+            return isOriginAllowed(refererOrigin);
+        } catch {
+            return false;
+        }
+    }
+    
+    // For CORS requests, check origin
+    if (origin) {
+        return isOriginAllowed(origin);
+    }
+    
+    // No origin or referer - potentially suspicious
+    return false;
+}
+
+/**
  * Creates a standard set of security headers for all responses.
  * @param {string} origin - The request's origin for CORS.
  * @returns {HeadersInit}
@@ -608,7 +735,7 @@ function getSecurityHeaders(origin) {
         'X-Frame-Options': 'SAMEORIGIN',
         'Referrer-Policy': 'strict-origin-when-cross-origin',
         'Permissions-Policy': 'geolocation=(), microphone=(), camera=()',
-        'Access-Control-Allow-Origin': origin || '*',
+        'Access-Control-Allow-Origin': isOriginAllowed(origin) ? origin : 'null',
         'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         'Access-Control-Allow-Credentials': 'true',
@@ -659,6 +786,62 @@ function handleOptions(request) {
   } else {
     return new Response(null, { headers: { Allow: 'GET, POST, OPTIONS' } });
   }
+}
+
+// --- SECURITY FUNCTIONS ---
+
+/**
+ * Generate a session fingerprint for additional security
+ */
+async function generateSessionFingerprint(clientIP, userAgent) {
+    const data = `${clientIP}:${userAgent}:${Date.now()}`;
+    const encoder = new TextEncoder();
+    const dataBuffer = encoder.encode(data);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * Validate session security by checking IP and User-Agent
+ */
+function validateSessionSecurity(session, request) {
+    const currentIP = request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || 'unknown';
+    const currentUserAgent = request.headers.get('User-Agent') || 'unknown';
+    
+    // Allow some flexibility for mobile networks and proxy changes
+    // But flag suspicious changes
+    const ipChanged = session.client_ip && session.client_ip !== currentIP;
+    const userAgentChanged = session.user_agent && session.user_agent !== currentUserAgent;
+    
+    // If both IP and User-Agent changed, it's likely session hijacking
+    if (ipChanged && userAgentChanged) {
+        console.warn(`Suspicious session activity: IP changed from ${session.client_ip} to ${currentIP}, UA changed`);
+        return false;
+    }
+    
+    return true;
+}
+
+/**
+ * Clean up expired and old sessions for a user (prevent session accumulation)
+ */
+async function cleanupUserSessions(env, userId, keepCurrentToken = null) {
+    // Keep only the 3 most recent sessions per user, plus the current one
+    const query = `
+        DELETE FROM user_sessions 
+        WHERE user_id = ? 
+        AND token != COALESCE(?, '') 
+        AND (expires_at < CURRENT_TIMESTAMP 
+             OR id NOT IN (
+                 SELECT id FROM user_sessions 
+                 WHERE user_id = ? 
+                 ORDER BY last_activity DESC 
+                 LIMIT 3
+             ))
+    `;
+    
+    await env.DB.prepare(query).bind(userId, keepCurrentToken, userId).run();
 }
 
 function jsonResponse(data, status = 200, headers = {}) {
