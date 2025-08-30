@@ -1,7 +1,7 @@
 // Secure Authentication Script for Fragrance Collect
 
 // --- CONFIGURATION ---
-const WORKER_URL = 'https://auth-worker.joshuablaszczyk.workers.dev';
+const WORKER_URL = 'https://weathered-mud-6ed5.joshuablaszczyk.workers.dev';
 // Make sure to replace this with your actual Google Client ID
 const GOOGLE_CLIENT_ID = "351083759622-fnmbu0am1knlj8ltcps8i7la64dhjpnn.apps.googleusercontent.com"; 
 
