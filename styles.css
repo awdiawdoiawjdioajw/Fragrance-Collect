@@ -50,19 +50,20 @@ h1, h2, h3, h4, h5, h6 {
 
 .nav-container {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
     width: 100%;
-    max-width: 1400px; /* Increased max-width */
+    max-width: 1400px;
     margin: 0 auto;
-    padding: 0 1.5rem; /* Consistent padding */
-    height: 70px; /* Consistent height */
+    padding: 0 1.5rem;
+    height: 70px;
     position: relative;
 }
 
 .nav-left {
     display: flex;
     align-items: center;
+    flex-grow: 1;
     gap: 1.5rem;
 }
 
@@ -104,11 +105,13 @@ h1, h2, h3, h4, h5, h6 {
 .nav-menu {
     display: flex;
     list-style: none;
-    gap: 1.5rem; /* Space between nav links */
+    gap: 1.5rem;
     flex-wrap: nowrap;
     align-items: center;
     margin: 0;
     padding: 0;
+    flex-grow: 1;
+    justify-content: center;
 }
 
 .nav-link {
