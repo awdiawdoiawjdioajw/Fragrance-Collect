@@ -431,13 +431,13 @@
     display: flex;
     justify-content: center;
     width: 100%;
-    min-height: 60px; /* Match submit button height more closely */
+    min-height: 72px; /* Match submit button height exactly */
 }
 
 .social-buttons .g_id_signin,
 .social-buttons .g_id_signin > div {
     width: 100% !important;
-    min-height: 60px !important; /* Match submit button padding (1.25rem * 2 + font height ≈ 60px) */
+    min-height: 72px !important; /* Match submit button height exactly */
     display: flex !important;       /* Use flexbox to center the button content */
     justify-content: center !important; /* Center horizontally */
     align-items: center !important;     /* Center vertically */
@@ -451,33 +451,35 @@
 
 /* Additional styling to ensure Google button content is properly spaced */
 .social-buttons .g_id_signin iframe {
-    min-height: 60px !important;
-    height: 60px !important;
+    min-height: 72px !important;
+    height: 72px !important;
     border-radius: 12px !important;
 }
 
-/* Stronger overrides for Google button styling */
+/* Stronger overrides for Google button styling - match submit button exactly */
 .social-buttons .g_id_signin,
 .social-buttons .g_id_signin iframe,
 .social-buttons .g_id_signin > div,
 .social-buttons .g_id_signin > div > div {
-    height: 60px !important;
-    min-height: 60px !important;
-    max-height: 60px !important;
+    height: 72px !important;
+    min-height: 72px !important;
+    max-height: 72px !important;
     border-radius: 12px !important;
 }
 
 /* Override Google's button container styles */
 .social-buttons .g_id_signin .S9gUrf-YoZ4jf {
-    height: 60px !important;
-    min-height: 60px !important;
+    height: 72px !important;
+    min-height: 72px !important;
 }
 
-/* Ensure proper button element height */
+/* Ensure proper button element height - match submit button padding */
 .social-buttons .nsm7Bb-HzV7m-LgbsSe {
-    height: 60px !important;
-    min-height: 60px !important;
+    height: 72px !important;
+    min-height: 72px !important;
     border-radius: 12px !important;
+    padding: 1.25rem 2rem !important;
+    font-size: 1.1rem !important;
 }
 
 /* Hide the Google Sign-In configuration div so it doesn't take up space */
