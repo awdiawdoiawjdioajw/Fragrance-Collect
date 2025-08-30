@@ -556,10 +556,30 @@ function createProductCard(perfume) {
     const shipping = formatShipping(perfume);
     const displayPrice = perfume.price.toFixed(2);
     const currencySymbol = currencySymbols[perfume.currency] || '$';
+    const isFavorited = userFavorites.has(perfume.id);
+    
+    // Create perfume object for favorite functionality
+    const perfumeData = {
+        productId: perfume.id,
+        name: perfume.name,
+        advertiserName: perfume.brand,
+        description: perfume.description || '',
+        imageUrl: perfume.image,
+        productUrl: perfume.buyUrl,
+        price: perfume.price,
+        currency: perfume.currency,
+        shipping_availability: perfume.shippingCost === 0 ? 'available' : 'paid'
+    };
 
     return `
         <div class="product-card" data-id="${perfume.id}" data-brand="${perfume.brand.toLowerCase().replace(/\s+/g, '-')}" data-price="${perfume.price}" data-rating="${perfume.rating}">
             <div class="product-image-container">
+                <button class="favorite-btn ${isFavorited ? 'favorited' : ''}" 
+                        data-id="${perfume.id}" 
+                        onclick="toggleFavorite(this, ${JSON.stringify(perfumeData).replace(/"/g, '&quot;')})"
+                        aria-label="Add to favorites">
+                    <i class="fas fa-heart"></i>
+                </button>
                 <img src="${perfume.image}" alt="${perfume.name}" class="product-image" loading="lazy" onerror="this.onerror=null;this.src='https://placehold.co/600x600?text=No+Image';">
             </div>
             <div class="product-info">
@@ -574,6 +594,42 @@ function createProductCard(perfume) {
             <div class="product-meta">
                 <div class="product-shipping ${shipping.cls}">${shipping.text}</div>
                 <a href="${perfume.buyUrl}" target="_blank" rel="nofollow sponsored noopener" class="btn-view-deal">Shop Now <i class="fas fa-arrow-right"></i></a>
+            </div>
+        </div>
+    `;
+}
+
+// Create perfume card with favorite button for authenticated users
+function createPerfumeCard(perfume) {
+    const stars = generateStars(perfume.rating || 4.5); // Default rating if not provided
+    const shipping = formatShipping(perfume);
+    const displayPrice = (perfume.price || 0).toFixed(2);
+    const currencySymbol = currencySymbols[perfume.currency] || '$';
+    const isFavorited = userFavorites.has(perfume.productId);
+
+    return `
+        <div class="product-card" data-id="${perfume.productId}" data-brand="${(perfume.advertiserName || '').toLowerCase().replace(/\s+/g, '-')}" data-price="${perfume.price || 0}" data-rating="${perfume.rating || 4.5}">
+            <div class="product-image-container">
+                <button class="favorite-btn ${isFavorited ? 'favorited' : ''}" 
+                        data-id="${perfume.productId}" 
+                        onclick="toggleFavorite(this, ${JSON.stringify(perfume).replace(/"/g, '&quot;')})"
+                        aria-label="Add to favorites">
+                    <i class="fas fa-heart"></i>
+                </button>
+                <img src="${perfume.imageUrl || 'https://placehold.co/600x600?text=No+Image'}" alt="${perfume.name}" class="product-image" loading="lazy" onerror="this.onerror=null;this.src='https://placehold.co/600x600?text=No+Image';">
+            </div>
+            <div class="product-info">
+                <h3 class="product-name">${perfume.name}</h3>
+                <p class="product-brand">${perfume.advertiserName}</p>
+                <div class="product-rating" role="img" aria-label="Rating: ${perfume.rating || 4.5} out of 5 stars">
+                    ${stars}
+                    <span class="rating-number">${(perfume.rating || 4.5).toFixed(1)}</span>
+                </div>
+                <p class="product-price">${currencySymbol}${displayPrice} ${perfume.currency || 'USD'}</p>
+            </div>
+            <div class="product-meta">
+                <div class="product-shipping ${shipping.cls}">${shipping.text}</div>
+                <a href="${perfume.productUrl}" target="_blank" rel="nofollow sponsored noopener" class="btn-view-deal">Shop Now <i class="fas fa-arrow-right"></i></a>
             </div>
         </div>
     `;
