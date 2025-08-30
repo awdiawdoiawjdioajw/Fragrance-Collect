@@ -86,24 +86,27 @@
                 if (response.ok && data.success) {
                     statusDiv.textContent = `✅ LOGGED IN as ${data.user.name} (${data.user.email})`;
                     statusDiv.className = 'status success';
+                    logToDebug(`Session check: Status ${response.status}`, { response, data });
+                    return true; // Return success
                 } else {
                     statusDiv.textContent = `❌ NOT LOGGED IN: ${data.error || 'Unknown error'}`;
                     statusDiv.className = 'status error';
+                    logToDebug(`Session check: Status ${response.status}`, { response, data });
+                    return false; // Return failure
                 }
-
-                logToDebug(`Session check: Status ${response.status}`, { response, data });
             } catch (error) {
                 statusDiv.textContent = `❌ ERROR: ${error.message}`;
                 statusDiv.className = 'status error';
                 logToDebug('Session check error:', error);
+                return false; // Return failure
             }
         }
 
-        function analyzeCookies() {
+        async function analyzeCookies() {
             const cookieDiv = document.getElementById('cookie-info');
             const cookies = document.cookie.split(';').map(c => c.trim());
 
-            let output = '📋 Current Cookies:\n';
+            let output = '📋 Current Cookies (JavaScript-accessible):\n';
             if (cookies.length === 1 && cookies[0] === '') {
                 output += 'No cookies found\n';
             } else {
@@ -116,9 +119,29 @@
             // Check for session_token specifically
             const sessionCookie = cookies.find(c => c.startsWith('session_token='));
             if (sessionCookie) {
-                output += '\n✅ session_token cookie found\n';
+                output += '\n✅ session_token cookie found (visible to JavaScript)\n';
             } else {
-                output += '\n❌ No session_token cookie found\n';
+                output += '\n⚠️ No session_token cookie visible to JavaScript\n';
+                output += '   This is expected if HttpOnly is set (for security)\n';
+            }
+
+            // Test if we can retrieve the session token via API
+            output += '\n🔍 Testing session token retrieval...\n';
+            try {
+                const tokenResponse = await fetch('https://auth-worker.joshuablaszczyk.workers.dev/token', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                const tokenData = await tokenResponse.json();
+
+                if (tokenResponse.ok && tokenData.success && tokenData.token) {
+                    output += '✅ Session token successfully retrieved via API\n';
+                    output += '🔐 Authentication is working correctly!\n';
+                } else {
+                    output += '❌ Could not retrieve session token via API\n';
+                }
+            } catch (error) {
+                output += `❌ Error testing token retrieval: ${error.message}\n`;
             }
 
             cookieDiv.textContent = output;
@@ -370,17 +393,20 @@
                     // Step 3: Verify session was created
                     setTimeout(async () => {
                         logToDebug('Step 3: Verifying session...');
-                        await checkSessionStatus();
+                        const statusResult = await checkSessionStatus();
                         await analyzeCookies();
                         await checkSharedAuthState();
 
-                        if (document.cookie.includes('session_token')) {
-                            logToDebug('🎉 SUCCESS: Session token found in cookies!');
-                            logToDebug('🔄 The authentication should now work properly');
+                        // Check if session is actually working (statusResult should be true)
+                        if (statusResult) {
+                            logToDebug('🎉 SUCCESS: Authentication is working correctly!');
+                            logToDebug('✅ Session created and validated successfully');
+                            logToDebug('🔐 Session token is properly secured (HttpOnly)');
                             logToDebug('💡 Try clicking "Go to Main Page" to test full authentication flow');
                         } else {
-                            logToDebug('❌ FAILURE: No session token in cookies');
+                            logToDebug('❌ FAILURE: Session verification failed');
                             logToDebug('🔍 Check browser dev tools > Application > Cookies');
+                            logToDebug('💡 Look for session_token in the auth-worker.joshuablaszczyk.workers.dev domain');
                         }
                     }, 1500);
                 } else {

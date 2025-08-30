@@ -75,6 +75,68 @@ let cjProducts = [];
 let filteredPerfumes = [];
 let availableFeeds = [];
 let userFavorites = new Set(); // Stores IDs of favorited fragrances
+let pendingFavoriteOperations = new Map(); // Stores pending operations for offline sync
+let isOnline = navigator.onLine; // Track online status
+
+// Track online/offline status
+window.addEventListener('online', () => {
+    isOnline = true;
+    console.log('Back online - syncing pending favorite operations...');
+    syncPendingFavoriteOperations();
+});
+
+window.addEventListener('offline', () => {
+    isOnline = false;
+    console.log('Gone offline - favorite operations will be queued');
+});
+
+// Function to sync pending operations when back online
+async function syncPendingFavoriteOperations() {
+    if (pendingFavoriteOperations.size === 0) return;
+
+    console.log(`Syncing ${pendingFavoriteOperations.size} pending favorite operations...`);
+    showToast(`Syncing ${pendingFavoriteOperations.size} favorite operations...`, 'info');
+
+    for (const [fragranceId, operation] of pendingFavoriteOperations) {
+        try {
+            const headers = { 'Content-Type': 'application/json' };
+            if (sessionToken) {
+                headers['Authorization'] = `Bearer ${sessionToken}`;
+            }
+
+            if (operation.type === 'add') {
+                await fetch('https://auth-worker.joshuablaszczyk.workers.dev/api/user/favorites', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify(operation.data),
+                    credentials: 'include'
+                });
+                console.log(`✅ Synced add operation for ${fragranceId}`);
+            } else if (operation.type === 'remove') {
+                await fetch(`https://auth-worker.joshuablaszczyk.workers.dev/api/user/favorites/${fragranceId}`, {
+                    method: 'DELETE',
+                    headers,
+                    credentials: 'include'
+                });
+                console.log(`✅ Synced remove operation for ${fragranceId}`);
+            }
+
+            pendingFavoriteOperations.delete(fragranceId);
+        } catch (error) {
+            console.error(`❌ Failed to sync operation for ${fragranceId}:`, error);
+            // Keep the operation in the queue for next attempt
+        }
+    }
+
+    // Reload favorites to ensure UI is in sync
+    if (pendingFavoriteOperations.size === 0) {
+        console.log('All pending operations synced successfully');
+        showToast('All favorites synced successfully!', 'success');
+        loadUserFavorites();
+    } else {
+        showToast(`${pendingFavoriteOperations.size} operations still pending`, 'warning');
+    }
+}
 let currentPage = 1;
 let totalPages = 1;
 
@@ -1553,23 +1615,41 @@ async function toggleFavorite(button, perfume) {
     }
 
     const fragranceId = perfume.productId;
-    const isFavorited = userFavorites.has(fragranceId);
+    const wasFavorited = userFavorites.has(fragranceId);
+
+    // Optimistic update - update UI immediately for better UX
+    if (wasFavorited) {
+        userFavorites.delete(fragranceId);
+        button.classList.remove('favorited');
+        console.log('Optimistically removed from favorites');
+    } else {
+        userFavorites.add(fragranceId);
+        button.classList.add('favorited');
+        console.log('Optimistically added to favorites');
+    }
+
+    // Show loading state
+    button.style.opacity = '0.6';
+    button.disabled = true;
 
     try {
-        if (isFavorited) {
+        if (wasFavorited) {
             // Unfavorite logic
             const headers = {};
             if (sessionToken) {
                 headers['Authorization'] = `Bearer ${sessionToken}`;
             }
-            
-            await fetch(`https://auth-worker.joshuablaszczyk.workers.dev/api/user/favorites/${fragranceId}`, { 
+
+            await fetch(`https://auth-worker.joshuablaszczyk.workers.dev/api/user/favorites/${fragranceId}`, {
                 method: 'DELETE',
                 headers,
                 credentials: 'include'
             });
-            userFavorites.delete(fragranceId);
-            button.classList.remove('favorited');
+
+            console.log('✅ Successfully removed from favorites on server');
+            // Remove from pending operations if it was there
+            pendingFavoriteOperations.delete(fragranceId);
+
         } else {
             // Favorite logic
             const favoriteData = {
@@ -1587,21 +1667,127 @@ async function toggleFavorite(button, perfume) {
             if (sessionToken) {
                 headers['Authorization'] = `Bearer ${sessionToken}`;
             }
-            
+
             await fetch('https://auth-worker.joshuablaszczyk.workers.dev/api/user/favorites', {
                 method: 'POST',
                 headers,
                 body: JSON.stringify(favoriteData),
                 credentials: 'include'
             });
-            userFavorites.add(fragranceId);
-            button.classList.add('favorited');
+
+            console.log('✅ Successfully added to favorites on server');
+            // Remove from pending operations if it was there
+            pendingFavoriteOperations.delete(fragranceId);
         }
+
         // Refresh the favorites display
         loadUserFavorites();
+
+        // Reset button state
+        button.style.opacity = '';
+        button.disabled = false;
+
     } catch (error) {
-        console.error('Error toggling favorite:', error);
+        console.error('❌ Error toggling favorite:', error);
+
+        // Handle different types of errors
+        if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
+            // Network error - implement offline handling
+            console.log('Network error detected - storing operation for later sync');
+
+            // Store the operation for later sync
+            if (wasFavorited) {
+                // We optimistically removed it, but server call failed
+                // Store operation to remove it later
+                pendingFavoriteOperations.set(fragranceId, {
+                    type: 'remove',
+                    timestamp: Date.now(),
+                    data: null
+                });
+                showToast('Removed from favorites (will sync when online)', 'warning');
+            } else {
+                // We optimistically added it, but server call failed
+                // Store operation to add it later
+                const favoriteData = {
+                    fragrance_id: perfume.productId,
+                    name: perfume.name,
+                    advertiserName: perfume.advertiserName,
+                    description: perfume.description,
+                    imageUrl: perfume.imageUrl,
+                    productUrl: perfume.productUrl,
+                    price: perfume.price,
+                    currency: perfume.currency,
+                    shipping_availability: perfume.shipping_availability || (perfume.shipping ? 'available' : 'unavailable'),
+                };
+                pendingFavoriteOperations.set(fragranceId, {
+                    type: 'add',
+                    timestamp: Date.now(),
+                    data: favoriteData
+                });
+                showToast('Added to favorites (will sync when online)', 'warning');
+            }
+
+            console.log(`📋 Pending operations: ${pendingFavoriteOperations.size} operations queued`);
+
+        } else {
+            // Other error - revert the optimistic update
+            console.error('Non-network error - reverting optimistic update');
+
+            // Revert the UI change
+            if (wasFavorited) {
+                userFavorites.add(fragranceId);
+                button.classList.add('favorited');
+            } else {
+                userFavorites.delete(fragranceId);
+                button.classList.remove('favorited');
+            }
+
+            showToast('Failed to update favorite. Please try again.', 'error');
+        }
+
+        // Reset button state
+        button.style.opacity = '';
+        button.disabled = false;
     }
+}
+
+// Helper function to show toast notifications
+function showToast(message, type = 'info') {
+    // Remove any existing toasts
+    const existingToast = document.querySelector('.toast-notification');
+    if (existingToast) {
+        existingToast.remove();
+    }
+
+    // Create new toast
+    const toast = document.createElement('div');
+    toast.className = `toast-notification toast-${type}`;
+    toast.textContent = message;
+
+    // Style the toast
+    Object.assign(toast.style, {
+        position: 'fixed',
+        top: '20px',
+        right: '20px',
+        background: type === 'error' ? '#dc3545' : type === 'warning' ? '#ffc107' : '#28a745',
+        color: type === 'warning' ? '#000' : '#fff',
+        padding: '12px 20px',
+        borderRadius: '4px',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
+        zIndex: '10000',
+        fontSize: '14px',
+        maxWidth: '300px',
+        wordWrap: 'break-word'
+    });
+
+    document.body.appendChild(toast);
+
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.remove();
+        }
+    }, 5000);
 }
 
 function showFavoritesView() {
@@ -1641,19 +1827,101 @@ async function loadUserFavorites() {
         if (sessionToken) {
             headers['Authorization'] = `Bearer ${sessionToken}`;
         }
-        
+
         const response = await fetch('https://auth-worker.joshuablaszczyk.workers.dev/api/user/favorites', {
             headers,
             credentials: 'include'
         });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
         const data = await response.json();
         if (data.success && data.favorites) {
             userFavorites = new Set(data.favorites.map(fav => fav.fragrance_id));
             displayFavorites(data.favorites);
             updateAllFavoriteIcons();
+            console.log(`✅ Loaded ${data.favorites.length} favorites from server`);
+        } else {
+            throw new Error('Invalid response format');
         }
     } catch (error) {
-        console.error('Error loading user favorites:', error);
+        console.error('❌ Error loading user favorites:', error);
+
+        // Handle network errors gracefully
+        if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
+            console.log('Network error - showing cached favorites if available');
+
+            // If we have pending operations, show a message about offline mode
+            if (pendingFavoriteOperations.size > 0) {
+                showToast(`Offline mode - ${pendingFavoriteOperations.size} pending sync(s)`, 'warning');
+            } else {
+                showToast('Unable to load favorites. Check your connection.', 'warning');
+            }
+
+            // Still try to display favorites if we have local data
+            if (userFavorites.size > 0) {
+                console.log('Showing cached favorites');
+                // Create a basic display from local data
+                displayFavoritesFromLocal();
+            } else {
+                displayFavorites([]);
+            }
+        } else {
+            // Server error or other issue
+            showToast('Failed to load favorites from server', 'error');
+            displayFavorites([]);
+        }
+    }
+}
+
+// Helper function to display favorites from local cache when offline
+function displayFavoritesFromLocal() {
+    if (!authUI.favoritesGrid || !authUI.favoritesEmptyState) return;
+
+    authUI.favoritesGrid.innerHTML = '';
+
+    if (userFavorites.size === 0) {
+        authUI.favoritesEmptyState.style.display = 'block';
+        return;
+    }
+
+    authUI.favoritesEmptyState.style.display = 'none';
+
+    // Create basic cards from local data (limited info available)
+    let count = 0;
+    userFavorites.forEach(fragranceId => {
+        if (count >= 50) return; // Limit to prevent too many cards
+
+        const card = document.createElement('div');
+        card.className = 'product-card';
+        card.innerHTML = `
+            <div class="product-image-container">
+                <img src="https://placehold.co/300x300?text=Cached+Item" alt="Cached favorite" class="product-image">
+                <button class="favorite-btn favorited" data-id="${fragranceId}" onclick="toggleFavorite(this, {productId: '${fragranceId}', name: 'Cached Item'})">
+                    <i class="fas fa-heart"></i>
+                </button>
+            </div>
+            <div class="product-info">
+                <h3 class="product-name">Favorite Item (ID: ${fragranceId})</h3>
+                <p class="product-brand">Cached offline</p>
+            </div>
+        `;
+        authUI.favoritesGrid.appendChild(card);
+        count++;
+    });
+
+    if (count >= 50) {
+        const moreCard = document.createElement('div');
+        moreCard.className = 'product-card';
+        moreCard.innerHTML = `
+            <div class="product-info">
+                <h3 class="product-name">And ${userFavorites.size - 50} more...</h3>
+                <p class="product-brand">Go online to see all favorites</p>
+            </div>
+        `;
+        authUI.favoritesGrid.appendChild(moreCard);
     }
 }
 

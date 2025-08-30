@@ -115,7 +115,7 @@ async function handleCredentialResponse(response) {
             setTimeout(async () => {
                 // Verify session is working
                 try {
-                    const verifyRes = await fetch(`${WORKER_URL}/status`);
+                    const verifyRes = await fetch(`${WORKER_URL}/status`, { credentials: 'include' });
                     const verifyData = await verifyRes.json();
                     if (!verifyData.success) {
                         console.warn('Session verification failed after login');
@@ -141,7 +141,7 @@ async function handleCredentialResponse(response) {
 async function checkUserStatus() {
     try {
         // The browser automatically sends the secure cookie with this request
-        const res = await fetch(`${WORKER_URL}/status`);
+        const res = await fetch(`${WORKER_URL}/status`, { credentials: 'include' });
         const data = await res.json();
 
         if (res.ok && data.success) {
@@ -258,7 +258,7 @@ async function handleEmailLogin(event) {
             // Add a small delay to ensure session is established
             setTimeout(async () => {
                 try {
-                    const verifyRes = await fetch(`${WORKER_URL}/status`);
+                    const verifyRes = await fetch(`${WORKER_URL}/status`, { credentials: 'include' });
                     const verifyData = await verifyRes.json();
                     if (!verifyData.success) {
                         console.warn('Session verification failed after email login');
@@ -400,7 +400,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Session establishment verification
                     setTimeout(async () => {
                         try {
-                            const verifyRes = await fetch(`${WORKER_URL}/status`);
+                            const verifyRes = await fetch(`${WORKER_URL}/status`, { credentials: 'include' });
                             const verifyData = await verifyRes.json();
                             if (!verifyData.success) {
                                 console.warn('Session verification failed after form login');
@@ -461,7 +461,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Verify the session is working before redirecting
             try {
-                const statusCheck = await fetch(`${WORKER_URL}/status`);
+                const statusCheck = await fetch(`${WORKER_URL}/status`, { credentials: 'include' });
                 const statusData = await statusCheck.json();
 
                 if (statusData.success && statusData.user) {
