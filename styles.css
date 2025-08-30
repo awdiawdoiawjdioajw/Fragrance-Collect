@@ -70,7 +70,9 @@ h1, h2, h3, h4, h5, h6 {
 .nav-right {
     display: flex;
     align-items: center;
+    justify-content: flex-end;
     gap: 1.5rem;
+    width: 120px; /* Fixed width to prevent layout shift */
 }
 
 .nav-logo {
@@ -168,10 +170,7 @@ h1, h2, h3, h4, h5, h6 {
 /* Menu actions buttons positioned closer to menu dropdown */
 .menu-actions {
     display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-left: 0.5rem; /* Small margin to create tight spacing with menu */
-    margin-right: 0;
+    gap: 1.5rem;
 }
 
 .menu-profile-btn,
