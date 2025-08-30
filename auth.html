@@ -33,9 +33,17 @@
             
             <div class="nav-right">
                 <!-- Login button on the right -->
-                <a href="auth.html" class="login-btn">
-                    <i class="fas fa-user"></i>
-                </a>
+                <a href="auth.html" class="login-btn" id="login-btn" aria-label="Login or Sign up"><i class="fas fa-user"></i></a>
+
+                <!-- Menu actions for logged in users -->
+                <div class="menu-actions" style="display: none;">
+                    <a href="account.html" class="menu-profile-btn" id="menu-profile-btn" aria-label="Profile Settings" title="Profile Settings">
+                        <i class="fas fa-user-cog"></i>
+                    </a>
+                    <a href="#" class="menu-logout-btn" id="menu-logout-btn" aria-label="Sign Out" title="Sign Out">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </a>
+                </div>
             </div>
             
             <!-- Search and dropdown row -->

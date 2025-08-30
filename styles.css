@@ -2721,3 +2721,32 @@ select option {
         gap: 0.25rem;
     }
 }
+
+.nav-right {
+    display: flex;
+    align-items: center;
+}
+
+.login-btn,
+.menu-profile-btn,
+.menu-logout-btn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    height: 40px;
+    background-color: transparent;
+    border: 1px solid #ddd;
+    border-radius: 50%;
+    color: #333;
+    font-size: 1.2rem;
+    margin-left: 10px;
+    transition: all 0.3s ease;
+}
+
+.login-btn:hover,
+.menu-profile-btn:hover,
+.menu-logout-btn:hover {
+    background-color: #f5f5f5;
+    color: #000;
+}
