@@ -190,9 +190,12 @@ function verifyClaims(payload, audience) {
  */
 async function handleLogin(request, env) {
   // Validate request origin for security
+  const origin = request.headers.get('Origin');
   if (!validateSiteOrigin(request)) {
-    console.warn('Login attempt from unauthorized origin:', request.headers.get('Origin') || request.headers.get('Referer'));
-    return jsonResponse({ error: 'Unauthorized origin' }, 403, {});
+    console.warn('Login attempt from unauthorized origin:', origin || request.headers.get('Referer'));
+    // Still set CORS headers even for unauthorized requests to prevent CORS errors
+    const headers = getSecurityHeaders(origin);
+    return jsonResponse({ error: 'Unauthorized origin' }, 403, headers);
   }
 
   const headers = getSecurityHeaders(env.ALLOWED_ORIGIN || 'https://fragrancecollect.com');
@@ -570,12 +573,14 @@ async function handleDeleteFavorite(request, env) {
  */
 async function handleEmailSignup(request, env) {
     // Validate request origin for security
+    const origin = request.headers.get('Origin');
     if (!validateSiteOrigin(request)) {
-        console.warn('Email signup attempt from unauthorized origin:', request.headers.get('Origin') || request.headers.get('Referer'));
-        return jsonResponse({ error: 'Unauthorized origin' }, 403, {});
+        console.warn('Email signup attempt from unauthorized origin:', origin || request.headers.get('Referer'));
+        // Still set CORS headers even for unauthorized requests to prevent CORS errors
+        const headers = getSecurityHeaders(origin);
+        return jsonResponse({ error: 'Unauthorized origin' }, 403, headers);
     }
 
-    const origin = request.headers.get('Origin');
     const headers = getSecurityHeaders(origin);
     try {
         const { name, email, password } = await request.json();
@@ -631,12 +636,14 @@ async function handleEmailSignup(request, env) {
  */
 async function handleEmailLogin(request, env) {
     // Validate request origin for security
+    const origin = request.headers.get('Origin');
     if (!validateSiteOrigin(request)) {
-        console.warn('Email login attempt from unauthorized origin:', request.headers.get('Origin') || request.headers.get('Referer'));
-        return jsonResponse({ error: 'Unauthorized origin' }, 403, {});
+        console.warn('Email login attempt from unauthorized origin:', origin || request.headers.get('Referer'));
+        // Still set CORS headers even for unauthorized requests to prevent CORS errors
+        const headers = getSecurityHeaders(origin);
+        return jsonResponse({ error: 'Unauthorized origin' }, 403, headers);
     }
 
-    const origin = request.headers.get('Origin');
     const headers = getSecurityHeaders(origin);
     try {
         const { email, password } = await request.json();
