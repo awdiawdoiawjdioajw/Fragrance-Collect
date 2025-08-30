@@ -2525,3 +2525,82 @@ select option {
 .product-card .favorite-btn.favorited:hover {
     color: #D4B85E;
 }
+
+/* User Welcome Message Styles */
+.user-welcome {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    color: var(--warm-white);
+    font-family: 'Playfair Display', serif;
+}
+
+.welcome-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    text-align: right;
+}
+
+.greeting {
+    font-size: 1.1rem;
+    font-weight: 400;
+    color: var(--antique-gold);
+}
+
+.user-name {
+    font-weight: 600;
+    color: var(--warm-white);
+    font-size: 1.1rem;
+}
+
+.welcome-sub {
+    font-size: 0.8rem;
+    color: var(--warm-white);
+    opacity: 0.8;
+    font-style: italic;
+    margin-top: 0.2rem;
+    font-family: 'Lato', sans-serif;
+}
+
+.user-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.account-link,
+.logout-link {
+    color: var(--antique-gold);
+    font-size: 1.2rem;
+    padding: 0.5rem;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.account-link:hover,
+.logout-link:hover {
+    background: rgba(201, 166, 70, 0.1);
+    color: #D4B85E;
+    transform: scale(1.1);
+}
+
+/* Responsive adjustments for user welcome */
+@media (max-width: 768px) {
+    .user-welcome {
+        gap: 0.5rem;
+    }
+    
+    .welcome-text {
+        font-size: 0.9rem;
+    }
+    
+    .welcome-sub {
+        display: none;
+    }
+    
+    .user-actions {
+        gap: 0.25rem;
+    }
+}

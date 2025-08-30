@@ -100,6 +100,8 @@ const config = {
 };
 
 // --- AUTHENTICATION ---
+let isUserLoggedIn = false; // Global authentication state
+
 const authUI = {
     loginBtn: document.getElementById('login-btn'),
     userWelcome: document.getElementById('user-welcome'),
@@ -140,16 +142,61 @@ async function checkUserStatus() {
 }
 
 function updateNavUI(user) {
+    console.log('updateNavUI called with user:', user);
     if (user) {
         // User is logged in
+        isUserLoggedIn = true;
+        console.log('Setting isUserLoggedIn to true');
         if (authUI.loginBtn) authUI.loginBtn.style.display = 'none';
         if (authUI.userWelcome) authUI.userWelcome.style.display = 'flex';
-        if (authUI.userNameDisplay) authUI.userNameDisplay.textContent = user.name.split(' ')[0];
+        if (authUI.userNameDisplay) {
+            const firstName = user.name.split(' ')[0];
+            authUI.userNameDisplay.textContent = firstName;
+            updateDynamicGreeting(firstName);
+        }
     } else {
         // User is logged out
+        isUserLoggedIn = false;
+        console.log('Setting isUserLoggedIn to false');
         if (authUI.loginBtn) authUI.loginBtn.style.display = 'flex';
         if (authUI.userWelcome) authUI.userWelcome.style.display = 'none';
     }
+}
+
+function updateDynamicGreeting(firstName) {
+    const hour = new Date().getHours();
+    const greetingElement = document.getElementById('dynamic-greeting');
+    const subtitleElement = document.getElementById('welcome-subtitle');
+    
+    let greeting, subtitle;
+    
+    if (hour < 12) {
+        greeting = 'Good morning';
+        subtitle = 'Start your day with the perfect scent';
+    } else if (hour < 17) {
+        greeting = 'Good afternoon';
+        subtitle = 'Discover new fragrances today';
+    } else {
+        greeting = 'Good evening';
+        subtitle = 'Unwind with luxurious scents';
+    }
+    
+    // Add some personalized variety
+    const personalizedMessages = [
+        'Ready to explore new scents?',
+        'Your fragrance journey continues',
+        'Discover your signature scent',
+        'Find your perfect match today',
+        'Welcome back to luxury'
+    ];
+    
+    // Occasionally use a personalized message
+    if (Math.random() < 0.3) {
+        subtitle = personalizedMessages[Math.floor(Math.random() * personalizedMessages.length)];
+    }
+    
+    if (greetingElement) greetingElement.textContent = greeting;
+    if (subtitleElement) subtitleElement.textContent = subtitle;
 }
 
 async function handleLogout() {
@@ -159,6 +206,7 @@ async function handleLogout() {
         });
     } finally {
         // Always update UI and redirect, even if server call fails
+        isUserLoggedIn = false;
         updateNavUI(null);
         window.location.href = 'auth.html';
     }
@@ -1513,10 +1561,19 @@ async function loadTikTokFinds() {
 // --------------------------------- 
 
 async function toggleFavorite(button, perfume) {
-    if (!authUI.userWelcome.style.display.includes('flex')) {
-        // If user is not logged in, redirect to login
-        window.location.href = 'auth.html';
-        return;
+    console.log('Toggle favorite clicked, isUserLoggedIn:', isUserLoggedIn);
+    
+    // Double-check authentication status before proceeding
+    if (!isUserLoggedIn) {
+        console.log('Initial check: User not logged in, re-checking status...');
+        await checkUserStatus();
+        
+        // Check again after status update
+        if (!isUserLoggedIn) {
+            console.log('User confirmed not logged in, redirecting to auth page');
+            window.location.href = 'auth.html';
+            return;
+        }
     }
 
     const fragranceId = perfume.productId;
@@ -1562,7 +1619,7 @@ async function toggleFavorite(button, perfume) {
 
 function showFavoritesView() {
     // Check if user is logged in
-    if (!authUI.userWelcome || authUI.userWelcome.style.display === 'none') {
+    if (!isUserLoggedIn) {
         // User is not logged in, redirect to auth page
         window.location.href = 'auth.html';
         return;

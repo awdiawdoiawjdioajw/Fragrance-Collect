@@ -58,9 +58,15 @@
 
                 <!-- Logged In View (Hidden by default) -->
                 <div class="user-welcome" id="user-welcome" style="display: none;">
-                    <span>Welcome, <span id="user-name-display"></span></span>
-                    <a href="account.html" class="account-link" aria-label="My Account"><i class="fas fa-user-cog"></i></a>
-                    <a href="#" id="logout-link" class="logout-link" aria-label="Logout"><i class="fas fa-sign-out-alt"></i></a>
+                    <div class="welcome-text">
+                        <span class="greeting" id="dynamic-greeting">Hello</span>, 
+                        <span id="user-name-display" class="user-name"></span>!
+                        <span class="welcome-sub" id="welcome-subtitle">Discover your perfect scent</span>
+                    </div>
+                    <div class="user-actions">
+                        <a href="account.html" class="account-link" aria-label="My Account"><i class="fas fa-user-cog"></i></a>
+                        <a href="#" id="logout-link" class="logout-link" aria-label="Logout"><i class="fas fa-sign-out-alt"></i></a>
+                    </div>
                 </div>
             </div>
             
