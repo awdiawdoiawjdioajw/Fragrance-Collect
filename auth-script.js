@@ -109,7 +109,7 @@ async function handleCredentialResponse(response) {
 
         if (res.ok && data.success) {
             showStatus('Login successful! Welcome.');
-            updateUI(data.user);
+            updateSharedNavUI(data.user); // Use shared function
             
             // Add a small delay before any potential redirect to ensure session is established
             setTimeout(async () => {
@@ -139,21 +139,9 @@ async function handleCredentialResponse(response) {
  * Checks the user's login status by calling the /status endpoint.
  */
 async function checkUserStatus() {
-    try {
-        // The browser automatically sends the secure cookie with this request
-        const res = await fetch(`${WORKER_URL}/status`, { credentials: 'include' });
-        const data = await res.json();
-
-        if (res.ok && data.success) {
-            updateUI(data.user);
-        } else {
-            updateUI(null);
-        }
-    } catch (error) {
-        console.error('Error checking user status:', error);
-        showStatus('Could not verify session. Please sign in.', true);
-        updateUI(null);
-    }
+    // This function is now redundant, as shared-auth.js handles the initial status check.
+    // The shared script will call updateSharedNavUI, which is all we need for the nav bar.
+    // The auth-script will handle the visibility of the login/logout forms.
 }
 
 /**
@@ -167,7 +155,7 @@ async function logout() {
 
         if (res.ok && data.success) {
             showStatus('You have been signed out successfully.');
-            updateUI(null);
+            updateSharedNavUI(null); // Use shared function
         } else {
             throw new Error(data.error || 'Logout failed.');
         }
@@ -219,7 +207,7 @@ async function handleEmailSignup(event) {
         const data = await res.json();
         if (res.ok && data.success) {
             showStatus('Account created successfully! Welcome.');
-            updateUI(data.user);
+            updateSharedNavUI(data.user); // Use shared function
         } else {
             throw new Error(data.error || 'Could not create account.');
         }
@@ -253,7 +241,7 @@ async function handleEmailLogin(event) {
 
         if (res.ok && data.success) {
             showStatus('Sign in successful!');
-            updateUI(data.user);
+            updateSharedNavUI(data.user); // Use shared function
             
             // Add a small delay to ensure session is established
             setTimeout(async () => {
@@ -340,15 +328,8 @@ function initializeGoogleSignIn() {
 // --- EVENT LISTENERS ---
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Initialize shared auth UI elements (even though auth page doesn't show them)
-    // This ensures shared auth variables are available
-    sharedAuthUI.loginBtn = null; // Auth page doesn't have a login button
-    sharedAuthUI.userWelcome = null; // Auth page doesn't have user welcome section
-    sharedAuthUI.userNameDisplay = null; // Auth page doesn't have user name display
-    sharedAuthUI.logoutLink = null; // Auth page doesn't have logout link
-
-    // Check user status on page load
-    checkUserStatus();
+    // The shared-auth.js script now handles the initial status check automatically.
+    // We just need to handle the visibility of the login forms based on the shared state.
 
     // Handle post-login redirect messages
     handlePostLogin();
@@ -373,7 +354,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Logout button
+    // Logout button in the main content (not the nav bar)
     if (ui.logoutButton) {
         ui.logoutButton.addEventListener('click', logout);
     }
@@ -402,7 +383,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         console.log('Token stored in localStorage for cross-origin support');
                     }
                     
-                    updateUI(data.user);
+                    updateSharedNavUI(data.user); // Use shared function
                     
                     // Session establishment verification
                     setTimeout(async () => {
@@ -416,6 +397,17 @@ document.addEventListener('DOMContentLoaded', () => {
                             console.error('Session verification error after form login:', error);
                         }
                     }, 100);
+
+                    // Update the main content UI, separate from shared nav
+                    if (data.user) {
+                         ui.loggedOutView.style.display = 'none';
+                         ui.loggedInView.style.display = 'block';
+                         ui.userPicture.src = data.user.picture || 'emblem.png';
+                         ui.userName.textContent = data.user.name || 'Welcome';
+                         ui.userEmail.textContent = data.user.email || '';
+                         if (ui.tabsContainer) ui.tabsContainer.style.display = 'none';
+                    }
+
                 } else {
                     throw new Error(data.error || 'Failed to sign in.');
                 }
@@ -454,6 +446,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     
                     showSuccessModal(data.user.name);
+                    updateSharedNavUI(data.user); // Use shared function
                 } else {
                     throw new Error(data.error || 'Failed to sign up.');
                 }

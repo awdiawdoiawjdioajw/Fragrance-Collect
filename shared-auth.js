@@ -195,9 +195,9 @@ function initSharedAuth() {
     // Check authentication status
     checkSharedUserStatus();
     
-    // Add logout event listener if logout link exists
-    if (sharedAuthUI.logoutLink) {
-        sharedAuthUI.logoutLink.addEventListener('click', (e) => {
+    // Add logout event listener if logout button exists in the nav
+    if (sharedAuthUI.menuLogoutBtn) {
+        sharedAuthUI.menuLogoutBtn.addEventListener('click', (e) => {
             e.preventDefault();
             handleSharedLogout();
         });
