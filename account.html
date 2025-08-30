@@ -8,11 +8,81 @@
     <link rel="stylesheet" href="account-styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <!-- GitHub Pages Performance Optimizations -->
+    <meta http-equiv="Cache-Control" content="public, max-age=3600">
+    <meta http-equiv="Expires" content="3600">
+    <link rel="dns-prefetch" href="//weathered-mud-6ed5.joshuablaszczyk.workers.dev">
+    <link rel="preconnect" href="//weathered-mud-6ed5.joshuablaszczyk.workers.dev" crossorigin>
+    <script>
+        // Force HTTPS redirect
+        if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+            location.replace(`https:${location.href.substring(location.protocol.length)}`);
+        }
+        // Use Cloudflare Worker API
+        window.API_BASE = 'https://weathered-mud-6ed5.joshuablaszczyk.workers.dev';
+    </script>
 </head>
 <body>
     <!-- Navigation -->
     <nav class="navbar">
-        <!-- (Navbar content will be loaded dynamically by account.js) -->
+        <div class="nav-container">
+            <div class="nav-left">
+                <!-- Logo on the left -->
+                <div class="nav-logo">
+                    <img src="emblem.png" alt="Fragrance Collect Logo" class="logo-emblem">
+                    <h2>Fragrance Collect</h2>
+                </div>
+
+                <!-- Navigation menu in center -->
+                <ul class="nav-menu">
+                    <li><a href="main.html#home" class="nav-link home-link">Home</a></li>
+                    <li><a href="main.html#favorites" class="nav-link">Favorites</a></li>
+                    <li><a href="main.html#collections" class="nav-link">Collections</a></li>
+                    <li><a href="main.html#top-rated" class="nav-link">Top Rated</a></li>
+                    <li><a href="main.html#shop" class="nav-link shop-link">Shop</a></li>
+                </ul>
+
+                <!-- Menu dropdown moved to nav-left -->
+                <div class="dropdown">
+                    <a href="#" class="dropdown-toggle">
+                        <i class="fas fa-bars"></i>
+                        <span>Menu</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="main.html#home">Home</a></li>
+                        <li><a href="main.html#favorites">Favorites</a></li>
+                        <li><a href="main.html#collections">Collections</a></li>
+                        <li><a href="main.html#top-rated">Top Rated</a></li>
+                        <li><a href="main.html#shop">Shop</a></li>
+                        <li><a href="customer-service.html">Customer Service</a></li>
+                        <li><a href="contact.html">Contact Us</a></li>
+                        <li><a href="size-guide.html">Size Guide</a></li>
+                        <li><a href="faq.html">FAQ</a></li>
+                        <li><a href="auth.html">Sign In/Up</a></li>
+                    </ul>
+                </div>
+
+                <!-- Menu actions moved to the left -->
+                <div class="menu-actions">
+                    <a href="account.html" class="menu-profile-btn" id="menu-profile-btn" aria-label="Profile Settings" title="Profile Settings">
+                        <i class="fas fa-user-cog"></i>
+                    </a>
+                    <a href="#" class="menu-logout-btn" id="menu-logout-btn" aria-label="Sign Out" title="Sign Out">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </a>
+                </div>
+            </div>
+
+
+            <!-- Hamburger menu for mobile -->
+            <div class="hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
     </nav>
 
     <main class="account-container">
@@ -96,6 +166,7 @@
         </div>
     </main>
 
+    <script src="shared-auth.js"></script>
     <script src="account.js"></script>
 </body>
 </html>

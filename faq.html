@@ -10,6 +10,20 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="faq.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <!-- GitHub Pages Performance Optimizations -->
+    <meta http-equiv="Cache-Control" content="public, max-age=3600">
+    <meta http-equiv="Expires" content="3600">
+    <link rel="dns-prefetch" href="//weathered-mud-6ed5.joshuablaszczyk.workers.dev">
+    <link rel="preconnect" href="//weathered-mud-6ed5.joshuablaszczyk.workers.dev" crossorigin>
+    <script>
+        // Force HTTPS redirect
+        if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+            location.replace(`https:${location.href.substring(location.protocol.length)}`);
+        }
+        // Use Cloudflare Worker API
+        window.API_BASE = 'https://weathered-mud-6ed5.joshuablaszczyk.workers.dev';
+    </script>
 </head>
 <body>
     <!-- Navigation -->
@@ -21,38 +35,17 @@
                     <img src="emblem.png" alt="Fragrance Collect Logo" class="logo-emblem">
                     <h2>Fragrance Collect</h2>
                 </div>
-                
+
                 <!-- Navigation menu in center -->
                 <ul class="nav-menu">
-                    <li><a href="main.html#home" class="nav-link">Home</a></li>
+                    <li><a href="main.html#home" class="nav-link home-link">Home</a></li>
                     <li><a href="main.html#favorites" class="nav-link">Favorites</a></li>
                     <li><a href="main.html#collections" class="nav-link">Collections</a></li>
                     <li><a href="main.html#top-rated" class="nav-link">Top Rated</a></li>
-                    <li><a href="main.html#shop" class="nav-link">Shop</a></li>
+                    <li><a href="main.html#shop" class="nav-link shop-link">Shop</a></li>
                 </ul>
-            </div>
-            
-            <div class="nav-right">
-                <!-- Logged Out View -->
-                <a href="auth.html" class="login-btn" id="login-btn" aria-label="Login or Sign up">
-                    <i class="fas fa-user"></i>
-                </a>
 
-                <!-- Logged In View (Hidden by default) -->
-                <div class="user-welcome" id="user-welcome" style="display: none;">
-                    <div class="welcome-text">
-                        <span>Welcome, <span id="user-name-display" class="user-name"></span></span>
-                    </div>
-                    <div class="user-actions">
-                        <a href="account.html" class="account-link" aria-label="My Account"><i class="fas fa-user-cog"></i></a>
-                        <a href="#" id="logout-link" class="logout-link" aria-label="Logout"><i class="fas fa-sign-out-alt"></i></a>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Search and dropdown row -->
-            <div class="search-row">
-                <!-- Dropdown menu on the left -->
+                <!-- Menu dropdown moved to nav-left -->
                 <div class="dropdown">
                     <a href="#" class="dropdown-toggle">
                         <i class="fas fa-bars"></i>
@@ -72,8 +65,19 @@
                         <li><a href="auth.html">Sign In/Up</a></li>
                     </ul>
                 </div>
+
+                <!-- Menu actions moved to the left -->
+                <div class="menu-actions">
+                    <a href="account.html" class="menu-profile-btn" id="menu-profile-btn" aria-label="Profile Settings" title="Profile Settings">
+                        <i class="fas fa-user-cog"></i>
+                    </a>
+                    <a href="#" class="menu-logout-btn" id="menu-logout-btn" aria-label="Sign Out" title="Sign Out">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </a>
+                </div>
             </div>
-            
+
+
             <!-- Hamburger menu for mobile -->
             <div class="hamburger">
                 <span class="bar"></span>
