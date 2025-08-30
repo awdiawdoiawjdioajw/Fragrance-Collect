@@ -258,34 +258,29 @@ async function handleLogin(request, env) {
     ).bind(sessionId, id, token, expiresAt.toISOString(), clientIP, userAgent, sessionFingerprint).run();
 
     // 5. Set the session token in a secure, HttpOnly cookie
-    // **FIX:** Configure cookie properly for both local development and production
+    // **FIX:** Configure cookie properly for cross-origin requests
     const originUrl = request.headers.get('Origin') ? new URL(request.headers.get('Origin')) : null;
     let cookieString = `session_token=${token}; Expires=${expiresAt.toUTCString()}; Path=/; HttpOnly`;
 
+    // Handle cross-origin cookie setting
     if (originUrl) {
-        // For local development, set domain to match the requesting origin
-        if (originUrl.hostname === '127.0.0.1' || originUrl.hostname === 'localhost') {
-            cookieString += `; Domain=${originUrl.hostname}; SameSite=Lax`;
-        } else if (originUrl.hostname.includes('workers.dev')) {
-            // For Cloudflare Workers, don't set domain to avoid conflicts
-            if (originUrl.protocol === 'https:') {
-                cookieString += '; Secure; SameSite=None';
-            } else {
-                cookieString += '; SameSite=Lax';
-            }
+        // For local development (localhost, 127.0.0.1, file://)
+        if (originUrl.hostname === '127.0.0.1' || originUrl.hostname === 'localhost' || originUrl.protocol === 'file:') {
+            // Don't set Domain for localhost to avoid issues
+            cookieString += '; SameSite=None; Secure';
+        } else if (originUrl.hostname.includes('workers.dev') || originUrl.hostname.includes('pages.dev')) {
+            // For Cloudflare domains
+            cookieString += '; SameSite=None; Secure';
+        } else if (originUrl.hostname.includes('github.io')) {
+            // For GitHub Pages
+            cookieString += '; SameSite=None; Secure';
         } else {
-            // For production domains, set appropriate SameSite
-            if (originUrl.protocol === 'https:') {
-                cookieString += '; Secure; SameSite=None';
-            } else {
-                cookieString += '; SameSite=Lax';
-            }
+            // For other production domains
+            cookieString += '; SameSite=None; Secure';
         }
     } else {
-        // Fallback for requests without Origin header (e.g., file://, direct API calls)
-        // For cross-origin requests from file:// or unknown origins, use Secure + SameSite=None
-        // This allows cookies to be sent to HTTPS domains from file:// origins
-        cookieString += '; Secure; SameSite=None';
+        // Fallback for requests without Origin header
+        cookieString += '; SameSite=None; Secure';
     }
 
     headers['Set-Cookie'] = cookieString;
@@ -652,39 +647,40 @@ async function handleEmailSignup(request, env) {
             `INSERT INTO user_sessions (id, user_id, token, expires_at, client_ip, user_agent, fingerprint, last_activity) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
         ).bind(sessionId, userId, token, expiresAt.toISOString(), clientIP, userAgent, sessionFingerprint).run();
 
-            // **FIX:** Configure cookie properly for both local development and production
+            // **FIX:** Configure cookie properly for cross-origin requests
     const originUrl = request.headers.get('Origin') ? new URL(request.headers.get('Origin')) : null;
     let cookieString = `session_token=${token}; Expires=${expiresAt.toUTCString()}; Path=/; HttpOnly`;
 
+    // Handle cross-origin cookie setting
     if (originUrl) {
-        // For local development, set domain to match the requesting origin
-        if (originUrl.hostname === '127.0.0.1' || originUrl.hostname === 'localhost') {
-            cookieString += `; Domain=${originUrl.hostname}; SameSite=Lax`;
-        } else if (originUrl.hostname.includes('workers.dev')) {
-            // For Cloudflare Workers, don't set domain to avoid conflicts
-            if (originUrl.protocol === 'https:') {
-                cookieString += '; Secure; SameSite=None';
-            } else {
-                cookieString += '; SameSite=Lax';
-            }
+        // For local development (localhost, 127.0.0.1, file://)
+        if (originUrl.hostname === '127.0.0.1' || originUrl.hostname === 'localhost' || originUrl.protocol === 'file:') {
+            // Don't set Domain for localhost to avoid issues
+            cookieString += '; SameSite=None; Secure';
+        } else if (originUrl.hostname.includes('workers.dev') || originUrl.hostname.includes('pages.dev')) {
+            // For Cloudflare domains
+            cookieString += '; SameSite=None; Secure';
+        } else if (originUrl.hostname.includes('github.io')) {
+            // For GitHub Pages
+            cookieString += '; SameSite=None; Secure';
         } else {
-            // For production domains, set appropriate SameSite
-            if (originUrl.protocol === 'https:') {
-                cookieString += '; Secure; SameSite=None';
-            } else {
-                cookieString += '; SameSite=Lax';
-            }
+            // For other production domains
+            cookieString += '; SameSite=None; Secure';
         }
     } else {
-        // Fallback for requests without Origin header (e.g., file://, direct API calls)
-        // For cross-origin requests from file:// or unknown origins, use Secure + SameSite=None
-        // This allows cookies to be sent to HTTPS domains from file:// origins
-        cookieString += '; Secure; SameSite=None';
+        // Fallback for requests without Origin header
+        cookieString += '; SameSite=None; Secure';
     }
 
         headers['Set-Cookie'] = cookieString;
 
-        return jsonResponse({ success: true, user: { id: userId, name, email } }, 201, headers);
+        // Also include token in response for localStorage fallback
+        const responseData = { 
+            success: true, 
+            user: { id: userId, name, email },
+            token: token // Include token for localStorage storage
+        };
+        return jsonResponse(responseData, 201, headers);
 
     } catch (error) {
         console.error('Error during email signup:', error);
@@ -754,44 +750,42 @@ async function handleEmailLogin(request, env) {
     const originUrl = request.headers.get('Origin') ? new URL(request.headers.get('Origin')) : null;
     let cookieString = `session_token=${token}; Expires=${expiresAt.toUTCString()}; Path=/; HttpOnly`;
 
+    // Handle cross-origin cookie setting
     if (originUrl) {
-        // For local development, set domain to match the requesting origin
-        if (originUrl.hostname === '127.0.0.1' || originUrl.hostname === 'localhost') {
-            cookieString += `; Domain=${originUrl.hostname}; SameSite=Lax`;
-        } else if (originUrl.hostname.includes('workers.dev')) {
-            // For Cloudflare Workers, don't set domain to avoid conflicts
-            if (originUrl.protocol === 'https:') {
-                cookieString += '; Secure; SameSite=None';
-            } else {
-                cookieString += '; SameSite=Lax';
-            }
+        // For local development (localhost, 127.0.0.1, file://)
+        if (originUrl.hostname === '127.0.0.1' || originUrl.hostname === 'localhost' || originUrl.protocol === 'file:') {
+            // Don't set Domain for localhost to avoid issues
+            cookieString += '; SameSite=None; Secure';
+        } else if (originUrl.hostname.includes('workers.dev') || originUrl.hostname.includes('pages.dev')) {
+            // For Cloudflare domains
+            cookieString += '; SameSite=None; Secure';
+        } else if (originUrl.hostname.includes('github.io')) {
+            // For GitHub Pages
+            cookieString += '; SameSite=None; Secure';
         } else {
-            // For production domains, set appropriate SameSite
-            if (originUrl.protocol === 'https:') {
-                cookieString += '; Secure; SameSite=None';
-            } else {
-                cookieString += '; SameSite=Lax';
-            }
+            // For other production domains
+            cookieString += '; SameSite=None; Secure';
         }
     } else {
-        // Fallback for requests without Origin header (e.g., file://, direct API calls)
-        // For cross-origin requests from file:// or unknown origins, use Secure + SameSite=None
-        // This allows cookies to be sent to HTTPS domains from file:// origins
-        cookieString += '; Secure; SameSite=None';
+        // Fallback for requests without Origin header
+        cookieString += '; SameSite=None; Secure';
     }
 
         headers['Set-Cookie'] = cookieString;
 
         // **FIX:** Return a JSON response instead of a redirect
-        return jsonResponse({
+        // Also include token in response for localStorage fallback
+        const responseData = {
             success: true,
             user: {
                 id: user.id,
                 name: user.name,
                 email: user.email,
                 picture: user.picture
-            }
-        }, 200, headers);
+            },
+            token: token // Include token for localStorage storage
+        };
+        return jsonResponse(responseData, 200, headers);
 
     } catch (error) {
         console.error('Error during email login:', error.message);

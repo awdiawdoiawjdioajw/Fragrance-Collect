@@ -26,6 +26,15 @@ const sharedAuthUI = {
 async function getSessionToken() {
     try {
         console.log('Attempting to get session token...');
+        
+        // First try to get token from localStorage (fallback for blocked cookies)
+        const localToken = localStorage.getItem('session_token');
+        if (localToken) {
+            console.log('Found session token in localStorage');
+            sessionToken = localToken;
+            return localToken;
+        }
+        
         const response = await fetch('https://auth-worker.joshuablaszczyk.workers.dev/token', {
             method: 'GET',
             credentials: 'include'
@@ -48,13 +57,23 @@ async function getSessionToken() {
 
         if (data.success && data.token) {
             sessionToken = data.token;
-            console.log('Session token retrieved successfully');
+            // Store token in localStorage as fallback
+            localStorage.setItem('session_token', data.token);
+            console.log('Session token retrieved successfully and stored in localStorage');
             return data.token;
         } else {
             console.log('Failed to get session token:', data.error);
         }
     } catch (error) {
         console.error('Error getting session token:', error);
+        
+        // If network fails, try localStorage as last resort
+        const localToken = localStorage.getItem('session_token');
+        if (localToken) {
+            console.log('Network failed, using localStorage token as fallback');
+            sessionToken = localToken;
+            return localToken;
+        }
     }
     return null;
 }
@@ -163,6 +182,10 @@ async function handleSharedLogout() {
         isUserLoggedIn = false;
         currentUser = null;
         sessionToken = null;
+        
+        // Clear localStorage tokens
+        localStorage.removeItem('session_token');
+        
         updateSharedNavUI(null);
         window.location.href = 'auth.html';
     }

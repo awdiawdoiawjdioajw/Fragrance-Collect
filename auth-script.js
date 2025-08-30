@@ -395,6 +395,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await res.json();
                 if (res.ok && data.success) {
                     showStatus('Login successful!');
+                    
+                    // Store token in localStorage for cross-origin fallback
+                    if (data.token) {
+                        localStorage.setItem('session_token', data.token);
+                        console.log('Token stored in localStorage for cross-origin support');
+                    }
+                    
                     updateUI(data.user);
                     
                     // Session establishment verification
@@ -440,6 +447,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 const data = await res.json();
                 if (res.ok && data.success) {
+                    // Store token in localStorage for cross-origin fallback
+                    if (data.token) {
+                        localStorage.setItem('session_token', data.token);
+                        console.log('Token stored in localStorage for cross-origin support');
+                    }
+                    
                     showSuccessModal(data.user.name);
                 } else {
                     throw new Error(data.error || 'Failed to sign up.');
