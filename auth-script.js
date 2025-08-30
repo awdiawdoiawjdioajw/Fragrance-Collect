@@ -102,6 +102,20 @@ async function handleCredentialResponse(response) {
         if (res.ok && data.success) {
             showStatus('Login successful! Welcome.');
             updateUI(data.user);
+            
+            // Add a small delay before any potential redirect to ensure session is established
+            setTimeout(async () => {
+                // Verify session is working
+                try {
+                    const verifyRes = await fetch(`${WORKER_URL}/status`);
+                    const verifyData = await verifyRes.json();
+                    if (!verifyData.success) {
+                        console.warn('Session verification failed after login');
+                    }
+                } catch (error) {
+                    console.error('Session verification error after login:', error);
+                }
+            }, 100);
         } else {
             // Use the detailed error message from the worker if available
             throw new Error(data.details || data.error || 'Login failed. Please try again.');
@@ -232,6 +246,19 @@ async function handleEmailLogin(event) {
         if (res.ok && data.success) {
             showStatus('Sign in successful!');
             updateUI(data.user);
+            
+            // Add a small delay to ensure session is established
+            setTimeout(async () => {
+                try {
+                    const verifyRes = await fetch(`${WORKER_URL}/status`);
+                    const verifyData = await verifyRes.json();
+                    if (!verifyData.success) {
+                        console.warn('Session verification failed after email login');
+                    }
+                } catch (error) {
+                    console.error('Session verification error after email login:', error);
+                }
+            }, 100);
         } else {
             throw new Error(data.error || 'Sign-in failed.');
         }
@@ -354,6 +381,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (res.ok && data.success) {
                     showStatus('Login successful!');
                     updateUI(data.user);
+                    
+                    // Session establishment verification
+                    setTimeout(async () => {
+                        try {
+                            const verifyRes = await fetch(`${WORKER_URL}/status`);
+                            const verifyData = await verifyRes.json();
+                            if (!verifyData.success) {
+                                console.warn('Session verification failed after form login');
+                            }
+                        } catch (error) {
+                            console.error('Session verification error after form login:', error);
+                        }
+                    }, 100);
                 } else {
                     throw new Error(data.error || 'Failed to sign in.');
                 }
@@ -396,8 +436,34 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (ui.continueToHomeBtn) {
-        ui.continueToHomeBtn.addEventListener('click', () => {
-            window.location.href = 'main.html';
+        ui.continueToHomeBtn.addEventListener('click', async () => {
+            // Add loading state to button
+            ui.continueToHomeBtn.disabled = true;
+            ui.continueToHomeBtn.textContent = 'Loading...';
+            
+            // Wait a moment for the session to be fully established
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Verify the session is working before redirecting
+            try {
+                const statusCheck = await fetch(`${WORKER_URL}/status`);
+                const statusData = await statusCheck.json();
+                
+                if (statusData.success && statusData.user) {
+                    // Session verified, safe to redirect
+                    window.location.href = 'main.html';
+                } else {
+                    // Session not working, try again
+                    showStatus('Please wait, completing login...', false);
+                    setTimeout(() => {
+                        window.location.href = 'main.html';
+                    }, 1000);
+                }
+            } catch (error) {
+                console.error('Session verification failed:', error);
+                // Fallback: redirect anyway
+                window.location.href = 'main.html';
+            }
         });
     }
 });

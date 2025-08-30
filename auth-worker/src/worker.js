@@ -238,7 +238,7 @@ async function handleLogin(request, env) {
     ).bind(sessionId, id, token, expiresAt.toISOString()).run();
 
     // 5. Set the session token in a secure, HttpOnly cookie
-    headers['Set-Cookie'] = `session_token=${token}; Expires=${expiresAt.toUTCString()}; Path=/; HttpOnly; Secure; SameSite=Strict`;
+    headers['Set-Cookie'] = `session_token=${token}; Expires=${expiresAt.toUTCString()}; Path=/; HttpOnly; Secure; SameSite=Lax`;
     
     // 6. Redirect the user back to the auth page with success status and user's first name.
     const firstName = name.split(' ')[0];
@@ -287,7 +287,7 @@ async function handleLogout(request, env) {
         }
 
         // Clear the cookie by setting its expiration date to the past
-        headers['Set-Cookie'] = `session_token=; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/; HttpOnly; Secure; SameSite=Strict`;
+        headers['Set-Cookie'] = `session_token=; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/; HttpOnly; Secure; SameSite=Lax`;
 
         return jsonResponse({ success: true, message: 'Logged out successfully' }, 200, headers);
     } catch (error) {
@@ -320,7 +320,7 @@ async function handleGetStatus(request, env) {
 
         if (!session || new Date(session.expires_at) < new Date()) {
             // If session is expired or invalid, clear the cookie
-            headers['Set-Cookie'] = `session_token=; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/; HttpOnly; Secure; SameSite=Strict`;
+            headers['Set-Cookie'] = `session_token=; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/; HttpOnly; Secure; SameSite=Lax`;
             return jsonResponse({ error: 'Invalid or expired session' }, 401, headers);
         }
 
@@ -488,7 +488,7 @@ async function handleEmailSignup(request, env) {
             `INSERT INTO user_sessions (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)`
         ).bind(sessionId, userId, token, expiresAt.toISOString()).run();
 
-        headers['Set-Cookie'] = `session_token=${token}; Expires=${expiresAt.toUTCString()}; Path=/; HttpOnly; Secure; SameSite=Strict`;
+        headers['Set-Cookie'] = `session_token=${token}; Expires=${expiresAt.toUTCString()}; Path=/; HttpOnly; Secure; SameSite=Lax`;
 
         return jsonResponse({ success: true, user: { id: userId, name, email } }, 201, headers);
 
@@ -540,7 +540,7 @@ async function handleEmailLogin(request, env) {
             `INSERT INTO user_sessions (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)`
         ).bind(sessionId, user.id, token, expiresAt.toISOString()).run();
 
-        headers['Set-Cookie'] = `session_token=${token}; Expires=${expiresAt.toUTCString()}; Path=/; HttpOnly; Secure; SameSite=Strict`;
+        headers['Set-Cookie'] = `session_token=${token}; Expires=${expiresAt.toUTCString()}; Path=/; HttpOnly; Secure; SameSite=Lax`;
         
         // Redirect the user back to the auth page with success status and user's first name.
         const firstName = user.name.split(' ')[0];
