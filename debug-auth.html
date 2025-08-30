@@ -343,7 +343,8 @@
                 logToDebug(`Signup result: ${signupResponse.status}`, signupData);
 
                 if (!signupResponse.ok) {
-                    logToDebug('❌ Signup failed, trying login instead...');
+                    logToDebug('❌ Signup failed:', signupData.details || signupData.error);
+                    return;
                 } else {
                     logToDebug('✅ Account created successfully');
                 }
@@ -376,8 +377,10 @@
                         if (document.cookie.includes('session_token')) {
                             logToDebug('🎉 SUCCESS: Session token found in cookies!');
                             logToDebug('🔄 The authentication should now work properly');
+                            logToDebug('💡 Try clicking "Go to Main Page" to test full authentication flow');
                         } else {
                             logToDebug('❌ FAILURE: No session token in cookies');
+                            logToDebug('🔍 Check browser dev tools > Application > Cookies');
                         }
                     }, 1500);
                 } else {
