@@ -284,6 +284,7 @@ async function handleLogin(request, env) {
     return new Response(null, {
         status: 302,
         headers: {
+            ...headers,
             'Location': errorRedirectUrl.toString(),
         }
     });
@@ -917,14 +918,23 @@ function base64UrlToArrayBuffer(base64Url) {
 }
 
 function handleOptions(request) {
+  const origin = request.headers.get('Origin');
+  const headers = getSecurityHeaders(origin);
+
   if (
-    request.headers.get('Origin') !== null &&
+    origin !== null &&
     request.headers.get('Access-Control-Request-Method') !== null &&
     request.headers.get('Access-Control-Request-Headers') !== null
   ) {
-    return new Response(null, { headers: getSecurityHeaders(request.headers.get('Origin')) });
+    // Proper CORS preflight request
+    return new Response(null, { headers });
   } else {
-    return new Response(null, { headers: { Allow: 'GET, POST, OPTIONS' } });
+    // Fallback for non-CORS preflight requests
+    const fallbackHeaders = {
+      ...headers,
+      Allow: 'GET, POST, OPTIONS'
+    };
+    return new Response(null, { headers: fallbackHeaders });
   }
 }
 
