@@ -838,6 +838,30 @@ const ALLOWED_ORIGINS = [
     'http://127.0.0.1:8080', // Local development
     'http://127.0.0.1:5000', // Local development
     'http://127.0.0.1:8000', // Local development
+    'http://localhost:5500', // VS Code Live Server
+    'http://localhost:4000', // Jekyll default
+    'http://localhost:4001', // Alternative Jekyll
+    'http://localhost:5173', // Vite dev server
+    'http://localhost:5174', // Alternative Vite
+    'http://localhost:3001', // React dev server alternative
+    'http://localhost:8001', // Alternative development
+    'http://127.0.0.1:5500', // VS Code Live Server
+    'http://127.0.0.1:4000', // Jekyll default
+    'http://127.0.0.1:5173', // Vite dev server
+    'http://127.0.0.1:5174', // Alternative Vite
+    'http://127.0.0.1:3001', // React dev server alternative
+    'http://127.0.0.1:8001', // Alternative development
+    'https://localhost:3000', // HTTPS localhost
+    'https://localhost:8080', // HTTPS localhost
+    'https://localhost:5000', // HTTPS localhost
+    'https://localhost:8000', // HTTPS localhost
+    'https://127.0.0.1:3000', // HTTPS localhost
+    'https://127.0.0.1:8080', // HTTPS localhost
+    'https://127.0.0.1:5000', // HTTPS localhost
+    'https://127.0.0.1:8000', // HTTPS localhost
+    'https://localhost:5500', // HTTPS VS Code Live Server
+    'https://localhost:5173', // HTTPS Vite
+    'https://localhost:5174', // HTTPS Alternative Vite
     'file://', // For local file testing
     null, // For direct navigation
     undefined // For direct navigation
@@ -851,13 +875,6 @@ function isOriginAllowed(origin) {
         console.log('No origin provided, allowing for direct navigation');
         return true; // Allow direct navigation
     }
-    
-    // In development, allow localhost and 127.0.0.1 with any port
-    if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:') ||
-        origin.startsWith('https://localhost:') || origin.startsWith('https://127.0.0.1:')) {
-        console.log('Localhost origin allowed:', origin);
-        return true;
-    }
 
     // Allow file:// protocol for local file testing
     if (origin.startsWith('file://')) {
@@ -865,18 +882,37 @@ function isOriginAllowed(origin) {
         return true;
     }
 
-    // Allow any port on 127.0.0.1 for development
-    if (origin.includes('127.0.0.1')) {
-        console.log('127.0.0.1 origin allowed:', origin);
+    // Allow localhost and 127.0.0.1 with any port (HTTP and HTTPS)
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+        console.log('Localhost/127.0.0.1 origin allowed:', origin);
         return true;
     }
-    
+
     // Allow any GitHub Pages domain
     if (origin.includes('.github.io')) {
         console.log('GitHub Pages origin allowed:', origin);
         return true;
     }
-    
+
+    // Allow Cloudflare Pages domains
+    if (origin.includes('.pages.dev')) {
+        console.log('Cloudflare Pages origin allowed:', origin);
+        return true;
+    }
+
+    // Allow common development ports on any localhost-like domain
+    try {
+        const url = new URL(origin);
+        const commonDevPorts = ['3000', '3001', '4000', '4001', '5000', '5173', '5174', '5500', '8000', '8001', '8080'];
+        if ((url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.hostname.includes('localhost')) &&
+            commonDevPorts.includes(url.port)) {
+            console.log('Common dev port allowed:', origin);
+            return true;
+        }
+    } catch (e) {
+        // Invalid URL, continue with normal checks
+    }
+
     // Check against allowed origins list
     const isAllowed = ALLOWED_ORIGINS.includes(origin);
     console.log('Origin check result:', origin, 'allowed:', isAllowed);
