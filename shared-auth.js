@@ -148,6 +148,37 @@ function updateSharedNavUI(user) {
         document.body.classList.add('user-logged-in');
         console.log('Setting isUserLoggedIn to true and adding .user-logged-in class');
 
+        // Ensure menu actions are visible and login button is hidden
+        if (sharedAuthUI.menuActions) {
+            sharedAuthUI.menuActions.style.display = 'flex';
+        }
+        const loginBtn = document.getElementById('login-btn');
+        if (loginBtn) {
+            loginBtn.style.display = 'none';
+        }
+
+        // Update profile picture in navigation if user has one
+        if (sharedAuthUI.menuProfileBtn && user.picture) {
+            // Create a profile picture element if it doesn't exist
+            let profileImg = sharedAuthUI.menuProfileBtn.querySelector('.profile-img');
+            if (!profileImg) {
+                profileImg = document.createElement('img');
+                profileImg.className = 'profile-img';
+                profileImg.style.cssText = `
+                    width: 100%;
+                    height: 100%;
+                    border-radius: 50%;
+                    object-fit: cover;
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                `;
+                sharedAuthUI.menuProfileBtn.appendChild(profileImg);
+            }
+            profileImg.src = user.picture;
+            profileImg.alt = `${user.name || 'User'}'s Profile Picture`;
+        }
+
         // Call updateDynamicGreeting if it exists (for hero greeting)
         if (typeof updateDynamicGreeting === 'function') {
             const firstName = user.name.split(' ')[0];
@@ -159,6 +190,23 @@ function updateSharedNavUI(user) {
         currentUser = null;
         document.body.classList.remove('user-logged-in');
         console.log('Setting isUserLoggedIn to false and removing .user-logged-in class');
+
+        // Ensure login button is visible and menu actions are hidden
+        if (sharedAuthUI.menuActions) {
+            sharedAuthUI.menuActions.style.display = 'none';
+        }
+        const loginBtn = document.getElementById('login-btn');
+        if (loginBtn) {
+            loginBtn.style.display = 'flex';
+        }
+
+        // Remove profile picture from navigation
+        if (sharedAuthUI.menuProfileBtn) {
+            const profileImg = sharedAuthUI.menuProfileBtn.querySelector('.profile-img');
+            if (profileImg) {
+                profileImg.remove();
+            }
+        }
     }
 }
 

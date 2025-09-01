@@ -96,36 +96,43 @@ async function handleProductsRequest(req, url, env) {
   const highPrice = parseFloat(searchParams.get('highPrice')) || null;
   const partnerId = searchParams.get('partnerId') || null;
   const includeTikTok = searchParams.get('includeTikTok') !== 'false';
-  const sortBy = searchParams.get('sortBy') || 'price_low'; // revenue, relevance, price, trending
+  const sortBy = searchParams.get('sortBy') || 'revenue'; // revenue, relevance, price, trending
   const brandFilter = searchParams.get('brand') || null;
+  const exactMatch = searchParams.get('exactMatch') === 'true'; // New parameter for exact matching
 
   // Smart cache key generation
   const cacheKey = generateCacheKey({
     query, limit, page, lowPrice, highPrice, partnerId, 
-    includeTikTok, sortBy, brandFilter
+    includeTikTok, sortBy, brandFilter, exactMatch
   });
   
-  // Try to get from cache first
+  // Try to get from cache first (but skip cache if _cb parameter is present)
   const cache = caches.default;
-  let response = await cache.match(new Request(`https://cache/${cacheKey}`));
+  let response = null;
+  
+  if (!searchParams.get('_cb')) {
+    response = await cache.match(new Request(`https://cache/${cacheKey}`));
+  }
   
   if (response) {
     console.log('🚀 Cache hit for:', cacheKey);
     return response;
   }
 
-  console.log('💸 Revenue-optimized search initiated:', { query, limit, page, sortBy });
+  console.log('💸 Revenue-optimized search initiated:', { query, limit, page, sortBy, exactMatch });
+  console.log('🔍 Exact match mode:', exactMatch ? 'ENABLED' : 'DISABLED');
+  console.log('🔍 Search query:', query);
 
   try {
     // Step 1: Search CJ Store (Primary - Higher Commission)
     // Fetch a larger pool of products to allow for proper sorting and pagination.
-    const cjProducts = await searchCJStore(query, 250, 0, lowPrice, highPrice, partnerId, env);
+    const cjProducts = await searchCJStore(query, 250, 0, lowPrice, highPrice, partnerId, env, exactMatch);
     console.log(`✅ CJ Store: Found ${cjProducts.length} products`);
     
     // Step 2: Search TikTok Shop (Secondary - Trending Products)
     let tiktokProducts = [];
     if (includeTikTok && !partnerId) {
-      tiktokProducts = await searchTikTokStore(query, 100, 0, lowPrice, highPrice, env);
+      tiktokProducts = await searchTikTokStore(query, 100, 0, lowPrice, highPrice, env, exactMatch);
       console.log(`🎵 TikTok Shop: Found ${tiktokProducts.length} products`);
     }
 
@@ -139,8 +146,60 @@ async function handleProductsRequest(req, url, env) {
     const allProducts = [...cjProducts, ...tiktokProducts];
     const deduplicatedProducts = deduplicateProducts(allProducts);
     
+    // Step 4.5: Apply exact match filtering if enabled
+    let filteredProducts = deduplicatedProducts;
+    if (exactMatch && query) {
+        console.log('🔍 Applying STRICT exact match filtering for query:', query);
+        const queryLower = query.toLowerCase().trim();
+        const queryWords = queryLower.split(/\s+/).filter(word => word.length > 0);
+        
+        filteredProducts = deduplicatedProducts.filter(product => {
+            const title = (product.title || product.name || '').toLowerCase();
+            const brand = (product.brand || '').toLowerCase();
+            const description = (product.description || '').toLowerCase();
+            
+            // Combine all searchable text
+            const allText = `${title} ${brand} ${description}`;
+            const allWords = allText.split(/\s+/).filter(word => word.length > 0);
+            
+            // STRICT "to a T" matching: Every query word must be found as a complete word
+            // This prevents "lenon" from matching "lemon" or partial matches
+            const allWordsMatch = queryWords.every(queryWord => {
+                // Check if this exact word exists in any of the product text fields
+                return allWords.some(productWord => productWord === queryWord);
+            });
+            
+            // Additional check: Ensure the words appear in the same order as the query
+            if (allWordsMatch) {
+                const titleWords = title.split(/\s+/).filter(word => word.length > 0);
+                const brandWords = brand.split(/\s+/).filter(word => word.length > 0);
+                const descWords = description.split(/\s+/).filter(word => word.length > 0);
+                
+                // Check if words appear in sequence in any of the fields
+                const checkSequence = (fieldWords) => {
+                    for (let i = 0; i <= fieldWords.length - queryWords.length; i++) {
+                        let match = true;
+                        for (let j = 0; j < queryWords.length; j++) {
+                            if (fieldWords[i + j] !== queryWords[j]) {
+                                match = false;
+                                break;
+                            }
+                        }
+                        if (match) return true;
+                    }
+                    return false;
+                };
+                
+                return checkSequence(titleWords) || checkSequence(brandWords) || checkSequence(descWords);
+            }
+            
+            return false;
+        });
+        console.log(`🔍 STRICT exact match filtering: ${deduplicatedProducts.length} -> ${filteredProducts.length} products`);
+    }
+    
     // Step 5: Apply revenue-optimized sorting and filtering
-    const optimizedProducts = optimizeForRevenue(deduplicatedProducts, query, sortBy, brandFilter);
+    const optimizedProducts = optimizeForRevenue(filteredProducts, query, sortBy, brandFilter);
     
     // Step 6: Format results and filter out any invalid products
     const products = optimizedProducts.map(p => formatProductForRevenue(p, query)).filter(Boolean);
@@ -159,17 +218,18 @@ async function handleProductsRequest(req, url, env) {
       limit,
       hasMore: total > (offset + limit),
       searchQuery: query,
-      filters: { lowPrice, highPrice, partnerId, includeTikTok, sortBy, brandFilter },
+      filters: { lowPrice, highPrice, partnerId, includeTikTok, sortBy, brandFilter, exactMatch },
       revenue: revenueMetrics,
       sources: {
         cj: cjProducts.length,
         tiktok: tiktokProducts.length,
-        total: optimizedProducts.length
+        total: filteredProducts.length
       },
       optimization: {
         strategy: 'revenue-maximization',
         commissionWeighting: 'CJ-70%-TikTok-30%',
-        smartFallback: cjProducts.length === 0 && tiktokProducts.length > 0
+        smartFallback: cjProducts.length === 0 && tiktokProducts.length > 0,
+        exactMatchApplied: exactMatch && query
       }
     };
 
@@ -193,14 +253,14 @@ async function handleProductsRequest(req, url, env) {
 /**
  * Revenue-optimized CJ Store search
  */
-async function searchCJStore(query, limit, offset, lowPrice, highPrice, partnerId, env) {
+async function searchCJStore(query, limit, offset, lowPrice, highPrice, partnerId, env, exactMatch = false) {
   const gqlQuery = buildShoppingProductsQuery(!!partnerId);
 
   if (query) {
     // Revenue-optimized search with expanded limit
     const gqlVariables = {
       companyId: env.CJ_COMPANY_ID,
-      keywords: query.split(/\s+/).filter(k => k.length > 0),
+      keywords: exactMatch ? [query] : query.split(/\s+/).filter(k => k.length > 0),
       limit: Math.min(limit * 2, 400), // Get more for better revenue optimization
       offset,
       websiteId: env.CJ_WEBSITE_ID,
@@ -208,6 +268,9 @@ async function searchCJStore(query, limit, offset, lowPrice, highPrice, partnerI
       highPrice,
       partnerIds: partnerId ? [partnerId] : null
     };
+    
+    console.log('🔍 CJ Store search keywords:', gqlVariables.keywords);
+    console.log('🔍 CJ Store exact match:', exactMatch);
     
     const gqlData = await fetchCJProducts(gqlQuery, gqlVariables, env);
     return gqlData.data?.shoppingProducts?.resultList || [];
@@ -250,7 +313,7 @@ async function searchCJStore(query, limit, offset, lowPrice, highPrice, partnerI
 /**
  * Revenue-optimized TikTok Store search
  */
-async function searchTikTokStore(query, limit, offset, lowPrice, highPrice, env) {
+async function searchTikTokStore(query, limit, offset, lowPrice, highPrice, env, exactMatch = false) {
   try {
     const gqlQuery = buildShoppingProductsQuery(true);
 
@@ -258,7 +321,7 @@ async function searchTikTokStore(query, limit, offset, lowPrice, highPrice, env)
       // Trending-focused search for TikTok
       const gqlVariables = {
         companyId: env.CJ_COMPANY_ID,
-        keywords: query.split(/\s+/).filter(k => k.length > 0),
+        keywords: exactMatch ? [query] : query.split(/\s+/).filter(k => k.length > 0),
         limit: Math.min(limit * 2, 200),
         offset,
         websiteId: env.CJ_WEBSITE_ID,
@@ -266,6 +329,9 @@ async function searchTikTokStore(query, limit, offset, lowPrice, highPrice, env)
         highPrice,
         partnerIds: [REVENUE_CONFIG.TIKTOK_PARTNER_ID]
       };
+      
+      console.log('🎵 TikTok Store search keywords:', gqlVariables.keywords);
+      console.log('🎵 TikTok Store exact match:', exactMatch);
       
       const gqlData = await fetchCJProducts(gqlQuery, gqlVariables, env);
       return gqlData.data?.shoppingProducts?.resultList || [];
@@ -321,10 +387,14 @@ function optimizeForRevenue(products, query, sortBy, brandFilter) {
     ...p,
     revenueScore: calculateRevenueScore(p, query),
     commissionRate: getCommissionRate(p),
-    trendingScore: calculateTrendingScore(p)
+    trendingScore: calculateTrendingScore(p),
+    relevance: calculateRelevance(p, query)
   }));
 
   // Sort by revenue optimization strategy
+  console.log('🔍 Sorting by:', sortBy);
+  console.log('📊 Sample relevance scores:', filtered.slice(0, 3).map(p => ({ title: p.title, relevance: p.relevance })));
+  
   switch (sortBy) {
     case 'revenue':
       return filtered.sort((a, b) => b.revenueScore - a.revenueScore);
@@ -338,7 +408,8 @@ function optimizeForRevenue(products, query, sortBy, brandFilter) {
       return filtered.sort((a, b) => parseFloat(b.price?.amount || 0) - parseFloat(a.price?.amount || 0));
     case 'relevance':
     default:
-      return filtered.sort((a, b) => parseFloat(a.price?.amount || 0) - parseFloat(b.price?.amount || 0));
+      console.log('🎯 Using relevance sorting');
+      return filtered.sort((a, b) => b.relevance - a.relevance);
   }
 }
 
@@ -482,13 +553,43 @@ function generateTrendingBadges(product) {
  * Calculate search relevance
  */
 function calculateRelevance(product, query) {
-  if (!query) return 0;
-  
-  const queryLower = query.toLowerCase();
   const titleLower = product.title?.toLowerCase() || '';
   const brandLower = product.brand?.toLowerCase() || '';
   
   let score = 0;
+  
+  // If no query provided, calculate general relevance based on product quality
+  if (!query) {
+    // Base score for products with "perfume" or "fragrance" in title
+    if (titleLower.includes('perfume') || titleLower.includes('fragrance')) {
+      score += 50;
+    }
+    
+    // Bonus for luxury/designer brands
+    if (titleLower.includes('luxury') || titleLower.includes('designer') || 
+        brandLower.includes('luxury') || brandLower.includes('designer')) {
+      score += 30;
+    }
+    
+    // Bonus for trending keywords
+    if (titleLower.includes('limited edition') || titleLower.includes('viral') || 
+        titleLower.includes('trending') || titleLower.includes('new')) {
+      score += 25;
+    }
+    
+    // Bonus for specific perfume brands
+    const perfumeBrands = ['chanel', 'dior', 'gucci', 'ysl', 'tom ford', 'creed', 'jo malone'];
+    perfumeBrands.forEach(brand => {
+      if (brandLower.includes(brand) || titleLower.includes(brand)) {
+        score += 40;
+      }
+    });
+    
+    return score;
+  }
+  
+  // Query-based relevance calculation
+  const queryLower = query.toLowerCase();
   
   // Exact matches get highest score
   if (titleLower.includes(queryLower)) score += 100;
@@ -500,6 +601,16 @@ function calculateRelevance(product, query) {
     if (titleLower.includes(word)) score += 20;
     if (brandLower.includes(word)) score += 15;
   });
+  
+  // Debug logging for first few products
+  if (Math.random() < 0.1) { // Only log 10% of the time to avoid spam
+    console.log('🔍 Relevance calculation:', { 
+      query, 
+      title: product.title?.substring(0, 50), 
+      brand: product.brand, 
+      score 
+    });
+  }
   
   return score;
 }
@@ -528,8 +639,8 @@ function calculateRevenueMetrics(products, cjCount, tiktokCount) {
  * Generate smart cache key
  */
 function generateCacheKey(params) {
-  const { query, limit, page, lowPrice, highPrice, partnerId, includeTikTok, sortBy, brandFilter } = params;
-  return `products:${query}:${limit}:${page}:${lowPrice}:${highPrice}:${partnerId}:${includeTikTok}:${sortBy}:${brandFilter}`;
+  const { query, limit, page, lowPrice, highPrice, partnerId, includeTikTok, sortBy, brandFilter, exactMatch } = params;
+  return `products:${query}:${limit}:${page}:${lowPrice}:${highPrice}:${partnerId}:${includeTikTok}:${sortBy}:${brandFilter}:${exactMatch}`;
 }
 
 /**

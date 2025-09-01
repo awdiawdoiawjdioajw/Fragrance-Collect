@@ -105,7 +105,7 @@ async function syncPendingFavoriteOperations() {
             }
 
             if (operation.type === 'add') {
-                await fetch('https://auth-worker.joshuablaszczyk.workers.dev/api/user/favorites', {
+                await fetch('https://weathered-mud-6ed5.joshuablaszczyk.workers.dev/api/user/favorites', {
                     method: 'POST',
                     headers,
                     body: JSON.stringify(operation.data),
@@ -113,7 +113,7 @@ async function syncPendingFavoriteOperations() {
                 });
                 console.log(`✅ Synced add operation for ${fragranceId}`);
             } else if (operation.type === 'remove') {
-                await fetch(`https://auth-worker.joshuablaszczyk.workers.dev/api/user/favorites/${fragranceId}`, {
+                await fetch(`https://weathered-mud-6ed5.joshuablaszczyk.workers.dev/api/user/favorites/${fragranceId}`, {
                     method: 'DELETE',
                     headers,
                     credentials: 'include'
@@ -140,9 +140,291 @@ async function syncPendingFavoriteOperations() {
 let currentPage = 1;
 let totalPages = 1;
 
+// Currency symbols for display
 const currencySymbols = {
-    USD: '$', EUR: '€', GBP: '£', CAD: 'C$', AUD: 'A$', JPY: '¥', CNY: '¥'
+    USD: '$', EUR: '€', GBP: '£', CAD: 'C$', AUD: 'A$', JPY: '¥', CNY: '¥', 
+    CHF: 'CHF', SEK: 'kr', NOK: 'kr', DKK: 'kr', PLN: 'zł', CZK: 'Kč', 
+    HUF: 'Ft', RON: 'lei', BGN: 'лв', HRK: 'kn', RUB: '₽', TRY: '₺',
+    BRL: 'R$', MXN: '$', ARS: '$', CLP: '$', COP: '$', PEN: 'S/', 
+    ZAR: 'R', INR: '₹', KRW: '₩', SGD: 'S$', HKD: 'HK$', TWD: 'NT$',
+    THB: '฿', MYR: 'RM', IDR: 'Rp', PHP: '₱', VND: '₫'
 };
+
+// Currency conversion cache and rates
+let currencyRates = {
+    EUR: 1 // Base currency for ECB API
+};
+let lastFetchTime = 0;
+const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+
+// Enhanced currency converter object with ECB API integration
+const currencyConverter = {
+    // Fetch latest exchange rates from ECB API
+    async fetchRates() {
+        const now = Date.now();
+        
+        // Return cached rates if they're still valid
+        if (now - lastFetchTime < CACHE_DURATION && Object.keys(currencyRates).length > 1) {
+            console.log('💰 Using cached currency rates');
+            return currencyRates;
+        }
+        
+        try {
+            console.log('💰 Fetching latest currency rates from Exchange Rate APIs...');
+            // Try multiple free currency APIs as fallbacks
+            let data = null;
+            let apiUsed = '';
+            
+            // Try open.er-api.com first (free tier available)
+            try {
+                const response = await fetch('https://open.er-api.com/v6/latest/EUR');
+                if (response.ok) {
+                    const responseData = await response.json();
+                    if (responseData.rates) {
+                        data = { success: true, rates: responseData.rates };
+                        apiUsed = 'open.er-api.com';
+                    }
+                }
+            } catch (e) {
+                console.log('⚠️ open.er-api.com failed, trying fallback...');
+            }
+            
+            // Fallback to frankfurter.app
+            if (!data) {
+                try {
+                    const response = await fetch('https://api.frankfurter.app/latest?from=EUR');
+                    if (response.ok) {
+                        const responseData = await response.json();
+                        if (responseData.rates) {
+                            data = { success: true, rates: responseData.rates };
+                            apiUsed = 'frankfurter.app';
+                        }
+                    }
+                } catch (e) {
+                    console.log('⚠️ frankfurter.app failed');
+                }
+            }
+            
+            if (!data || !data.success || !data.rates) {
+                throw new Error('All currency APIs failed');
+            }
+            
+            // Update rates cache
+            currencyRates = {
+                EUR: 1, // Base currency
+                ...data.rates
+            };
+            
+            lastFetchTime = now;
+            console.log(`✅ Currency rates updated successfully via ${apiUsed}:`, Object.keys(currencyRates).length, 'currencies');
+            
+            return currencyRates;
+            
+        } catch (error) {
+            console.error('❌ Failed to fetch currency rates from all APIs:', error);
+            
+            // Fallback to basic rates if API fails
+            currencyRates = {
+                EUR: 1,
+                USD: 1.08,
+                GBP: 0.86,
+                CAD: 1.47,
+                AUD: 1.66,
+                JPY: 160,
+                CNY: 7.8,
+                CHF: 0.95,
+                SEK: 11.2,
+                NOK: 11.5,
+                DKK: 7.45,
+                PLN: 4.3,
+                CZK: 25.2,
+                HUF: 380,
+                RON: 4.95,
+                BGN: 1.96,
+                HRK: 7.53,
+                RUB: 100,
+                TRY: 33.5,
+                BRL: 5.4,
+                MXN: 18.2,
+                ARS: 950,
+                CLP: 1050,
+                COP: 4200,
+                PEN: 4.05,
+                ZAR: 20.5,
+                INR: 90,
+                KRW: 1450,
+                SGD: 1.46,
+                HKD: 8.45,
+                TWD: 34.5,
+                THB: 39.5,
+                MYR: 5.1,
+                IDR: 17000,
+                PHP: 60.5,
+                VND: 26500
+            };
+            
+            return currencyRates;
+        }
+    },
+    
+    // Convert amount between currencies
+    async convert(amount, fromCurrency, toCurrency) {
+        if (!amount || !fromCurrency || !toCurrency) return amount || 0;
+        if (fromCurrency === toCurrency) return amount;
+        
+        try {
+            // Ensure we have the latest rates
+            await this.fetchRates();
+            
+            // Convert to EUR first, then to target currency
+            const eurAmount = amount / (currencyRates[fromCurrency] || 1);
+            const result = eurAmount * (currencyRates[toCurrency] || 1);
+            
+            // Validate the result
+            if (isNaN(result) || !isFinite(result)) {
+                console.warn('⚠️ Invalid conversion result, using original amount:', { amount, fromCurrency, toCurrency, result });
+                return amount;
+            }
+            
+            return result;
+        } catch (error) {
+            console.error('❌ Currency conversion failed:', error);
+            return amount; // Return original amount on error
+        }
+    },
+    
+    // Synchronous convert (for sorting - uses cached rates)
+    convertSync(amount, fromCurrency, toCurrency) {
+        if (!amount || !fromCurrency || !toCurrency) return amount || 0;
+        if (fromCurrency === toCurrency) return amount;
+        
+        try {
+            // Use cached rates for synchronous operations
+            const eurAmount = amount / (currencyRates[fromCurrency] || 1);
+            const result = eurAmount * (currencyRates[toCurrency] || 1);
+            
+            // Validate the result
+            if (isNaN(result) || !isFinite(result)) {
+                console.warn('⚠️ Invalid sync conversion result, using original amount:', { amount, fromCurrency, toCurrency, result });
+                return amount;
+            }
+            
+            return result;
+        } catch (error) {
+            console.error('❌ Synchronous currency conversion failed:', error);
+            return amount; // Return original amount on error
+        }
+    },
+    
+    // Get currency symbol
+    getSymbol(currency) {
+        return currencySymbols[currency] || currency;
+    },
+    
+    // Format price with proper currency symbol and formatting
+    formatPrice(amount, currency) {
+        const symbol = this.getSymbol(currency);
+        const formattedAmount = amount.toFixed(2);
+        
+        // Handle different currency formatting conventions
+        if (currency === 'JPY' || currency === 'KRW' || currency === 'IDR' || currency === 'VND') {
+            // No decimal places for these currencies
+            return `${symbol}${Math.round(amount)}`;
+        } else if (currency === 'INR') {
+            // Indian numbering system
+            return `${symbol}${formattedAmount}`;
+        } else {
+            // Standard formatting
+            return `${symbol}${formattedAmount}`;
+        }
+    },
+    
+    // Get available currencies
+    getAvailableCurrencies() {
+        return Object.keys(currencyRates);
+    },
+    
+    // Check if currency is supported
+    isSupported(currency) {
+        return currency in currencyRates;
+    }
+};
+
+// Populate currency dropdown with available currencies from ECB API
+function populateCurrencyDropdown() {
+    const currencyDropdown = document.getElementById('currency-converter');
+    if (!currencyDropdown) return;
+    
+    // Get available currencies
+    const availableCurrencies = currencyConverter.getAvailableCurrencies();
+    
+    // Sort currencies by popularity/common usage
+    const popularCurrencies = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'CHF', 'SEK', 'NOK', 'DKK'];
+    const sortedCurrencies = [
+        ...popularCurrencies.filter(c => availableCurrencies.includes(c)),
+        ...availableCurrencies.filter(c => !popularCurrencies.includes(c)).sort()
+    ];
+    
+    // Clear existing options
+    currencyDropdown.innerHTML = '';
+    
+    // Add options for each currency
+    sortedCurrencies.forEach(currency => {
+        const symbol = currencyConverter.getSymbol(currency);
+        const option = document.createElement('option');
+        option.value = currency;
+        option.textContent = `${currency} (${symbol})`;
+        currencyDropdown.appendChild(option);
+    });
+    
+    // Set default to USD
+    currencyDropdown.value = 'USD';
+    
+    console.log(`✅ Currency dropdown populated with ${sortedCurrencies.length} currencies`);
+}
+
+// Test function to verify currency API integration
+async function testCurrencyConverter() {
+    console.log('🧪 Testing currency converter...');
+    
+    try {
+        // Test fetching rates
+        const rates = await currencyConverter.fetchRates();
+        console.log('✅ Rates fetched successfully:', Object.keys(rates).length, 'currencies');
+        
+        // Test basic conversions
+        const usdToEur = await currencyConverter.convert(100, 'USD', 'EUR');
+        const eurToUsd = await currencyConverter.convert(100, 'EUR', 'USD');
+        const gbpToEur = await currencyConverter.convert(100, 'GBP', 'EUR');
+        console.log('✅ Conversion tests:', {
+            '100 USD to EUR': usdToEur,
+            '100 EUR to USD': eurToUsd,
+            '100 GBP to EUR': gbpToEur
+        });
+        
+        // Test same currency conversion
+        const sameCurrency = await currencyConverter.convert(100, 'EUR', 'EUR');
+        console.log('✅ Same currency test:', sameCurrency);
+        
+        // Test synchronous conversion
+        const syncConversion = currencyConverter.convertSync(100, 'EUR', 'GBP');
+        console.log('✅ Synchronous conversion test:', syncConversion);
+        
+        // Test formatting
+        const formatted = currencyConverter.formatPrice(123.45, 'USD');
+        console.log('✅ Formatting test:', formatted);
+        
+        // Test error handling with invalid currencies
+        const invalidConversion = await currencyConverter.convert(100, 'INVALID', 'USD');
+        console.log('✅ Invalid currency handling:', invalidConversion);
+        
+        console.log('✅ All currency converter tests passed');
+        return true;
+    } catch (error) {
+        console.error('❌ Currency converter test failed:', error);
+        return false;
+    }
+}
 
 // Configuration
 const config = {
@@ -263,7 +545,7 @@ async function handleLogout() {
 }
 
 // --- INITIALIZATION ---
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
 
     // Authentication is now handled by shared-auth.js
     // Check if user is logged in after shared auth initializes
@@ -323,12 +605,49 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Currency converter event listener
+    const currencyConverterElement = document.getElementById('currency-converter');
+    if (currencyConverterElement) {
+        currencyConverterElement.addEventListener('change', async () => {
+            try {
+                // Show loading state
+                currencyConverterElement.disabled = true;
+                currencyConverterElement.style.opacity = '0.6';
+                
+                // Update all displayed prices to the selected currency
+                await updateDisplayedPrices(currencyConverterElement.value);
+                
+                console.log('✅ Currency conversion completed successfully');
+            } catch (error) {
+                console.error('❌ Currency conversion failed:', error);
+                // Show error message to user
+                showToast('Currency conversion failed. Please try again.', 'error');
+            } finally {
+                // Restore normal state
+                currencyConverterElement.disabled = false;
+                currencyConverterElement.style.opacity = '1';
+            }
+        });
+    }
+
     if (priceRangeFilter) {
         priceRangeFilter.addEventListener('change', applyFilters);
     }
 
     if (shippingFilter) {
         shippingFilter.addEventListener('change', applyFilters);
+    }
+
+    // Exact match checkbox event listener
+    const exactMatchToggle = document.getElementById('exact-match-toggle');
+    if (exactMatchToggle) {
+        exactMatchToggle.addEventListener('change', () => {
+            console.log('🔍 Exact match toggled:', exactMatchToggle.checked);
+            // Trigger a new search when exact match is toggled
+            if (currentFilters.search) {
+                applyFilters(true);
+            }
+        });
     }
 
     // Initialize the application
@@ -342,7 +661,24 @@ document.addEventListener('DOMContentLoaded', () => {
     if (searchInput) {
         searchInput.value = initialSearchTerm;
     }
-    loadCJProducts(initialSearchTerm);
+    
+    // Initialize currency converter with latest rates
+    try {
+        await currencyConverter.fetchRates();
+        
+        // Test currency converter functionality
+        await testCurrencyConverter();
+        
+        // Populate currency dropdown with available currencies
+        populateCurrencyDropdown();
+        
+        console.log('✅ Currency converter initialized successfully');
+    } catch (error) {
+        console.error('❌ Currency converter initialization failed:', error);
+        // Continue with fallback rates
+    }
+    
+    loadCJProducts(initialSearchTerm, 1, null, { sortBy: 'revenue' });
 
     // Load recommendation sections with their specific queries
     loadPopularPicks(); // Use a featured brand for popular picks
@@ -499,13 +835,24 @@ function sortProducts(products) {
         return;
     }
     
-    const [sortBy, sortOrder] = sortByFilter.value.split('-');
+    const sortBy = sortByFilter.value;
+    console.log('🔍 Client-side sorting by:', sortBy);
 
     products.sort((a, b) => {
-        if (sortBy === 'price') {
-            return sortOrder === 'asc' ? a.price - b.price : b.price - a.price;
+        if (sortBy === 'price_low') {
+            // Convert prices to USD for fair comparison using cached rates
+            const priceA = currencyConverter.convertSync(a.price || 0, a.currency || 'USD', 'USD');
+            const priceB = currencyConverter.convertSync(b.price || 0, b.currency || 'USD', 'USD');
+            console.log(`🔍 Comparing: ${a.name?.substring(0, 20)} (${priceA} USD) vs ${b.name?.substring(0, 20)} (${priceB} USD)`);
+            return priceA - priceB;
+        } else if (sortBy === 'price_high') {
+            // Convert prices to USD for fair comparison using cached rates
+            const priceA = currencyConverter.convertSync(a.price || 0, a.currency || 'USD', 'USD');
+            const priceB = currencyConverter.convertSync(b.price || 0, b.currency || 'USD', 'USD');
+            console.log(`🔍 Comparing: ${a.name?.substring(0, 20)} (${priceB} USD) vs ${b.name?.substring(0, 20)} (${priceA} USD)`);
+            return priceB - priceA;
         }
-        return 0; // Default case
+        return 0; // Default case - no sorting
     });
 
     displayProducts(products);
@@ -518,23 +865,30 @@ function sortProducts(products) {
  */
 async function fetchProductsFromApi(query = '', page = 1, limit = null, filters = {}) {
     try {
-        const sortBy = (filters && filters.sortBy) || 'revenue';
         const params = new URLSearchParams({
             q: query || '',
             page: page.toString(),
             limit: (limit || config.RESULTS_PER_PAGE).toString(),
-            sortBy: sortBy,
             includeTikTok: 'true'
         });
 
         if (filters.lowPrice) params.append('lowPrice', filters.lowPrice.toString());
         if (filters.highPrice) params.append('highPrice', filters.highPrice.toString());
         if (filters.brand) params.append('brand', filters.brand);
+        if (filters.shipping) params.append('shipping', filters.shipping);
         if (filters.rating) params.append('rating', filters.rating.toString());
         if (filters.partnerId) params.append('partnerId', filters.partnerId.toString());
+        if (filters.sortBy) params.append('sortBy', filters.sortBy);
+        if (filters.exactMatch) {
+            params.append('exactMatch', filters.exactMatch.toString());
+            // Add cache-busting parameter for exact match to ensure fresh results
+            params.append('_cb', Date.now().toString());
+            console.log('🔍 Exact match enabled - adding cache busting parameter');
+        }
 
         const apiUrl = `${config.API_ENDPOINT}/products?${params.toString()}`;
         console.log('🚀 API Fetch:', apiUrl);
+        console.log('🔍 Exact match status:', filters.exactMatch ? 'ENABLED' : 'DISABLED');
 
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), 15000);
@@ -588,6 +942,20 @@ async function loadCJProducts(query = '', page = 1, limit = null, filters = {}) 
         cjProducts = mapProductsDataToItems(data);
         filteredPerfumes = [...cjProducts];
         
+        // Apply client-side sorting based on current sort filter
+        const sortByFilter = document.getElementById('sort-by-filter');
+        if (sortByFilter && sortByFilter.value && sortByFilter.value !== 'revenue') {
+            sortProducts(filteredPerfumes);
+        }
+        
+        // Set currency converter to the most common currency in the results
+        const currencyConverterDropdown = document.getElementById('currency-converter');
+        if (currencyConverterDropdown && filteredPerfumes.length > 0) {
+            const defaultCurrency = detectDefaultCurrency(filteredPerfumes);
+            currencyConverterDropdown.value = defaultCurrency;
+            console.log('🔄 Auto-detected default currency:', defaultCurrency);
+        }
+        
         totalPages = data.total ? Math.ceil(data.total / (limit || config.RESULTS_PER_PAGE)) : 1;
 
         displayProducts(filteredPerfumes);
@@ -597,7 +965,16 @@ async function loadCJProducts(query = '', page = 1, limit = null, filters = {}) 
         const searchResultsInfo = document.getElementById('search-results-info');
         if (searchResultsInfo) {
             const total = data.total || cjProducts.length;
-            SecurityUtils.setInnerHTML(searchResultsInfo, `Showing ${cjProducts.length} of approximately ${total} results.`);
+            let message = `Showing ${cjProducts.length} of approximately ${total} results.`;
+            
+            // Add exact match information if applicable
+            if (data.optimization?.exactMatchApplied && cjProducts.length === 0) {
+                message = `No exact matches found for "${data.searchQuery}". Try disabling exact match or using different search terms.`;
+            } else if (data.optimization?.exactMatchApplied) {
+                message += ' <span class="exact-match-badge">🔍 Exact Match</span>';
+            }
+            
+            SecurityUtils.setInnerHTML(searchResultsInfo, message);
             searchResultsInfo.style.display = 'block';
         }
 
@@ -609,6 +986,89 @@ async function loadCJProducts(query = '', page = 1, limit = null, filters = {}) 
         return [];
     } finally {
         hideLoading();
+    }
+}
+
+// Detect the most common currency in the displayed products
+function detectDefaultCurrency(products) {
+    if (!products || products.length === 0) return 'USD';
+    
+    const currencyCounts = {};
+    products.forEach(product => {
+        const currency = product.currency || 'USD';
+        currencyCounts[currency] = (currencyCounts[currency] || 0) + 1;
+    });
+    
+    // Find the most common currency
+    let mostCommonCurrency = 'USD';
+    let maxCount = 0;
+    
+    Object.entries(currencyCounts).forEach(([currency, count]) => {
+        if (count > maxCount) {
+            maxCount = count;
+            mostCommonCurrency = currency;
+        }
+    });
+    
+    return mostCommonCurrency;
+}
+
+// Update all displayed prices to the selected currency
+async function updateDisplayedPrices(targetCurrency) {
+    console.log('🔄 Updating displayed prices to:', targetCurrency);
+    
+    if (!targetCurrency) {
+        console.warn('⚠️ No target currency specified');
+        return;
+    }
+    
+    // Get all price elements on the page
+    const priceElements = document.querySelectorAll('.product-price, .modal-price');
+    
+    if (priceElements.length === 0) {
+        console.log('ℹ️ No price elements found to update');
+        return;
+    }
+    
+    console.log(`🔄 Converting ${priceElements.length} price elements to ${targetCurrency}`);
+    
+    // Convert all prices asynchronously
+    const conversionPromises = Array.from(priceElements).map(async (element, index) => {
+        const originalPrice = element.getAttribute('data-original-price');
+        const originalCurrency = element.getAttribute('data-original-currency');
+        
+        if (!originalPrice || !originalCurrency) {
+            console.warn(`⚠️ Missing price data for element ${index}:`, { originalPrice, originalCurrency });
+            return;
+        }
+        
+        try {
+            const convertedPrice = await currencyConverter.convert(
+                parseFloat(originalPrice), 
+                originalCurrency, 
+                targetCurrency
+            );
+            
+            if (convertedPrice !== null && convertedPrice !== undefined) {
+                const formattedPrice = currencyConverter.formatPrice(convertedPrice, targetCurrency);
+                element.textContent = `${formattedPrice} ${targetCurrency}`;
+            } else {
+                console.warn(`⚠️ Invalid conversion result for element ${index}`);
+            }
+        } catch (error) {
+            console.error(`❌ Currency conversion error for element ${index}:`, error);
+            // Fallback to original price if conversion fails
+            const originalFormatted = currencyConverter.formatPrice(parseFloat(originalPrice), originalCurrency);
+            element.textContent = `${originalFormatted} ${originalCurrency}`;
+        }
+    });
+    
+    try {
+        // Wait for all conversions to complete
+        await Promise.all(conversionPromises);
+        console.log('✅ All prices updated successfully');
+    } catch (error) {
+        console.error('❌ Error during price updates:', error);
     }
 }
 
@@ -702,7 +1162,7 @@ function createProductCard(perfume) {
                     ${stars}
                     <span class="rating-number">${perfume.rating.toFixed(1)}</span>
                 </div>
-                <p class="product-price">${currencySymbol}${displayPrice} ${perfume.currency}</p>
+                <p class="product-price" data-original-price="${perfume.price}" data-original-currency="${perfume.currency}">${currencySymbol}${displayPrice} ${perfume.currency}</p>
             </div>
             <div class="product-meta">
                 <div class="product-shipping ${shipping.cls}">${shipping.text}</div>
@@ -738,7 +1198,7 @@ function createPerfumeCard(perfume) {
                     ${stars}
                     <span class="rating-number">${(perfume.rating || 4.5).toFixed(1)}</span>
                 </div>
-                <p class="product-price">${currencySymbol}${displayPrice} ${perfume.currency || 'USD'}</p>
+                <p class="product-price" data-original-price="${perfume.price || 0}" data-original-currency="${perfume.currency || 'USD'}">${currencySymbol}${displayPrice} ${perfume.currency || 'USD'}</p>
             </div>
             <div class="product-meta">
                 <div class="product-shipping ${shipping.cls}">${shipping.text}</div>
@@ -1037,8 +1497,17 @@ function buildServerFilters() {
     const filters = {};
     const priceFilter = document.getElementById('price-range');
     const brandFilter = document.getElementById('brand-filter');
+    const shippingFilter = document.getElementById('shipping-filter');
+    const sortByFilter = document.getElementById('sort-by-filter');
+    const exactMatchToggle = document.getElementById('exact-match-toggle');
     const priceRange = priceFilter ? priceFilter.value : '';
     const brand = brandFilter ? brandFilter.value : '';
+    const shipping = shippingFilter ? shippingFilter.value : '';
+    const sortBy = sortByFilter ? sortByFilter.value : 'revenue';
+    const exactMatch = exactMatchToggle ? exactMatchToggle.checked : false;
+
+    console.log('🔍 buildServerFilters - exactMatchToggle found:', !!exactMatchToggle);
+    console.log('🔍 buildServerFilters - exactMatch value:', exactMatch);
 
     if (brand) {
         filters.brand = brand;
@@ -1053,6 +1522,20 @@ function buildServerFilters() {
             filters.highPrice = high ? parseInt(high, 10) : null;
         }
     }
+
+    if (shipping && shipping !== 'all') {
+        filters.shipping = shipping;
+    }
+
+    if (sortBy) {
+        filters.sortBy = sortBy;
+    }
+
+    if (exactMatch) {
+        filters.exactMatch = exactMatch;
+    }
+
+    console.log('🔍 buildServerFilters - final filters:', filters);
     return filters;
 }
 
@@ -1562,7 +2045,7 @@ async function loadPopularPicks(query) {
     console.log('[Debug] Loading Popular Picks with query:', searchQuery);
 
     try {
-        const data = await fetchProductsFromApi(searchQuery, 1, config.POPULAR_PICKS_LIMIT, { sortBy: 'trending' });
+        const data = await fetchProductsFromApi(searchQuery, 1, config.POPULAR_PICKS_LIMIT, { sortBy: 'revenue' });
         console.log('[Debug] Popular Picks API response:', data);
 
         if (data && data.products && data.products.length > 0) {
@@ -1607,7 +2090,7 @@ async function loadTikTokFinds() {
     console.log('[Debug] Loading TikTok Finds with query:', query);
 
     try {
-        const data = await fetchProductsFromApi(query, 1, config.TIKTOK_FINDS_LIMIT, { partnerId: '7563286' }); // Using a specific partner ID for TikTok
+        const data = await fetchProductsFromApi(query, 1, config.TIKTOK_FINDS_LIMIT, { partnerId: '7563286', sortBy: 'revenue' }); // Using a specific partner ID for TikTok with revenue sorting
         console.log('[Debug] TikTok Finds API response:', data);
 
         if (data && data.products && data.products.length > 0) {
@@ -1670,7 +2153,7 @@ async function toggleFavorite(button, perfume) {
                 headers['Authorization'] = `Bearer ${sessionToken}`;
             }
 
-            await fetch(`https://auth-worker.joshuablaszczyk.workers.dev/api/user/favorites/${fragranceId}`, {
+            await fetch(`https://weathered-mud-6ed5.joshuablaszczyk.workers.dev/api/user/favorites/${fragranceId}`, {
                 method: 'DELETE',
                 headers,
                 credentials: 'include'
@@ -1698,7 +2181,7 @@ async function toggleFavorite(button, perfume) {
                 headers['Authorization'] = `Bearer ${sessionToken}`;
             }
 
-            await fetch('https://auth-worker.joshuablaszczyk.workers.dev/api/user/favorites', {
+            await fetch('https://weathered-mud-6ed5.joshuablaszczyk.workers.dev/api/user/favorites', {
                 method: 'POST',
                 headers,
                 body: JSON.stringify(favoriteData),
@@ -1858,7 +2341,7 @@ async function loadUserFavorites() {
             headers['Authorization'] = `Bearer ${sessionToken}`;
         }
 
-        const response = await fetch('https://auth-worker.joshuablaszczyk.workers.dev/api/user/favorites', {
+        const response = await fetch('https://weathered-mud-6ed5.joshuablaszczyk.workers.dev/api/user/favorites', {
             headers,
             credentials: 'include'
         });

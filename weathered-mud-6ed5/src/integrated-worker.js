@@ -316,6 +316,12 @@ export default {
     }
 
     // --- NEW ACCOUNT FEATURE ENDPOINTS ---
+    if (url.pathname === '/api/user/profile' && request.method === 'POST') {
+        return handleUpdateProfile(request, env);
+    }
+    if (url.pathname === '/api/user/profile-picture' && request.method === 'POST') {
+        return handleUpdateProfilePicture(request, env);
+    }
     if (url.pathname === '/api/user/preferences' && request.method === 'GET') {
         return handleGetPreferences(request, env);
     }
@@ -815,17 +821,23 @@ async function getAuthenticatedUser(request, env) {
 }
 
 async function handleGetPreferences(request, env) {
+    const origin = request.headers.get('Origin');
+    const headers = getSecurityHeaders(origin);
+    
     const user = await getAuthenticatedUser(request, env);
-    if (!user) return jsonResponse({ error: 'Unauthorized' }, 401);
+    if (!user) return jsonResponse({ error: 'Unauthorized' }, 401, headers);
 
     const prefs = await env.DB.prepare('SELECT * FROM user_preferences WHERE user_id = ?').bind(user.id).first();
     
-    return jsonResponse({ success: true, preferences: prefs || {} });
+    return jsonResponse({ success: true, preferences: prefs || {} }, 200, headers);
 }
 
 async function handleUpdatePreferences(request, env) {
+    const origin = request.headers.get('Origin');
+    const headers = getSecurityHeaders(origin);
+    
     const user = await getAuthenticatedUser(request, env);
-    if (!user) return jsonResponse({ error: 'Unauthorized' }, 401);
+    if (!user) return jsonResponse({ error: 'Unauthorized' }, 401, headers);
 
     const prefs = await request.json();
     
@@ -842,7 +854,7 @@ async function handleUpdatePreferences(request, env) {
            updated_at=CURRENT_TIMESTAMP`
     ).bind(user.id, JSON.stringify(prefs.scent_categories || []), prefs.intensity, prefs.season, prefs.occasion, prefs.budget_range, prefs.sensitivities).run();
 
-    return jsonResponse({ success: true, message: 'Preferences updated.' });
+    return jsonResponse({ success: true, message: 'Preferences updated.' }, 200, headers);
 }
 
 async function handleGetFavorites(request, env) {
@@ -908,6 +920,75 @@ async function handleDeleteFavorite(request, env) {
     ).bind(user.id, fragranceId).run();
 
     return jsonResponse({ success: true, message: 'Removed from favorites.' }, 200, headers);
+}
+
+async function handleUpdateProfile(request, env) {
+    const origin = request.headers.get('Origin');
+    const headers = getSecurityHeaders(origin);
+    
+    const user = await getAuthenticatedUser(request, env);
+    if (!user) return jsonResponse({ error: 'Unauthorized' }, 401, headers);
+
+    const profileData = await request.json();
+    
+    if (!profileData.name || !profileData.email) {
+        return jsonResponse({ error: 'Name and email are required' }, 400, headers);
+    }
+
+    try {
+        await env.DB.prepare(
+            `UPDATE users SET name = ?, email = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
+        ).bind(profileData.name, profileData.email, user.id).run();
+
+        return jsonResponse({ 
+            success: true, 
+            message: 'Profile updated successfully.',
+            user: {
+                id: user.id,
+                name: profileData.name,
+                email: profileData.email
+            }
+        }, 200, headers);
+    } catch (error) {
+        console.error('Failed to update profile:', error);
+        return jsonResponse({ error: 'Failed to update profile' }, 500, headers);
+    }
+}
+
+async function handleUpdateProfilePicture(request, env) {
+    const origin = request.headers.get('Origin');
+    const headers = getSecurityHeaders(origin);
+    
+    const user = await getAuthenticatedUser(request, env);
+    if (!user) return jsonResponse({ error: 'Unauthorized' }, 401, headers);
+
+    try {
+        const formData = await request.formData();
+        const pictureFile = formData.get('picture');
+        
+        if (!pictureFile) {
+            return jsonResponse({ error: 'No picture file provided' }, 400, headers);
+        }
+
+        // For now, we'll store the file as base64 in the database
+        // In a production environment, you'd want to upload to a CDN
+        const arrayBuffer = await pictureFile.arrayBuffer();
+        const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+        const pictureUrl = `data:${pictureFile.type};base64,${base64}`;
+
+        await env.DB.prepare(
+            `UPDATE users SET picture = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
+        ).bind(pictureUrl, user.id).run();
+
+        return jsonResponse({ 
+            success: true, 
+            message: 'Profile picture updated successfully.',
+            picture_url: pictureUrl
+        }, 200, headers);
+    } catch (error) {
+        console.error('Failed to update profile picture:', error);
+        return jsonResponse({ error: 'Failed to update profile picture' }, 500, headers);
+    }
 }
 
 
@@ -1522,35 +1603,106 @@ async function handleProductsRequest(request, url, env) {
   const highPrice = parseFloat(searchParams.get('highPrice')) || null;
   const partnerId = searchParams.get('partnerId') || null;
   const includeTikTok = searchParams.get('includeTikTok') !== 'false';
-  const sortBy = searchParams.get('sortBy') || 'price_low';
+  const sortBy = searchParams.get('sortBy') || 'revenue'; // revenue, relevance, price, trending
   const brandFilter = searchParams.get('brand') || null;
+  const exactMatch = searchParams.get('exactMatch') === 'true'; // New parameter for exact matching
 
+  // Smart cache key generation
   const cacheKey = generateCacheKey({
-    query, limit, page, lowPrice, highPrice, partnerId,
-    includeTikTok, sortBy, brandFilter
+    query, limit, page, lowPrice, highPrice, partnerId, 
+    includeTikTok, sortBy, brandFilter, exactMatch
   });
-
+  
+  // Try to get from cache first (but skip cache if _cb parameter is present)
   const cache = caches.default;
-  let response = await cache.match(new Request(`https://cache/${cacheKey}`));
-
+  let response = null;
+  
+  if (!searchParams.get('_cb')) {
+    response = await cache.match(new Request(`https://cache/${cacheKey}`));
+  }
+  
   if (response) {
+    console.log('🚀 Cache hit for:', cacheKey);
     return response;
   }
 
+  console.log('💸 Revenue-optimized search initiated:', { query, limit, page, sortBy, exactMatch });
+  console.log('🔍 Exact match mode:', exactMatch ? 'ENABLED' : 'DISABLED');
+  console.log('🔍 Search query:', query);
+
   try {
-    const cjProducts = await searchCJStore(query, 250, 0, lowPrice, highPrice, partnerId, env);
+    const cjProducts = await searchCJStore(query, 250, 0, lowPrice, highPrice, partnerId, env, exactMatch);
+    console.log(`✅ CJ Store: Found ${cjProducts.length} products`);
+    
+    // Step 2: Search TikTok Shop (Secondary - Trending Products)
     let tiktokProducts = [];
     if (includeTikTok && !partnerId) {
-      tiktokProducts = await searchTikTokStore(query, 100, 0, lowPrice, highPrice, env);
+      tiktokProducts = await searchTikTokStore(query, 100, 0, lowPrice, highPrice, env, exactMatch);
+      console.log(`🎵 TikTok Shop: Found ${tiktokProducts.length} products`);
     }
 
+    // Step 3: Smart Fallback - If CJ has no results, prioritize TikTok
     if (cjProducts.length === 0 && tiktokProducts.length > 0) {
+      console.log('🔄 Smart fallback: Using TikTok results as primary');
       tiktokProducts = await searchTikTokStore(query, 200, 0, lowPrice, highPrice, env);
     }
 
     const allProducts = [...cjProducts, ...tiktokProducts];
     const deduplicatedProducts = deduplicateProducts(allProducts);
-    const optimizedProducts = optimizeForRevenue(deduplicatedProducts, query, sortBy, brandFilter, REVENUE_CONFIG, COMMISSION_RATES);
+    
+    // Step 4.5: Apply exact match filtering if enabled
+    let filteredProducts = deduplicatedProducts;
+    if (exactMatch && query) {
+        console.log('🔍 Applying STRICT exact match filtering for query:', query);
+        const queryLower = query.toLowerCase().trim();
+        const queryWords = queryLower.split(/\s+/).filter(word => word.length > 0);
+        
+        filteredProducts = deduplicatedProducts.filter(product => {
+            const title = (product.title || product.name || '').toLowerCase();
+            const brand = (product.brand || '').toLowerCase();
+            const description = (product.description || '').toLowerCase();
+            
+            // Combine all searchable text
+            const allText = `${title} ${brand} ${description}`;
+            const allWords = allText.split(/\s+/).filter(word => word.length > 0);
+            
+            // STRICT "to a T" matching: Every query word must be found as a complete word
+            // This prevents "lenon" from matching "lemon" or partial matches
+            const allWordsMatch = queryWords.every(queryWord => {
+                // Check if this exact word exists in any of the product text fields
+                return allWords.some(productWord => productWord === queryWord);
+            });
+            
+            // Additional check: Ensure the words appear in the same order as the query
+            if (allWordsMatch) {
+                const titleWords = title.split(/\s+/).filter(word => word.length > 0);
+                const brandWords = brand.split(/\s+/).filter(word => word.length > 0);
+                const descWords = description.split(/\s+/).filter(word => word.length > 0);
+                
+                // Check if words appear in sequence in any of the fields
+                const checkSequence = (fieldWords) => {
+                    for (let i = 0; i <= fieldWords.length - queryWords.length; i++) {
+                        let match = true;
+                        for (let j = 0; j < queryWords.length; j++) {
+                            if (fieldWords[i + j] !== queryWords[j]) {
+                                match = false;
+                                break;
+                            }
+                        }
+                        if (match) return true;
+                    }
+                    return false;
+                };
+                
+                return checkSequence(titleWords) || checkSequence(brandWords) || checkSequence(descWords);
+            }
+            
+            return false;
+        });
+        console.log(`🔍 STRICT exact match filtering: ${deduplicatedProducts.length} -> ${filteredProducts.length} products`);
+    }
+    
+    const optimizedProducts = optimizeForRevenue(filteredProducts, query, sortBy, brandFilter, REVENUE_CONFIG, COMMISSION_RATES);
     const products = optimizedProducts.map(p => formatProductForRevenue(p, query, REVENUE_CONFIG, COMMISSION_RATES)).filter(Boolean);
 
     const total = products.length;
@@ -1564,17 +1716,18 @@ async function handleProductsRequest(request, url, env) {
       limit,
       hasMore: total > (offset + limit),
       searchQuery: query,
-      filters: { lowPrice, highPrice, partnerId, includeTikTok, sortBy, brandFilter },
+      filters: { lowPrice, highPrice, partnerId, includeTikTok, sortBy, brandFilter, exactMatch },
       revenue: revenueMetrics,
       sources: {
         cj: cjProducts.length,
         tiktok: tiktokProducts.length,
-        total: optimizedProducts.length
+        total: filteredProducts.length
       },
       optimization: {
         strategy: 'revenue-maximization',
         commissionWeighting: 'CJ-70%-TikTok-30%',
-        smartFallback: cjProducts.length === 0 && tiktokProducts.length > 0
+        smartFallback: cjProducts.length === 0 && tiktokProducts.length > 0,
+        exactMatchApplied: exactMatch && query
       }
     };
 
@@ -1778,21 +1931,25 @@ async function handleTestGraphQLRequest(env) {
 }
 
 // Helper functions for API
-async function searchCJStore(query, limit, offset, lowPrice, highPrice, partnerId, env) {
+async function searchCJStore(query, limit, offset, lowPrice, highPrice, partnerId, env, exactMatch = false) {
   const gqlQuery = buildShoppingProductsQuery(!!partnerId);
 
   if (query) {
+    // Revenue-optimized search with expanded limit
     const gqlVariables = {
       companyId: env.CJ_COMPANY_ID,
-      keywords: query.split(/\s+/).filter(k => k.length > 0),
-      limit: Math.min(limit * 2, 400),
+      keywords: exactMatch ? [query] : query.split(/\s+/).filter(k => k.length > 0),
+      limit: Math.min(limit * 2, 400), // Get more for better revenue optimization
       offset,
       websiteId: env.CJ_WEBSITE_ID,
       lowPrice,
       highPrice,
       partnerIds: partnerId ? [partnerId] : null
     };
-
+    
+    console.log('🔍 CJ Store search keywords:', gqlVariables.keywords);
+    console.log('🔍 CJ Store exact match:', exactMatch);
+    
     const gqlData = await fetchCJProducts(gqlQuery, gqlVariables, env);
     return gqlData.data?.shoppingProducts?.resultList || [];
   } else {
@@ -1830,14 +1987,15 @@ async function searchCJStore(query, limit, offset, lowPrice, highPrice, partnerI
   }
 }
 
-async function searchTikTokStore(query, limit, offset, lowPrice, highPrice, env) {
+async function searchTikTokStore(query, limit, offset, lowPrice, highPrice, env, exactMatch = false) {
   try {
     const gqlQuery = buildShoppingProductsQuery(true);
 
     if (query) {
+      // Trending-focused search for TikTok
       const gqlVariables = {
         companyId: env.CJ_COMPANY_ID,
-        keywords: query.split(/\s+/).filter(k => k.length > 0),
+        keywords: exactMatch ? [query] : query.split(/\s+/).filter(k => k.length > 0),
         limit: Math.min(limit * 2, 200),
         offset,
         websiteId: env.CJ_WEBSITE_ID,
@@ -1845,7 +2003,10 @@ async function searchTikTokStore(query, limit, offset, lowPrice, highPrice, env)
         highPrice,
         partnerIds: [REVENUE_CONFIG.TIKTOK_PARTNER_ID]
       };
-
+      
+      console.log('🎵 TikTok Store search keywords:', gqlVariables.keywords);
+      console.log('🎵 TikTok Store exact match:', exactMatch);
+      
       const gqlData = await fetchCJProducts(gqlQuery, gqlVariables, env);
       return gqlData.data?.shoppingProducts?.resultList || [];
     } else {
@@ -1884,8 +2045,8 @@ async function searchTikTokStore(query, limit, offset, lowPrice, highPrice, env)
 }
 
 function generateCacheKey(params) {
-  const { query, limit, page, lowPrice, highPrice, partnerId, includeTikTok, sortBy, brandFilter } = params;
-  return `products:${query}:${limit}:${page}:${lowPrice}:${highPrice}:${partnerId}:${includeTikTok}:${sortBy}:${brandFilter}`;
+  const { query, limit, page, lowPrice, highPrice, partnerId, includeTikTok, sortBy, brandFilter, exactMatch } = params;
+  return `products:${query}:${limit}:${page}:${lowPrice}:${highPrice}:${partnerId}:${includeTikTok}:${sortBy}:${brandFilter}:${exactMatch}`;
 }
 
 function corsHeaders(env) {

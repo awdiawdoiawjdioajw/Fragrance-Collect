@@ -32,6 +32,33 @@ const config = {
   DEFAULT_PAGE: 1
 };
 
+// Currency conversion rates (simplified - in production, use a real API)
+const CURRENCY_RATES = {
+  USD: 1,
+  EUR: 0.85,
+  GBP: 0.73,
+  CAD: 1.25,
+  AUD: 1.35,
+  JPY: 110,
+  CNY: 6.45
+};
+
+// Convert price to USD for comparison
+function convertToUSD(price, currency) {
+  if (!price || !currency || !CURRENCY_RATES[currency]) {
+    return price || 0;
+  }
+  return price / CURRENCY_RATES[currency];
+}
+
+// Convert price from USD to target currency
+function convertFromUSD(priceUSD, targetCurrency) {
+  if (!priceUSD || !targetCurrency || !CURRENCY_RATES[targetCurrency]) {
+    return priceUSD || 0;
+  }
+  return priceUSD * CURRENCY_RATES[targetCurrency];
+}
+
 // Rate limiting storage
 const rateLimitStore = new Map();
 
@@ -310,7 +337,11 @@ async function searchCJProducts(searchParams) {
     perPage = config.DEFAULT_LIMIT,
     page = config.DEFAULT_PAGE,
     scope = 'joined',
-    advertiserIds = '' // New parameter
+    advertiserIds = '', // New parameter
+    shipping = '', // Shipping filter
+    currency = '', // Currency filter
+    lowPrice = null, // Price range filter
+    highPrice = null // Price range filter
   } = searchParams;
 
   // Validate and sanitize inputs
@@ -325,6 +356,7 @@ async function searchCJProducts(searchParams) {
     keywords: validatedSearch,
     'records-per-page': validatedLimit.toString(),
     'page-number': validatedPage.toString(),
+    'sort-by': 'popularity', // Sort by popularity instead of price
     format: 'json'
   });
 
@@ -358,13 +390,20 @@ async function searchCJProducts(searchParams) {
     const products = data.products.map(mapCJProduct);
     const total = data.totalResults || data.products.length;
     
-    console.log(`✅ CJ API returned ${products.length} products`);
+    // Filter out ultra-cheap items that are cluttering results
+    const filteredProducts = products.filter(product => {
+      const price = product.price || 0;
+      // Only show items that cost more than $10 to avoid cheap accessories
+      return price >= 10;
+    });
+    
+    console.log(`✅ CJ API returned ${filteredProducts.length} products (filtered out ${products.length - filteredProducts.length} items under $10)`);
     
     return {
-      products,
-      total,
+      products: filteredProducts,
+      total: filteredProducts.length,
       page: validatedPage,
-      hasMore: products.length === validatedLimit
+      hasMore: filteredProducts.length === validatedLimit
     };
     
   } catch (error) {
@@ -462,13 +501,17 @@ const server = http.createServer(async (req, res) => {
     // Products search endpoint
     if (url.pathname === '/products') {
       // Validate and sanitize query parameters
-      const searchParams = {
-        search: InputValidator.validateSearchQuery(url.searchParams.get('q') || config.DEFAULT_SEARCH),
-        perPage: InputValidator.validateLimit(url.searchParams.get('limit') || config.DEFAULT_LIMIT),
-        page: InputValidator.validatePage(url.searchParams.get('page') || config.DEFAULT_PAGE),
-        scope: InputValidator.validateScope(url.searchParams.get('scope') || 'joined'),
-        advertiserIds: InputValidator.sanitizeString(url.searchParams.get('advertiserIds') || '', 500)
-      };
+              const searchParams = {
+          search: InputValidator.validateSearchQuery(url.searchParams.get('q') || config.DEFAULT_SEARCH),
+          perPage: InputValidator.validateLimit(url.searchParams.get('limit') || config.DEFAULT_LIMIT),
+          page: InputValidator.validatePage(url.searchParams.get('page') || config.DEFAULT_PAGE),
+          scope: InputValidator.validateScope(url.searchParams.get('scope') || 'joined'),
+          advertiserIds: InputValidator.sanitizeString(url.searchParams.get('advertiserIds') || '', 500),
+          shipping: InputValidator.sanitizeString(url.searchParams.get('shipping') || '', 50),
+          currency: InputValidator.sanitizeString(url.searchParams.get('currency') || '', 10),
+          lowPrice: url.searchParams.get('lowPrice') ? parseFloat(url.searchParams.get('lowPrice')) : null,
+          highPrice: url.searchParams.get('highPrice') ? parseFloat(url.searchParams.get('highPrice')) : null
+        };
 
       try {
         const result = await searchCJProducts(searchParams);
