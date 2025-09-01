@@ -62,7 +62,11 @@ const SecurityUtils = {
   }
 };
 
-// Global variables
+// Global variables for favorites filtering
+let currentFavorites = []; // Store the current favorites data
+let isInFavoritesView = false; // Track if we're currently viewing favorites
+
+// ... existing code ...
 let currentFilters = {
     brand: '',
     priceRange: '',
@@ -458,8 +462,16 @@ const authUI = {
     mainContentSections: document.querySelectorAll('.main-content'),
     homeLinks: document.querySelectorAll('.home-link'),
     shopLinks: document.querySelectorAll('.shop-link'),
-    favoritesLink: document.querySelector('a[href="#favorites"]')
+    favoritesLink: document.querySelector('a[href="main.html#favorites"]')
 };
+
+// Debug authUI elements
+console.log('authUI elements found:');
+console.log('favoritesSection:', authUI.favoritesSection);
+console.log('favoritesGrid:', authUI.favoritesGrid);
+console.log('favoritesEmptyState:', authUI.favoritesEmptyState);
+console.log('favoritesLink:', authUI.favoritesLink);
+console.log('mainContentSections count:', authUI.mainContentSections.length);
 
 // Authentication status checking is now handled by shared-auth.js
 // This function is kept for backward compatibility but delegates to shared auth
@@ -544,7 +556,23 @@ async function handleLogout() {
     await handleSharedLogout();
 }
 
-// --- INITIALIZATION ---
+// Test function to manually trigger favorites view
+function testFavorites() {
+    console.log('=== TESTING FAVORITES FUNCTIONALITY ===');
+    console.log('Current URL:', window.location.href);
+    console.log('isUserLoggedIn:', isUserLoggedIn);
+    console.log('currentUser:', currentUser);
+    console.log('sessionToken:', sessionToken ? 'exists' : 'missing');
+    console.log('isAuthenticated():', isAuthenticated());
+    console.log('authUI.favoritesSection:', authUI.favoritesSection);
+    console.log('authUI.favoritesLink:', authUI.favoritesLink);
+    
+    // Try to show favorites view
+    showFavoritesView();
+}
+
+// Add test function to window for easy access
+window.testFavorites = testFavorites;
 document.addEventListener('DOMContentLoaded', async () => {
 
     // Authentication is now handled by shared-auth.js
@@ -575,10 +603,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (authUI.favoritesLink) {
+        console.log('Found favorites link, adding event listener');
         authUI.favoritesLink.addEventListener('click', (e) => {
+            console.log('Favorites link clicked');
             e.preventDefault();
             showFavoritesView();
         });
+    } else {
+        console.log('Favorites link not found');
     }
 
     const restoreMainViewLinks = [...authUI.homeLinks, ...authUI.shopLinks];
@@ -636,6 +668,59 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (shippingFilter) {
         shippingFilter.addEventListener('change', applyFilters);
+    }
+
+    // Add event listeners for favorites filter controls (using main filter elements)
+    const clearFiltersFavoritesBtn = document.getElementById('clear-filters');
+    const sortByFilterFavorites = document.getElementById('sort-by-filter');
+    const priceRangeFilterFavorites = document.getElementById('price-range');
+    const shippingFilterFavorites = document.getElementById('shipping-filter');
+    const currencyConverterFavorites = document.getElementById('currency-converter');
+
+    if (clearFiltersFavoritesBtn) {
+        clearFiltersFavoritesBtn.addEventListener('click', clearAllFilters);
+    }
+
+    if (sortByFilterFavorites) {
+        sortByFilterFavorites.addEventListener('change', () => {
+            // Sort the currently displayed favorites or main products
+            if (isInFavoritesView) {
+                sortFavorites(currentFavorites);
+            } else {
+                sortProducts(currentProducts);
+            }
+        });
+    }
+
+    if (currencyConverterFavorites) {
+        currencyConverterFavorites.addEventListener('change', async () => {
+            try {
+                // Show loading state
+                currencyConverterFavorites.disabled = true;
+                currencyConverterFavorites.style.opacity = '0.6';
+                
+                // Update all displayed prices to the selected currency
+                await updateDisplayedPrices(currencyConverterFavorites.value);
+                
+                console.log('✅ Currency conversion completed successfully');
+            } catch (error) {
+                console.error('❌ Currency conversion failed:', error);
+                // Show error message to user
+                showToast('Currency conversion failed. Please try again.', 'error');
+            } finally {
+                // Restore normal state
+                currencyConverterFavorites.disabled = false;
+                currencyConverterFavorites.style.opacity = '1';
+            }
+        });
+    }
+
+    if (priceRangeFilterFavorites) {
+        priceRangeFilterFavorites.addEventListener('change', applyFilters);
+    }
+
+    if (shippingFilterFavorites) {
+        shippingFilterFavorites.addEventListener('change', applyFilters);
     }
 
     // Exact match checkbox event listener
@@ -782,6 +867,16 @@ function clearAllFilters() {
     if (shippingFilter) shippingFilter.value = 'all';
     if (searchInput) searchInput.value = config.DEFAULT_SEARCH_TERM;
 
+    // Check if we're in favorites view
+    if (isInFavoritesView) {
+        console.log('🔍 In favorites view - clearing filters for favorites');
+        // Reset filters and show all favorites
+        currentFilters.priceRange = '';
+        currentFilters.shipping = '';
+        displayFavorites(currentFavorites);
+        return;
+    }
+
     // Perform search with default term
     performSearch(config.DEFAULT_SEARCH_TERM);
 }
@@ -804,6 +899,13 @@ async function applyFilters(isServerSide = false) {
         currentFilters.brand = brandFilter ? brandFilter.value : '';
         currentFilters.shipping = shippingFilter ? shippingFilter.value : '';
         
+        // Check if we're in favorites view
+        if (isInFavoritesView) {
+            console.log('🔍 In favorites view - applying filters to favorites');
+            filterFavorites();
+            return;
+        }
+        
         // Server-side filters trigger a new data fetch from the worker
         if (isServerSide) {
             showLoading();
@@ -818,7 +920,7 @@ async function applyFilters(isServerSide = false) {
     } catch (error) {
         console.error('Error in applyFilters:', error);
         // Fallback: just try to load products without filters
-        if (isServerSide) {
+        if (isServerSide && !isInFavoritesView) {
             showLoading();
             currentPage = 1;
             await loadCJProducts(currentFilters.search, currentPage);
@@ -828,7 +930,15 @@ async function applyFilters(isServerSide = false) {
 
 // Sort products on the client-side
 function sortProducts(products) {
+    // Check if we're in favorites view
+    if (isInFavoritesView) {
+        console.log('🔍 In favorites view - sorting favorites');
+        sortFavorites(currentFavorites);
+        return;
+    }
+
     const sortByFilter = document.getElementById('sort-by-filter');
+    
     if (!sortByFilter) {
         // If no sort filter exists, just display products without sorting
         displayProducts(products);
@@ -948,12 +1058,24 @@ async function loadCJProducts(query = '', page = 1, limit = null, filters = {}) 
             sortProducts(filteredPerfumes);
         }
         
-        // Set currency converter to the most common currency in the results
+        // Preserve user's currency selection when loading new results
         const currencyConverterDropdown = document.getElementById('currency-converter');
         if (currencyConverterDropdown && filteredPerfumes.length > 0) {
-            const defaultCurrency = detectDefaultCurrency(filteredPerfumes);
-            currencyConverterDropdown.value = defaultCurrency;
-            console.log('🔄 Auto-detected default currency:', defaultCurrency);
+            // Store the current currency selection before any changes
+            const userSelectedCurrency = currencyConverterDropdown.value;
+            console.log('🔄 Current user currency selection:', userSelectedCurrency);
+            
+            // Only auto-detect currency on the very first load (when no products exist yet)
+            if (!cjProducts || cjProducts.length === 0) {
+                const defaultCurrency = detectDefaultCurrency(filteredPerfumes);
+                currencyConverterDropdown.value = defaultCurrency;
+                console.log('🔄 First load - auto-detected default currency:', defaultCurrency);
+            } else {
+                // Preserve the user's currency selection for subsequent loads
+                console.log('🔄 Preserving user-selected currency:', userSelectedCurrency);
+                // Ensure the dropdown still shows the user's selection
+                currencyConverterDropdown.value = userSelectedCurrency;
+            }
         }
         
         totalPages = data.total ? Math.ceil(data.total / (limit || config.RESULTS_PER_PAGE)) : 1;
@@ -1019,6 +1141,19 @@ async function updateDisplayedPrices(targetCurrency) {
     
     if (!targetCurrency) {
         console.warn('⚠️ No target currency specified');
+        return;
+    }
+    
+    // Check if we're in favorites view
+    if (isInFavoritesView) {
+        console.log('🔄 In favorites view - updating favorites prices');
+        // Update favorites with new currency
+        const updatedFavorites = currentFavorites.map(fav => ({
+            ...fav,
+            currency: targetCurrency,
+            price: currencyConverter.convertSync(fav.price || 0, fav.currency || 'USD', targetCurrency)
+        }));
+        displayFavorites(updatedFavorites);
         return;
     }
     
@@ -1088,6 +1223,17 @@ function displayProducts(perfumes) {
     // Add infinite scroll if enabled
     if (window.infiniteScrollEnabled) {
         // setupInfiniteScroll();
+    }
+    
+    // Automatically convert prices to the currently selected currency
+    const currencyConverter = document.getElementById('currency-converter');
+    if (currencyConverter && currencyConverter.value && currencyConverter.value !== 'USD') {
+        // Use setTimeout to ensure DOM is updated before converting prices
+        setTimeout(() => {
+            updateDisplayedPrices(currencyConverter.value).catch(error => {
+                console.warn('Auto currency conversion failed:', error);
+            });
+        }, 100);
     }
 }
 
@@ -1426,7 +1572,85 @@ function hideSearchLoading() {
 }
 
 
-// Filter perfumes based on current filters
+// Filter favorites based on current filters
+function filterFavorites() {
+    console.log('🔍 Filtering favorites...');
+    console.log('Current favorites count:', currentFavorites.length);
+    console.log('Current filters:', currentFilters);
+    
+    let filteredFavorites = [...currentFavorites];
+    
+    // Price range filter
+    if (currentFilters.priceRange && currentFilters.priceRange !== 'all') {
+        const beforeCount = filteredFavorites.length;
+        filteredFavorites = filteredFavorites.filter(fav => {
+            const price = fav.price || 0;
+            const currency = fav.currency || 'USD';
+            const priceUSD = currencyConverter.convertSync(price, currency, 'USD');
+            
+            if (currentFilters.priceRange.includes('+')) {
+                const minPrice = parseInt(currentFilters.priceRange, 10);
+                return priceUSD >= minPrice;
+            } else if (currentFilters.priceRange.includes('-')) {
+                const [low, high] = currentFilters.priceRange.split('-');
+                const minPrice = low ? parseInt(low, 10) : 0;
+                const maxPrice = high ? parseInt(high, 10) : Infinity;
+                return priceUSD >= minPrice && priceUSD <= maxPrice;
+            }
+            return true;
+        });
+        console.log(`Price filter applied: ${beforeCount} -> ${filteredFavorites.length}`);
+    }
+    
+    // Shipping filter
+    if (currentFilters.shipping && currentFilters.shipping !== 'all') {
+        const beforeCount = filteredFavorites.length;
+        filteredFavorites = filteredFavorites.filter(fav => {
+            if (currentFilters.shipping === 'free') {
+                return fav.shipping_availability === 'available' && (fav.shipping_cost === 0 || !fav.shipping_cost);
+            }
+            return true;
+        });
+        console.log(`Shipping filter applied: ${beforeCount} -> ${filteredFavorites.length}`);
+    }
+    
+    // Sort favorites
+    sortFavorites(filteredFavorites);
+}
+
+// Sort favorites based on current sort selection
+function sortFavorites(favorites) {
+    const sortByFilter = document.getElementById('sort-by-filter');
+    if (!sortByFilter) {
+        displayFavorites(favorites);
+        return;
+    }
+    
+    const sortBy = sortByFilter.value;
+    console.log('🔍 Sorting favorites by:', sortBy);
+    
+    favorites.sort((a, b) => {
+        if (sortBy === 'price_low') {
+            const priceA = currencyConverter.convertSync(a.price || 0, a.currency || 'USD', 'USD');
+            const priceB = currencyConverter.convertSync(b.price || 0, b.currency || 'USD', 'USD');
+            return priceA - priceB;
+        } else if (sortBy === 'price_high') {
+            const priceA = currencyConverter.convertSync(a.price || 0, a.currency || 'USD', 'USD');
+            const priceB = currencyConverter.convertSync(b.price || 0, b.currency || 'USD', 'USD');
+            return priceB - priceA;
+        } else if (sortBy === 'relevance') {
+            // For favorites, relevance could be based on name similarity or rating
+            const ratingA = a.rating || 4.5;
+            const ratingB = b.rating || 4.5;
+            return ratingB - ratingA;
+        }
+        return 0; // Default case - no sorting
+    });
+    
+    displayFavorites(favorites);
+}
+
+// ... existing code ...
 function filterPerfumes() {
     SearchDebugger.logStep('Filtering products', {
         totalProducts: cjProducts.length,
@@ -2153,11 +2377,15 @@ async function toggleFavorite(button, perfume) {
                 headers['Authorization'] = `Bearer ${sessionToken}`;
             }
 
-            await fetch(`https://weathered-mud-6ed5.joshuablaszczyk.workers.dev/api/user/favorites/${fragranceId}`, {
+            const response = await fetch(`https://weathered-mud-6ed5.joshuablaszczyk.workers.dev/api/user/favorites/${fragranceId}`, {
                 method: 'DELETE',
                 headers,
                 credentials: 'include'
             });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
 
             console.log('✅ Successfully removed from favorites on server');
             // Remove from pending operations if it was there
@@ -2174,19 +2402,33 @@ async function toggleFavorite(button, perfume) {
                 productUrl: perfume.productUrl,
                 price: perfume.price,
                 currency: perfume.currency,
+                shippingCost: perfume.shippingCost || 0,
                 shipping_availability: perfume.shipping_availability || (perfume.shipping ? 'available' : 'unavailable'),
             };
+            
+            console.log('Sending favorite data:', favoriteData);
+            console.log('Perfume shipping info:', {
+                shippingCost: perfume.shippingCost,
+                shipping_availability: perfume.shipping_availability,
+                shipping: perfume.shipping
+            });
+            console.log('Session token:', sessionToken);
+            
             const headers = { 'Content-Type': 'application/json' };
             if (sessionToken) {
                 headers['Authorization'] = `Bearer ${sessionToken}`;
             }
+            console.log('Request headers:', headers);
 
-            await fetch('https://weathered-mud-6ed5.joshuablaszczyk.workers.dev/api/user/favorites', {
+            const response = await fetch('https://weathered-mud-6ed5.joshuablaszczyk.workers.dev/api/user/favorites', {
                 method: 'POST',
                 headers,
-                body: JSON.stringify(favoriteData),
-                credentials: 'include'
+                body: JSON.stringify(favoriteData)
             });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
 
             console.log('✅ Successfully added to favorites on server');
             // Remove from pending operations if it was there
@@ -2194,7 +2436,20 @@ async function toggleFavorite(button, perfume) {
         }
 
         // Refresh the favorites display
-        loadUserFavorites();
+        if (isInFavoritesView) {
+            // If we're in favorites view, update the currentFavorites array and re-display
+            if (wasFavorited) {
+                // Remove from currentFavorites array
+                currentFavorites = currentFavorites.filter(fav => fav.fragrance_id !== fragranceId);
+                displayFavorites(currentFavorites);
+            } else {
+                // Add to currentFavorites array and re-display
+                loadUserFavorites();
+            }
+        } else {
+            // If we're not in favorites view, just reload favorites
+            loadUserFavorites();
+        }
 
         // Reset button state
         button.style.opacity = '';
@@ -2218,6 +2473,12 @@ async function toggleFavorite(button, perfume) {
                     data: null
                 });
                 showToast('Removed from favorites (will sync when online)', 'warning');
+                
+                // If in favorites view, update the display immediately
+                if (isInFavoritesView) {
+                    currentFavorites = currentFavorites.filter(fav => fav.fragrance_id !== fragranceId);
+                    displayFavorites(currentFavorites);
+                }
             } else {
                 // We optimistically added it, but server call failed
                 // Store operation to add it later
@@ -2230,6 +2491,7 @@ async function toggleFavorite(button, perfume) {
                     productUrl: perfume.productUrl,
                     price: perfume.price,
                     currency: perfume.currency,
+                    shippingCost: perfume.shippingCost,
                     shipping_availability: perfume.shipping_availability || (perfume.shipping ? 'available' : 'unavailable'),
                 };
                 pendingFavoriteOperations.set(fragranceId, {
@@ -2250,6 +2512,10 @@ async function toggleFavorite(button, perfume) {
             if (wasFavorited) {
                 userFavorites.add(fragranceId);
                 button.classList.add('favorited');
+                // If in favorites view, also revert the currentFavorites array
+                if (isInFavoritesView) {
+                    loadUserFavorites(); // Reload to restore the removed item
+                }
             } else {
                 userFavorites.delete(fragranceId);
                 button.classList.remove('favorited');
@@ -2307,6 +2573,8 @@ function showFavoritesView() {
     // Check if user is logged in using shared auth system
     console.log('showFavoritesView called - checking auth status...');
     console.log('isUserLoggedIn:', isUserLoggedIn, 'currentUser:', currentUser);
+    console.log('isAuthenticated():', isAuthenticated());
+    console.log('sessionToken:', sessionToken ? 'exists' : 'missing');
 
     if (!isAuthenticated()) {
         console.log('User not authenticated, redirecting to auth page');
@@ -2315,22 +2583,40 @@ function showFavoritesView() {
         return;
     }
     
-    authUI.mainContentSections.forEach(section => {
+    console.log('User is authenticated, showing favorites view');
+    
+    // Set favorites view flag
+    isInFavoritesView = true;
+    
+    // Hide only the product sections, keep the main filter section visible
+    const productSections = document.querySelectorAll('.products-section, .top-rated-section, .tiktok-section, .collections-section');
+    productSections.forEach(section => {
         section.style.display = 'none';
     });
+    
     authUI.favoritesSection.style.display = 'block';
     loadUserFavorites(); // Ensure favorites are loaded
 }
 
 function showMainContentView() {
-    authUI.mainContentSections.forEach(section => {
+    // Clear favorites view flag
+    isInFavoritesView = false;
+    
+    // Show all product sections
+    const productSections = document.querySelectorAll('.products-section, .top-rated-section, .tiktok-section, .collections-section');
+    productSections.forEach(section => {
         section.style.display = 'block';
     });
+    
     authUI.favoritesSection.style.display = 'none';
 }
 
 async function loadUserFavorites() {
+    console.log('loadUserFavorites called');
+    console.log('favoritesSection display:', authUI.favoritesSection.style.display);
+    
     if (authUI.favoritesSection.style.display === 'none') {
+        console.log('Favorites section is hidden, skipping load');
         // Don't load favorites if the section isn't visible, unless toggling it on
         return;
     }
@@ -2339,20 +2625,30 @@ async function loadUserFavorites() {
         const headers = {};
         if (sessionToken) {
             headers['Authorization'] = `Bearer ${sessionToken}`;
+            console.log('Adding Authorization header with sessionToken');
+        } else {
+            console.log('No sessionToken available');
         }
 
+        console.log('Fetching favorites from:', 'https://weathered-mud-6ed5.joshuablaszczyk.workers.dev/api/user/favorites');
         const response = await fetch('https://weathered-mud-6ed5.joshuablaszczyk.workers.dev/api/user/favorites', {
             headers,
             credentials: 'include'
         });
+
+        console.log('Response status:', response.status, response.statusText);
 
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
         const data = await response.json();
+        console.log('Favorites response data:', data);
+        
         if (data.success && data.favorites) {
             userFavorites = new Set(data.favorites.map(fav => fav.fragrance_id));
+            // Store favorites data for filtering
+            currentFavorites = data.favorites;
             displayFavorites(data.favorites);
             updateAllFavoriteIcons();
             console.log(`✅ Loaded ${data.favorites.length} favorites from server`);
@@ -2446,20 +2742,50 @@ function displayFavorites(favorites) {
         authUI.favoritesEmptyState.style.display = 'block';
     } else {
         authUI.favoritesEmptyState.style.display = 'none';
+        
+        // Get the current selected currency to preserve conversion
+        const currencySelect = document.getElementById('currency-converter');
+        const currentCurrency = currencySelect ? currencySelect.value : 'USD';
+        
         favorites.forEach(fav => {
+            // Convert price to current currency if different from original
+            let displayPrice = fav.price;
+            let displayCurrency = fav.currency;
+            
+            if (fav.currency && fav.currency !== currentCurrency && currencySelect) {
+                try {
+                    displayPrice = currencyConverter.convertSync(fav.price || 0, fav.currency || 'USD', currentCurrency);
+                    displayCurrency = currentCurrency;
+                } catch (error) {
+                    console.warn('Failed to convert currency for favorite:', fav.name, error);
+                    // Keep original price if conversion fails
+                }
+            }
+            
             // Re-purposing createPerfumeCard for favorites
-            const card = createPerfumeCard({
+            const cardHTML = createPerfumeCard({
                 productId: fav.fragrance_id,
                 name: fav.name,
                 advertiserName: fav.advertiserName,
                 description: fav.description,
                 imageUrl: fav.imageUrl,
                 productUrl: fav.productUrl,
-                price: fav.price,
-                currency: fav.currency,
+                price: displayPrice,
+                currency: displayCurrency,
+                shippingCost: fav.shippingCost,
                 shipping: fav.shipping_availability === 'available',
             });
-            authUI.favoritesGrid.appendChild(card);
+            
+            // Convert HTML string to DOM node
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = cardHTML;
+            const card = tempDiv.firstElementChild;
+            
+            if (card) {
+                authUI.favoritesGrid.appendChild(card);
+            } else {
+                console.error('Failed to create card element from HTML:', cardHTML);
+            }
         });
     }
 }

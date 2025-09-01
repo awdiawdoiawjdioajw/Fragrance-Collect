@@ -113,6 +113,85 @@
         </div>
     </section>
 
+    <!-- Filter Section -->
+    <section class="filter-section" id="filter">
+        <div class="container">
+            <div class="filter-container">
+                <!-- Sort By -->
+                <div class="filter-group">
+                    <label for="sort-by-filter" class="filter-label">Sort By</label>
+                    <select id="sort-by-filter" class="sort-select dropdown-toggle">
+                        <option value="revenue">Best Match</option>
+                        <option value="price_low">Price: Low to High</option>
+                        <option value="price_high">Price: High to Low</option>
+                        <option value="trending">Trending</option>
+                        <option value="relevance">Relevance</option>
+                    </select>
+                </div>
+
+                <!-- Currency Converter -->
+                <div class="filter-group">
+                    <label for="currency-converter" class="filter-label">Currency</label>
+                    <select id="currency-converter" class="dropdown-toggle">
+                        <option value="USD">USD ($)</option>
+                        <option value="EUR">EUR (€)</option>
+                        <option value="GBP">GBP (£)</option>
+                        <option value="CAD">CAD (C$)</option>
+                        <option value="AUD">AUD (A$)</option>
+                        <option value="JPY">JPY (¥)</option>
+                        <option value="CNY">CNY (¥)</option>
+                    </select>
+                </div>
+
+                <!-- Price Range -->
+                <div class="filter-group">
+                    <label for="price-range" class="filter-label">Price Range</label>
+                    <select id="price-range" class="dropdown-toggle">
+                        <option value="all">All Prices</option>
+                        <option value="0-50">$0 - $50</option>
+                        <option value="50-100">$50 - $100</option>
+                        <option value="100-200">$100 - $200</option>
+                        <option value="200+">$200+</option>
+                    </select>
+                </div>
+
+                <!-- Shipping -->
+                <div class="filter-group">
+                    <label for="shipping-filter" class="filter-label">Shipping</label>
+                    <select id="shipping-filter" class="dropdown-toggle">
+                        <option value="all">All Shipping</option>
+                        <option value="free">Free Shipping</option>
+                    </select>
+                </div>
+
+                <!-- Clear Filters -->
+                <div class="filter-group">
+                    <button id="clear-filters" class="btn-secondary">Clear Filters</button>
+                </div>
+                
+                <!-- Centered Search Container -->
+                <div class="search-container">
+                    <div class="search-input-wrapper">
+                        <input type="text" placeholder="Search fragrances..." class="search-input" id="main-search">
+                        <button class="search-btn" aria-label="Search">
+                            <i class="fas fa-search"></i>
+                        </button>
+                        <button class="clear-search-btn" id="clear-search" style="display: none;" aria-label="Clear search">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="search-options">
+                        <label class="exact-match-checkbox">
+                            <input type="checkbox" id="exact-match-toggle">
+                            <span class="checkmark"></span>
+                            Exact Match
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Favorites Section -->
     <section id="favorites" class="favorites-section" style="display: none;">
         <div class="container">
@@ -128,86 +207,6 @@
 
     <!-- Main Content Wrapper -->
     <div class="main-content">
-                 <!-- Filter Section -->
-         <section class="filter-section" id="filter">
-             <div class="container">
-                 <div class="filter-container">
-                                           <!-- Sort By -->
-                      <div class="filter-group">
-                          <label for="sort-by-filter" class="filter-label">Sort By</label>
-                          <select id="sort-by-filter" class="sort-select dropdown-toggle">
-                              <option value="revenue">Best Match</option>
-                              <option value="price_low">Price: Low to High</option>
-                              <option value="price_high">Price: High to Low</option>
-                              <option value="trending">Trending</option>
-                              <option value="relevance">Relevance</option>
-                          </select>
-                      </div>
-
-                      <!-- Currency Converter -->
-                      <div class="filter-group">
-                          <label for="currency-converter" class="filter-label">Currency</label>
-                          <select id="currency-converter" class="dropdown-toggle">
-                              <option value="USD">USD ($)</option>
-                              <option value="EUR">EUR (€)</option>
-                              <option value="GBP">GBP (£)</option>
-                              <option value="CAD">CAD (C$)</option>
-                              <option value="AUD">AUD (A$)</option>
-                              <option value="JPY">JPY (¥)</option>
-                              <option value="CNY">CNY (¥)</option>
-                          </select>
-                      </div>
-
-                      <!-- Price Range -->
-                     <div class="filter-group">
-                         <label for="price-range" class="filter-label">Price Range</label>
-                         <select id="price-range" class="dropdown-toggle">
-                             <option value="all">All Prices</option>
-                             <option value="0-50">$0 - $50</option>
-                             <option value="50-100">$50 - $100</option>
-                             <option value="100-200">$100 - $200</option>
-                             <option value="200+">$200+</option>
-                         </select>
-                     </div>
-
-                     <!-- Shipping -->
-                     <div class="filter-group">
-                         <label for="shipping-filter" class="filter-label">Shipping</label>
-                         <select id="shipping-filter" class="dropdown-toggle">
-                             <option value="all">All Shipping</option>
-                             <option value="free">Free Shipping</option>
-                         </select>
-                     </div>
-
-                     <!-- Clear Filters -->
-                     <div class="filter-group">
-                         <button id="clear-filters" class="btn-secondary">Clear Filters</button>
-                     </div>
-                     
-                     <!-- Centered Search Container -->
-                     <div class="search-container">
-                         <div class="search-input-wrapper">
-                             <input type="text" placeholder="Search fragrances..." class="search-input" id="main-search">
-                             <button class="search-btn" aria-label="Search">
-                                 <i class="fas fa-search"></i>
-                             </button>
-                             <button class="clear-search-btn" id="clear-search" style="display: none;" aria-label="Clear search">
-                                 <i class="fas fa-times"></i>
-                             </button>
-                         </div>
-                         <div class="search-options">
-                             <label class="exact-match-checkbox">
-                                 <input type="checkbox" id="exact-match-toggle">
-                                 <span class="checkmark"></span>
-                                 Exact Match
-                             </label>
-                         </div>
-                     </div>
-                 </div>
-             </div>
-         </section>
-
-                 <!-- Featured Products -->
         <section id="shop" class="products-section">
             <div class="container">
                 <h2 class="section-title">Featured Fragrances</h2>
@@ -351,7 +350,6 @@
         </div>
     </footer>
 
-    <!-- Perfume Details Modal -->
     <div class="modal" id="perfume-modal">
         <div class="modal-content">
             <span class="close">&times;</span>

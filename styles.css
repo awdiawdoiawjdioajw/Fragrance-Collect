@@ -1444,7 +1444,8 @@ textarea:focus {
 }
 
 /* Cleaner "Clear Filters" button */
-#clear-filters.btn-secondary {
+#clear-filters.btn-secondary,
+#clear-filters-favorites.btn-secondary {
     background: transparent;
     border: 1px solid var(--antique-gold);
     color: var(--antique-gold);
@@ -1458,7 +1459,8 @@ textarea:focus {
     letter-spacing: 0.5px;
 }
 
-#clear-filters.btn-secondary:hover {
+#clear-filters.btn-secondary:hover,
+#clear-filters-favorites.btn-secondary:hover {
     background: var(--antique-gold);
     color: var(--soft-black);
     box-shadow: 0 4px 12px rgba(201, 166, 70, 0.2);

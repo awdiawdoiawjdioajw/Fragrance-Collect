@@ -885,12 +885,12 @@ async function handleAddFavorite(request, env) {
 
     try {
         await env.DB.prepare(
-            `INSERT INTO user_favorites (id, user_id, fragrance_id, name, advertiserName, description, imageUrl, productUrl, price, currency, shipping_availability) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+            `INSERT INTO user_favorites (id, user_id, fragrance_id, name, advertiserName, description, imageUrl, productUrl, price, currency, shippingCost, shipping_availability, user_notes) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
         ).bind(
             favoriteId, user.id, fav.fragrance_id, fav.name, fav.advertiserName, 
             fav.description, fav.imageUrl, fav.productUrl, fav.price, 
-            fav.currency, fav.shipping_availability
+            fav.currency, fav.shippingCost, fav.shipping_availability, null
         ).run();
     } catch (e) {
         if (e.message.includes('UNIQUE constraint failed')) {
@@ -1371,7 +1371,7 @@ function getSecurityHeaders(origin) {
         'X-Frame-Options': 'SAMEORIGIN',
         'Referrer-Policy': 'strict-origin-when-cross-origin',
         'Permissions-Policy': 'geolocation=(), microphone=(), camera=()',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         'Access-Control-Allow-Credentials': 'true',
         'Access-Control-Max-Age': '86400',
@@ -2053,7 +2053,7 @@ function corsHeaders(env) {
   const allow = env.ALLOW_ORIGIN || '*';
   return {
     'Access-Control-Allow-Origin': allow,
-    'Access-Control-Allow-Methods': 'GET, HEAD, POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, HEAD, POST, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Cache-Control',
   };
 }

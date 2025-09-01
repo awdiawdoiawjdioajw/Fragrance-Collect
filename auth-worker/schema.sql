@@ -1,17 +1,17 @@
--- Database schema for Fragrance-Collect Authentication
--- Users table for authentication and login
+-- Users table
+DROP TABLE IF EXISTS users;
 CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,
-    name TEXT,
+    name TEXT NOT NULL,
     picture TEXT,
-    password_hash TEXT, -- For email/password authentication
-    salt TEXT,          -- Salt for password hashing
+    password_hash TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- User sessions table for managing login sessions with security features
+-- User sessions table
+DROP TABLE IF EXISTS user_sessions;
 CREATE TABLE IF NOT EXISTS user_sessions (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
@@ -22,28 +22,22 @@ CREATE TABLE IF NOT EXISTS user_sessions (
     fingerprint TEXT,
     last_activity DATETIME DEFAULT CURRENT_TIMESTAMP,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- Create indexes for better performance
-CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON user_sessions(user_id);
-CREATE INDEX IF NOT EXISTS idx_user_sessions_token ON user_sessions(token);
-CREATE INDEX IF NOT EXISTS idx_user_sessions_expires_at ON user_sessions(expires_at);
-CREATE INDEX IF NOT EXISTS idx_user_sessions_fingerprint ON user_sessions(fingerprint);
-CREATE INDEX IF NOT EXISTS idx_user_sessions_last_activity ON user_sessions(last_activity);
-
--- Fragrance preferences table
+-- User preferences table
+DROP TABLE IF EXISTS user_preferences;
 CREATE TABLE IF NOT EXISTS user_preferences (
     user_id TEXT PRIMARY KEY,
-    scent_categories TEXT, -- JSON array: ['woody', 'floral']
-    intensity TEXT, -- 'light', 'moderate', 'strong'
-    season TEXT, -- 'spring', 'summer', 'fall', 'winter'
-    occasion TEXT, -- 'casual', 'formal'
-    budget_range TEXT, -- e.g., '50-100'
-    sensitivities TEXT, -- User-defined text
+    scent_categories TEXT, -- JSON array of preferred scent categories
+    intensity TEXT, -- light, medium, strong
+    season TEXT, -- spring, summer, fall, winter, all
+    occasion TEXT, -- casual, formal, date, work, special
+    budget_range TEXT, -- low, medium, high, luxury
+    sensitivities TEXT, -- JSON array of sensitivities/allergies
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- User favorites table
@@ -59,14 +53,21 @@ CREATE TABLE IF NOT EXISTS user_favorites (
     productUrl TEXT,
     price REAL,
     currency TEXT,
+    shippingCost REAL, -- Shipping cost in the original currency
     shipping_availability TEXT,
     user_notes TEXT,
     added_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     UNIQUE(user_id, fragrance_id)
 );
 
--- Indexes for new tables
-DROP INDEX IF EXISTS idx_user_favorites_user_id;
+-- Create indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_token ON user_sessions(token);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON user_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_expires_at ON user_sessions(expires_at);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_fingerprint ON user_sessions(fingerprint);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_last_activity ON user_sessions(last_activity);
 CREATE INDEX IF NOT EXISTS idx_user_favorites_user_id ON user_favorites(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_favorites_fragrance_id ON user_favorites(fragrance_id);
 CREATE INDEX IF NOT EXISTS idx_user_favorites_added_at ON user_favorites(added_at);

@@ -237,6 +237,7 @@ async function handleSharedLogout() {
 
 // Initialize shared authentication on page load
 function initSharedAuth() {
+    console.log('🔄 Initializing shared auth...');
     // Initialize UI elements
     sharedAuthUI.init();
     
@@ -250,10 +251,12 @@ function initSharedAuth() {
             handleSharedLogout();
         });
     }
+    console.log('✅ Shared auth initialization complete');
 }
 
 // Auto-initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('🔄 Shared auth DOMContentLoaded event fired');
     initSharedAuth();
 });
 
