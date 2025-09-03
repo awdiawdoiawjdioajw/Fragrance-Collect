@@ -432,7 +432,7 @@ async function testCurrencyConverter() {
 
 // Configuration
 const config = {
-    API_ENDPOINT: 'https://weathered-mud-6ed5.joshuablaszczyk.workers.dev/api',
+    API_ENDPOINT: 'https://weathered-mud-6ed5.joshuablaszczyk.workers.dev',
     RESULTS_PER_PAGE: 25, // Changed from original value
     DEBOUNCE_DELAY: 300,
     POPULAR_PICKS_LIMIT: 10, // New constant for popular picks
@@ -996,7 +996,7 @@ async function fetchProductsFromApi(query = '', page = 1, limit = null, filters 
             console.log('🔍 Exact match enabled - adding cache busting parameter');
         }
 
-        const apiUrl = `${config.API_ENDPOINT}/products?${params.toString()}`;
+        const apiUrl = `${config.API_ENDPOINT}/api/products?${params.toString()}`;
         console.log('🚀 API Fetch:', apiUrl);
         console.log('🔍 Exact match status:', filters.exactMatch ? 'ENABLED' : 'DISABLED');
 
@@ -1320,18 +1320,42 @@ function createProductCard(perfume) {
 
 // Create perfume card with favorite button for authenticated users
 function createPerfumeCard(perfume) {
-    const stars = generateStars(perfume.rating || 4.5); // Default rating if not provided
+    // --- Data Standardization ---
+    // The 'perfume' object can come from the API or the local favorites DB,
+    // so we need to standardize its structure first.
+
+    // 1. Standardize the ID
+    const fragranceId = perfume.fragrance_id || perfume.productId;
+
+    // 2. Standardize the Price and Currency
+    const priceAmount = (typeof perfume.price === 'object' && perfume.price !== null) 
+        ? perfume.price.amount 
+        : perfume.price;
+    const priceCurrency = (typeof perfume.price === 'object' && perfume.price !== null) 
+        ? perfume.price.currency 
+        : perfume.currency;
+
+    // 3. Create a clean, consistent data object for the toggle function
+    const perfumeDataForToggle = {
+        ...perfume,
+        fragrance_id: fragranceId, // Ensure the correct ID is always present
+        price: priceAmount,        // Ensure price is always a number
+        currency: priceCurrency    // Ensure currency is always a string
+    };
+
+    // --- UI Generation ---
+    const stars = generateStars(perfume.rating || 4.5);
     const shipping = formatShipping(perfume);
-    const displayPrice = (perfume.price || 0).toFixed(2);
-    const currencySymbol = currencySymbols[perfume.currency] || '$';
-    const isFavorited = userFavorites.has(perfume.productId);
+    const displayPrice = (priceAmount || 0).toFixed(2);
+    const currencySymbol = currencySymbols[priceCurrency] || '$';
+    const isFavorited = userFavorites.has(fragranceId);
 
     return `
-        <div class="product-card" data-id="${perfume.productId}" data-brand="${(perfume.advertiserName || '').toLowerCase().replace(/\s+/g, '-')}" data-price="${perfume.price || 0}" data-rating="${perfume.rating || 4.5}">
+        <div class="product-card" data-id="${fragranceId}" data-brand="${(perfume.advertiserName || '').toLowerCase().replace(/\s+/g, '-')}" data-price="${priceAmount || 0}" data-rating="${perfume.rating || 4.5}">
             <div class="product-image-container">
                 <button class="favorite-btn ${isFavorited ? 'favorited' : ''}" 
-                        data-id="${perfume.productId}" 
-                        onclick="toggleFavorite(this, ${JSON.stringify(perfume).replace(/"/g, '&quot;')})"
+                        data-id="${fragranceId}" 
+                        onclick="toggleFavorite(this, ${JSON.stringify(perfumeDataForToggle).replace(/"/g, '&quot;')})"
                         aria-label="Add to favorites">
                     <i class="fas fa-heart"></i>
                 </button>
@@ -1344,7 +1368,7 @@ function createPerfumeCard(perfume) {
                     ${stars}
                     <span class="rating-number">${(perfume.rating || 4.5).toFixed(1)}</span>
                 </div>
-                <p class="product-price" data-original-price="${perfume.price || 0}" data-original-currency="${perfume.currency || 'USD'}">${currencySymbol}${displayPrice} ${perfume.currency || 'USD'}</p>
+                <p class="product-price" data-original-price="${priceAmount || 0}" data-original-currency="${priceCurrency || 'USD'}">${currencySymbol}${displayPrice} ${priceCurrency || 'USD'}</p>
             </div>
             <div class="product-meta">
                 <div class="product-shipping ${shipping.cls}">${shipping.text}</div>
@@ -2351,7 +2375,15 @@ async function toggleFavorite(button, perfume) {
         }
     }
 
-    const fragranceId = perfume.productId;
+    const fragranceId = perfume.fragrance_id || perfume.productId;
+    if (!fragranceId) {
+        console.error('Could not determine fragrance ID for favorite toggle.', perfume);
+        // Revert UI and show an error
+        button.classList.toggle('favorited');
+        alert('Could not update favorite. Please try again.');
+        return;
+    }
+
     const wasFavorited = userFavorites.has(fragranceId);
 
     // Optimistic update - update UI immediately for better UX
@@ -2388,20 +2420,42 @@ async function toggleFavorite(button, perfume) {
             }
 
             console.log('✅ Successfully removed from favorites on server');
-            // Remove from pending operations if it was there
             pendingFavoriteOperations.delete(fragranceId);
+
+            // If we are currently on the favorites page, remove the card from the view
+            const favoritesGrid = document.getElementById('favorites-grid');
+            if (favoritesGrid && button.closest('#favorites-grid')) {
+                const card = button.closest('.product-card');
+                if (card) {
+                    card.style.transition = 'opacity 0.3s ease';
+                    card.style.opacity = '0';
+                    setTimeout(() => {
+                        card.remove();
+                        // Check if the grid is now empty
+                        if (favoritesGrid.children.length === 0) {
+                            const emptyState = document.getElementById('favorites-empty-state');
+                            if (emptyState) {
+                                emptyState.style.display = 'block';
+                            }
+                        }
+                    }, 300);
+                }
+            }
 
         } else {
             // Favorite logic
+            const priceAmount = (typeof perfume.price === 'object' && perfume.price !== null) ? perfume.price.amount : perfume.price;
+            const priceCurrency = (typeof perfume.price === 'object' && perfume.price !== null) ? perfume.price.currency : perfume.currency;
+
             const favoriteData = {
-                fragrance_id: perfume.productId,
+                fragrance_id: fragranceId,
                 name: perfume.name,
                 advertiserName: perfume.advertiserName,
                 description: perfume.description,
                 imageUrl: perfume.imageUrl,
                 productUrl: perfume.productUrl,
-                price: perfume.price,
-                currency: perfume.currency,
+                price: priceAmount,
+                currency: priceCurrency,
                 shippingCost: perfume.shippingCost || 0,
                 shipping_availability: perfume.shipping_availability || (perfume.shipping ? 'available' : 'unavailable'),
             };
@@ -2423,109 +2477,53 @@ async function toggleFavorite(button, perfume) {
             const response = await fetch('https://weathered-mud-6ed5.joshuablaszczyk.workers.dev/api/user/favorites', {
                 method: 'POST',
                 headers,
-                body: JSON.stringify(favoriteData)
+                body: JSON.stringify(favoriteData),
+                credentials: 'include'
             });
 
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
 
-            console.log('✅ Successfully added to favorites on server');
-            // Remove from pending operations if it was there
-            pendingFavoriteOperations.delete(fragranceId);
-        }
-
-        // Refresh the favorites display
-        if (isInFavoritesView) {
-            // If we're in favorites view, update the currentFavorites array and re-display
-            if (wasFavorited) {
-                // Remove from currentFavorites array
-                currentFavorites = currentFavorites.filter(fav => fav.fragrance_id !== fragranceId);
-                displayFavorites(currentFavorites);
+            const data = await response.json();
+            if (data.success) {
+                console.log('✅ Successfully added to favorites on server');
+                pendingFavoriteOperations.delete(fragranceId);
+                // Optionally reload favorites if the section is open
+                if (authUI.favoritesSection.style.display === 'block') {
+                    loadUserFavorites();
+                }
             } else {
-                // Add to currentFavorites array and re-display
-                loadUserFavorites();
+                throw new Error(data.error || 'Failed to save favorite');
             }
-        } else {
-            // If we're not in favorites view, just reload favorites
-            loadUserFavorites();
         }
-
-        // Reset button state
-        button.style.opacity = '';
-        button.disabled = false;
-
     } catch (error) {
         console.error('❌ Error toggling favorite:', error);
 
-        // Handle different types of errors
-        if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
-            // Network error - implement offline handling
-            console.log('Network error detected - storing operation for later sync');
-
-            // Store the operation for later sync
-            if (wasFavorited) {
-                // We optimistically removed it, but server call failed
-                // Store operation to remove it later
-                pendingFavoriteOperations.set(fragranceId, {
-                    type: 'remove',
-                    timestamp: Date.now(),
-                    data: null
-                });
-                showToast('Removed from favorites (will sync when online)', 'warning');
-                
-                // If in favorites view, update the display immediately
-                if (isInFavoritesView) {
-                    currentFavorites = currentFavorites.filter(fav => fav.fragrance_id !== fragranceId);
-                    displayFavorites(currentFavorites);
-                }
-            } else {
-                // We optimistically added it, but server call failed
-                // Store operation to add it later
-                const favoriteData = {
-                    fragrance_id: perfume.productId,
-                    name: perfume.name,
-                    advertiserName: perfume.advertiserName,
-                    description: perfume.description,
-                    imageUrl: perfume.imageUrl,
-                    productUrl: perfume.productUrl,
-                    price: perfume.price,
-                    currency: perfume.currency,
-                    shippingCost: perfume.shippingCost,
-                    shipping_availability: perfume.shipping_availability || (perfume.shipping ? 'available' : 'unavailable'),
-                };
-                pendingFavoriteOperations.set(fragranceId, {
-                    type: 'add',
-                    timestamp: Date.now(),
-                    data: favoriteData
-                });
-                showToast('Added to favorites (will sync when online)', 'warning');
-            }
-
-            console.log(`📋 Pending operations: ${pendingFavoriteOperations.size} operations queued`);
-
+        // Revert optimistic update on failure
+        if (wasFavorited) {
+            userFavorites.add(fragranceId);
+            button.classList.add('favorited');
+            console.log('Reverting optimistic removal');
         } else {
-            // Other error - revert the optimistic update
-            console.error('Non-network error - reverting optimistic update');
-
-            // Revert the UI change
-            if (wasFavorited) {
-                userFavorites.add(fragranceId);
-                button.classList.add('favorited');
-                // If in favorites view, also revert the currentFavorites array
-                if (isInFavoritesView) {
-                    loadUserFavorites(); // Reload to restore the removed item
-                }
-            } else {
-                userFavorites.delete(fragranceId);
-                button.classList.remove('favorited');
-            }
-
-            showToast('Failed to update favorite. Please try again.', 'error');
+            userFavorites.delete(fragranceId);
+            button.classList.remove('favorited');
+            console.log('Reverting optimistic addition');
         }
-
-        // Reset button state
-        button.style.opacity = '';
+        
+        // Handle network errors by queuing the operation
+        if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
+            console.log('Network error detected - storing operation for later sync');
+            pendingFavoriteOperations.set(fragranceId, wasFavorited ? 'remove' : 'add');
+            // NOTE: updatePendingOperationsUI() is not defined, so it's commented out.
+            // updatePendingOperationsUI();
+        } else {
+            // For other errors (like 500), just log it
+            console.log('Non-network error - reverting optimistic update');
+        }
+    } finally {
+        // Hide loading state
+        button.style.opacity = '1';
         button.disabled = false;
     }
 }
@@ -2762,19 +2760,15 @@ function displayFavorites(favorites) {
                 }
             }
             
+            // When displaying favorites, the ID is in fav.fragrance_id
+            // We pass it directly to createPerfumeCard
+            const perfumeData = {
+                ...fav,
+                productId: fav.fragrance_id // Ensure consistency for createPerfumeCard
+            };
+            
             // Re-purposing createPerfumeCard for favorites
-            const cardHTML = createPerfumeCard({
-                productId: fav.fragrance_id,
-                name: fav.name,
-                advertiserName: fav.advertiserName,
-                description: fav.description,
-                imageUrl: fav.imageUrl,
-                productUrl: fav.productUrl,
-                price: displayPrice,
-                currency: displayCurrency,
-                shippingCost: fav.shippingCost,
-                shipping: fav.shipping_availability === 'available',
-            });
+            const cardHTML = createPerfumeCard(perfumeData);
             
             // Convert HTML string to DOM node
             const tempDiv = document.createElement('div');

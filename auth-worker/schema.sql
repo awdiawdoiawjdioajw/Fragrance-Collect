@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
     picture TEXT,
     password_hash TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    last_login DATETIME,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 

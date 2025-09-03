@@ -98,38 +98,29 @@ function showStatus(message, isError = false) {
 async function handleCredentialResponse(response) {
     showStatus('Verifying your credentials...');
     try {
-        const res = await fetch(`${WORKER_URL}/login`, {
+        const res = await fetch(`${WORKER_URL}/api/login/google`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            // The body now sends the credential object from Google
-            body: JSON.stringify({ credential: response.credential }),
+            body: JSON.stringify({ token: response.credential }),
         });
 
         const data = await res.json();
 
         if (res.ok && data.success) {
             showStatus('Login successful! Welcome.');
-            updateSharedNavUI(data.user); // Use shared function
             
-            // Add a small delay before any potential redirect to ensure session is established
-            setTimeout(async () => {
-                // Verify session is working
-                try {
-                    const verifyRes = await fetch(`${WORKER_URL}/status`, { credentials: 'include' });
-                    const verifyData = await verifyRes.json();
-                    if (!verifyData.success) {
-                        console.warn('Session verification failed after login');
-                    }
-                } catch (error) {
-                    console.error('Session verification error after login:', error);
-                }
-            }, 100);
+            if (data.token) {
+                localStorage.setItem('session_token', data.token);
+            }
+            
+            updateSharedNavUI(data.user);
+            updateUI(data.user);
+
         } else {
-            // Use the detailed error message from the worker if available
-            throw new Error(data.details || data.error || 'Login failed. Please try again.');
+            throw new Error(data.details || data.error || 'Google login failed. Please try again.');
         }
     } catch (error) {
-        console.error('Login process error:', error);
+        console.error('Google login process error:', error);
         showStatus(error.message, true);
         updateUI(null);
     }
@@ -150,7 +141,7 @@ async function checkUserStatus() {
 async function logout() {
     showStatus('Signing out...');
     try {
-        const res = await fetch(`${WORKER_URL}/logout`, { method: 'POST' });
+        const res = await fetch(`${WORKER_URL}/api/logout`, { method: 'POST' });
         const data = await res.json();
 
         if (res.ok && data.success) {
@@ -199,7 +190,7 @@ async function handleEmailSignup(event) {
 
     showStatus('Creating your account...');
     try {
-        const res = await fetch(`${WORKER_URL}/signup/email`, {
+        const res = await fetch(`${WORKER_URL}/api/signup/email`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, email, password }),
@@ -232,7 +223,7 @@ async function handleEmailLogin(event) {
 
     showStatus('Signing you in...');
     try {
-        const res = await fetch(`${WORKER_URL}/login/email`, {
+        const res = await fetch(`${WORKER_URL}/api/login/email`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password }),
@@ -246,7 +237,7 @@ async function handleEmailLogin(event) {
             // Add a small delay to ensure session is established
             setTimeout(async () => {
                 try {
-                    const verifyRes = await fetch(`${WORKER_URL}/status`, { credentials: 'include' });
+                    const verifyRes = await fetch(`${WORKER_URL}/api/status`, { credentials: 'include' });
                     const verifyData = await verifyRes.json();
                     if (!verifyData.success) {
                         console.warn('Session verification failed after email login');
@@ -368,7 +359,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             showStatus('Signing in...');
             try {
-                const res = await fetch(`${WORKER_URL}/login/email`, {
+                const res = await fetch(`${WORKER_URL}/api/login/email`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password }),
@@ -388,7 +379,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Session establishment verification
                     setTimeout(async () => {
                         try {
-                            const verifyRes = await fetch(`${WORKER_URL}/status`, { credentials: 'include' });
+                            const verifyRes = await fetch(`${WORKER_URL}/api/status`, { credentials: 'include' });
                             const verifyData = await verifyRes.json();
                             if (!verifyData.success) {
                                 console.warn('Session verification failed after form login');
@@ -432,7 +423,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             showStatus('Creating account...');
             try {
-                const res = await fetch(`${WORKER_URL}/signup/email`, {
+                const res = await fetch(`${WORKER_URL}/api/signup/email`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name, email, password }),
@@ -467,7 +458,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Verify the session is working before redirecting
             try {
-                const statusCheck = await fetch(`${WORKER_URL}/status`, { credentials: 'include' });
+                const statusCheck = await fetch(`${WORKER_URL}/api/status`, { credentials: 'include' });
                 const statusData = await statusCheck.json();
 
                 if (statusData.success && statusData.user) {

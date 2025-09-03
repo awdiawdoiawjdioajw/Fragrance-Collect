@@ -33,7 +33,7 @@ async function getSessionToken() {
             return localToken;
         }
         
-        const response = await fetch('https://weathered-mud-6ed5.joshuablaszczyk.workers.dev/token', {
+        const response = await fetch('https://weathered-mud-6ed5.joshuablaszczyk.workers.dev/api/token?v=2', {
             method: 'GET',
             credentials: 'include'
         });
@@ -82,7 +82,7 @@ async function checkSharedUserStatus() {
         console.log('Checking shared user status...');
         
         // First try direct status check with cookies (for same-origin or if cookies work)
-        let response = await fetch('https://weathered-mud-6ed5.joshuablaszczyk.workers.dev/status', {
+        let response = await fetch('https://weathered-mud-6ed5.joshuablaszczyk.workers.dev/api/status?v=2', {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include'
@@ -104,7 +104,7 @@ async function checkSharedUserStatus() {
                     'Authorization': `Bearer ${sessionToken}`
                 };
                 
-                response = await fetch('https://weathered-mud-6ed5.joshuablaszczyk.workers.dev/status', {
+                response = await fetch('https://weathered-mud-6ed5.joshuablaszczyk.workers.dev/api/status?v=2', {
                     method: 'GET',
                     headers,
                     credentials: 'include'
@@ -213,7 +213,7 @@ function updateSharedNavUI(user) {
 // Handle logout functionality
 async function handleSharedLogout() {
     try {
-        await fetch('https://weathered-mud-6ed5.joshuablaszczyk.workers.dev/logout', {
+        await fetch('https://weathered-mud-6ed5.joshuablaszczyk.workers.dev/api/logout?v=2', {
             method: 'POST',
             credentials: 'include'
         });
