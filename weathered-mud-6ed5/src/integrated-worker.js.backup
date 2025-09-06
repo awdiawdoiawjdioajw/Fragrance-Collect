@@ -4,153 +4,6 @@ const keyCache = new Map();
 let lastKeyFetchTime = 0;
 const KEY_CACHE_TTL = 3600 * 1000; // 1 hour in milliseconds
 
-// Helper function to resolve CJ links to get actual destination URLs using multiple methods
-async function resolveCJLink(cjLink, env, depth = 0) {
-  // Prevent infinite recursion
-  if (depth > 1) {
-    console.log('Max recursion depth reached, returning original link');
-    return cjLink;
-  }
-
-  try {
-    console.log('🔍 Resolving CJ link:', cjLink, `(depth: ${depth})`);
-
-    // Method 1: Try to extract URL from query parameters if present
-    try {
-      const url = new URL(cjLink);
-      if (url.searchParams.has('url')) {
-        const extractedUrl = decodeURIComponent(url.searchParams.get('url'));
-        console.log('✅ Extracted URL from params:', extractedUrl);
-        return extractedUrl;
-      }
-    } catch (urlError) {
-      console.log('Could not parse as URL, trying other methods...');
-    }
-
-    // Method 2: Try HEAD request first (faster)
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-    
-    try {
-      console.log('🌐 Making HEAD request to CJ link...');
-      const headResponse = await fetch(cjLink, {
-        method: 'HEAD',
-        redirect: 'follow',
-        signal: controller.signal,
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-          'Accept-Language': 'en-US,en;q=0.5',
-          'Accept-Encoding': 'gzip, deflate, br',
-          'DNT': '1',
-          'Connection': 'keep-alive',
-          'Upgrade-Insecure-Requests': '1'
-        }
-      });
-
-      clearTimeout(timeoutId);
-      const finalUrl = headResponse.url;
-      console.log('📍 HEAD request resolved to:', finalUrl);
-
-      // Check if we've reached a non-CJ domain (actual merchant website)
-      const cjDomains = ['cj.com', 'anrdoezrs.net', 'tkqlhce.com', 'kqzyfj.com', 'qksrv.net', 'jdoqocy.com', 'dpbolvw.net'];
-      const isCjDomain = cjDomains.some(domain => finalUrl.includes(domain));
-      
-      if (!isCjDomain) {
-        console.log('✅ Successfully resolved to merchant website:', finalUrl);
-        return finalUrl;
-      }
-
-      // If still a CJ domain, try GET request to get the response body
-      console.log('🔄 Still CJ domain, trying GET request...');
-      const getController = new AbortController();
-      const getTimeoutId = setTimeout(() => getController.abort(), 5000);
-      
-      try {
-        const getResponse = await fetch(cjLink, {
-          method: 'GET',
-          redirect: 'follow',
-          signal: getController.signal,
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.5',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'DNT': '1',
-            'Connection': 'keep-alive',
-            'Upgrade-Insecure-Requests': '1'
-          }
-        });
-
-        clearTimeout(getTimeoutId);
-        const getFinalUrl = getResponse.url;
-        console.log('📍 GET request resolved to:', getFinalUrl);
-
-        // Check if GET request got us to a merchant site
-        const isGetCjDomain = cjDomains.some(domain => getFinalUrl.includes(domain));
-        if (!isGetCjDomain) {
-          console.log('✅ GET request resolved to merchant website:', getFinalUrl);
-          return getFinalUrl;
-        }
-
-        // Try to extract the destination from response body
-        try {
-          const responseText = await getResponse.text();
-          console.log('📄 Response body length:', responseText.length);
-          
-          // Look for common patterns that might contain the destination URL
-          const urlPatterns = [
-            /window\.location\.href\s*=\s*['"]([^'"]+)['"]/gi,
-            /location\.href\s*=\s*['"]([^'"]+)['"]/gi,
-            /window\.location\s*=\s*['"]([^'"]+)['"]/gi,
-            /location\s*=\s*['"]([^'"]+)['"]/gi,
-            /href\s*=\s*['"]([^'"]+)['"]/gi,
-            /url\s*=\s*['"]([^'"]+)['"]/gi,
-            /redirect\s*=\s*['"]([^'"]+)['"]/gi,
-            /destination\s*=\s*['"]([^'"]+)['"]/gi
-          ];
-          
-          for (const pattern of urlPatterns) {
-            const matches = responseText.match(pattern);
-            if (matches) {
-              for (const match of matches) {
-                const urlMatch = match.match(/['"]([^'"]+)['"]/);
-                if (urlMatch && urlMatch[1]) {
-                  const foundUrl = urlMatch[1];
-                  console.log('🔍 Found potential URL in response:', foundUrl);
-                  
-                  // Check if it's not a CJ domain
-                  if (!cjDomains.some(domain => foundUrl.includes(domain))) {
-                    console.log('✅ Found merchant URL in response body:', foundUrl);
-                    return foundUrl;
-                  }
-                }
-              }
-            }
-          }
-        } catch (bodyError) {
-          console.log('❌ Could not read response body:', bodyError.message);
-        }
-
-      } catch (getError) {
-        clearTimeout(getTimeoutId);
-        console.log('❌ GET request failed:', getError.message);
-      }
-
-    } catch (fetchError) {
-      clearTimeout(timeoutId);
-      console.log('❌ HEAD request failed:', fetchError.message);
-    }
-
-    // If we still can't resolve, return the original link
-    console.log('❌ Could not resolve CJ link to merchant website, returning original');
-    return cjLink;
-  } catch (error) {
-    console.error('❌ Error in resolveCJLink:', error);
-    return cjLink;
-  }
-}
-
 // Revenue optimization constants
 const REVENUE_CONFIG = {
   TIKTOK_PARTNER_ID: '7563286',
@@ -225,12 +78,6 @@ export default {
 
     // --- NEW ACCOUNT FEATURE ENDPOINTS ---
     if (path.startsWith('/api/user/')) {
-        if (path === '/api/user/profile' && request.method === 'POST') {
-            return handleUpdateProfile(request, env);
-        }
-        if (path === '/api/user/password' && request.method === 'POST') {
-            return handleChangePassword(request, env);
-        }
         if (path === '/api/user/preferences' && request.method === 'GET') {
             return handleGetPreferences(request, env);
         }
@@ -744,9 +591,7 @@ async function handleProductsRequest(request, url, env) {
     }
     
     const optimizedProducts = optimizeForRevenue(filteredProducts, query, sortBy, brandFilter, REVENUE_CONFIG, COMMISSION_RATES);
-    console.log('🔥 About to call formatProductForRevenue for', optimizedProducts.length, 'products');
-    const products = (await Promise.all(optimizedProducts.map(p => formatProductForRevenue(p, query, REVENUE_CONFIG, COMMISSION_RATES, env)))).filter(Boolean);
-    console.log('🔥 After formatProductForRevenue, got', products.length, 'products');
+    const products = optimizedProducts.map(p => formatProductForRevenue(p, query, REVENUE_CONFIG, COMMISSION_RATES)).filter(Boolean);
 
     const total = products.length;
     const paginatedProducts = products.slice(offset, offset + limit);
@@ -771,17 +616,10 @@ async function handleProductsRequest(request, url, env) {
         commissionWeighting: 'CJ-70%-TikTok-30%',
         smartFallback: cjProducts.length === 0 && tiktokProducts.length > 0,
         exactMatchApplied: exactMatch && query
-      },
-      TEST_FIELD: "THIS SHOULD APPEAR IN RESPONSE - " + Date.now()
+      }
     };
 
-    const headers = {
-      ...getSecurityHeaders(request.headers.get('Origin')),
-      'Cache-Control': 'no-cache, no-store, must-revalidate',
-      'Pragma': 'no-cache',
-      'Expires': '0'
-    };
-    return jsonResponse(responseData, 200, headers);
+    return jsonResponse(responseData, 200, getSecurityHeaders(request.headers.get('Origin')));
 
   } catch (error) {
     console.error('Error fetching products:', error);
@@ -853,7 +691,6 @@ async function fetchCJProducts(gqlQuery, variables, env) {
     console.error('CJ GraphQL Errors:', JSON.stringify(gqlData.errors, null, 2));
     throw new Error(`CJ GraphQL Error: ${JSON.stringify(gqlData.errors)}`);
   }
-
   return gqlData;
 }
 
@@ -871,14 +708,8 @@ function buildShoppingProductsQuery(includePartnerIds) {
           price { amount currency }
           imageLink
           advertiserName
-          advertiserId
-          description
-          productType
-          link
           shipping { price { amount currency } }
-          linkCode(pid: $websiteId) {
-            clickUrl
-          }
+          linkCode(pid: $websiteId) { clickUrl }
         }
       }
     }
@@ -984,108 +815,12 @@ function calculateRelevance(product, query) {
   return score;
 }
 
-function constructProductUrl(product, cleanAdvertiserName) {
-  const productId = product.id;
-  const productTitle = product.title || '';
-  
-  // Create URL-friendly slug from product title
-  const urlSlug = productTitle
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
-    .replace(/\s+/g, '-') // Replace spaces with hyphens
-    .replace(/-+/g, '-') // Replace multiple hyphens with single
-    .substring(0, 100); // Limit length
-  
-  // Try different URL patterns based on known advertiser patterns
-  switch (cleanAdvertiserName) {
-    case 'shein':
-      // SHEIN uses product IDs in URLs
-      return `https://www.shein.com/product/${productId}`;
-    
-    case 'watchmaxx':
-      // Watchmaxx uses product IDs
-      return `https://www.watchmaxx.com/product/${productId}`;
-    
-    case 'yvessaintlaurentbeautyysl':
-    case 'yslbeauty':
-      // YSL Beauty uses product IDs
-      return `https://www.yslbeautyus.com/product/${productId}`;
-    
-    case 'giorgioarmanibeauty':
-      // Giorgio Armani Beauty uses product IDs
-      return `https://www.giorgioarmanibeauty-usa.com/product/${productId}`;
-    
-    case 'revolve':
-      // REVOLVE uses product IDs
-      return `https://www.revolve.com/product/${productId}`;
-    
-    case 'fwrd':
-      // FWRD uses product IDs
-      return `https://www.fwrd.com/product/${productId}`;
-    
-    case 'fragrancexcom':
-      // FragranceX uses product IDs
-      return `https://www.fragrancex.com/product/${productId}`;
-    
-    case 'notinocouk':
-      // Notino uses product IDs
-      return `https://www.notino.co.uk/product/${productId}`;
-    
-    default:
-      // For unknown advertisers, try a generic product URL pattern
-      if (urlSlug && productId) {
-        return `https://www.${cleanAdvertiserName}.com/product/${urlSlug}-${productId}`;
-      } else if (urlSlug) {
-        return `https://www.${cleanAdvertiserName}.com/product/${urlSlug}`;
-      } else {
-        // Fallback to search URL
-        return `https://www.${cleanAdvertiserName}.com/search?q=${encodeURIComponent(productTitle)}`;
-      }
-  }
-}
-
-async function formatProductForRevenue(p, query, REVENUE_CONFIG, COMMISSION_RATES, env) {
-  const clickUrl = p.linkCode?.clickUrl;
-  const productLink = p.link; // The actual product landing page URL from CJ
-  
-  if (!p.imageLink) return null;
+function formatProductForRevenue(p, query, REVENUE_CONFIG, COMMISSION_RATES) {
+  const cjLink = p.linkCode?.clickUrl;
+  if (!cjLink || !p.imageLink) return null;
 
   const price = parseFloat(p.price?.amount || 0);
   const commissionRate = getCommissionRate(p, COMMISSION_RATES);
-  
-  // Determine the final link to use for clicks
-  let finalClickUrl;
-  let hasCommission = false;
-  
-  // Priority order: CJ affiliate link > CJ product link > constructed URL
-  if (clickUrl) {
-    // Use CJ affiliate link for commission tracking (best option)
-    finalClickUrl = clickUrl;
-    hasCommission = true;
-    console.log('✅ Using CJ affiliate link for commission tracking:', clickUrl);
-  } else if (productLink) {
-    // Use CJ's product landing page URL (good fallback - no commission but direct product link)
-    finalClickUrl = productLink;
-    hasCommission = false;
-    console.log('✅ Using CJ product landing page URL (no commission):', productLink);
-  } else {
-    // If no CJ link available, try to construct a better product URL
-    console.log('⚠️ No CJ link available for:', p.id, '- constructing direct product URL');
-    
-    const advertiserName = p.advertiserName?.toLowerCase();
-    const cleanAdvertiserName = advertiserName?.replace(/[^a-z0-9]/g, '');
-    
-    if (cleanAdvertiserName) {
-      // Try to construct a more specific product URL based on advertiser patterns
-      finalClickUrl = constructProductUrl(p, cleanAdvertiserName);
-      hasCommission = false;
-      console.log('✅ Constructed product URL:', finalClickUrl);
-    } else {
-      console.log('❌ Cannot construct merchant URL - no advertiser name');
-      return null; // Skip products we can't link to
-    }
-  }
-  
   return {
     id: p.id,
     name: p.title,
@@ -1093,18 +828,12 @@ async function formatProductForRevenue(p, query, REVENUE_CONFIG, COMMISSION_RATE
     price: price,
     image: p.imageLink,
     shippingCost: parseFloat(p.shipping?.price?.amount || 0),
-    link: finalClickUrl, // The actual clickable link (CJ affiliate link if available, otherwise CJ product link, otherwise constructed URL)
-    cjLink: clickUrl, // Original CJ affiliate link (null if not available)
-    productLink: productLink, // CJ's product landing page URL (null if not available)
-    advertiserId: p.advertiserId, // Advertiser ID from CJ
-    description: p.description, // Product description from CJ
-    productType: p.productType, // Product type from CJ
+    cjLink: cjLink,
     advertiser: p.advertiserName,
     currency: p.price?.currency || 'USD',
     revenue: {
-      commissionRate: hasCommission ? commissionRate : 0,
-      estimatedCommission: hasCommission ? (price * commissionRate) : 0,
-      hasCommission: hasCommission,
+      commissionRate: commissionRate,
+      estimatedCommission: price * commissionRate,
       revenueScore: calculateRevenueScore(p, query, REVENUE_CONFIG, COMMISSION_RATES)
     },
     relevance: calculateRelevance(p, query)
@@ -1166,19 +895,7 @@ async function handleGetPreferences(request, env) {
         if (!prefs) {
             return jsonResponse({ preferences: {} }, 200, headers);
         }
-        
-        // Parse JSON strings back to arrays
-        const parsedPrefs = {
-            ...prefs,
-            scent_categories: prefs.scent_categories ? JSON.parse(prefs.scent_categories) : [],
-            sensitivities: prefs.sensitivities ? JSON.parse(prefs.sensitivities) : []
-        };
-        
-        console.log('Retrieved preferences for user:', user.id);
-        console.log('Raw preferences:', prefs);
-        console.log('Parsed preferences:', parsedPrefs);
-        
-        return jsonResponse({ preferences: parsedPrefs }, 200, headers);
+        return jsonResponse({ preferences: prefs }, 200, headers);
     } catch (error) {
         console.error('Error getting preferences:', error);
         return jsonResponse({ error: 'Failed to get preferences' }, 500, headers);
@@ -1191,16 +908,6 @@ async function handleUpdatePreferences(request, env) {
 
     try {
         const prefs = await request.json();
-        
-        // Convert arrays to JSON strings for database storage
-        const scentCategoriesJson = JSON.stringify(prefs.scent_categories || []);
-        const sensitivitiesJson = JSON.stringify(prefs.sensitivities || []);
-        
-        console.log('Updating preferences for user:', user.id);
-        console.log('Preferences data:', prefs);
-        console.log('Scent categories JSON:', scentCategoriesJson);
-        console.log('Sensitivities JSON:', sensitivitiesJson);
-        
         await env.DB.prepare(`
             INSERT INTO user_preferences (user_id, scent_categories, intensity, season, occasion, budget_range, sensitivities, updated_at) 
             VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
@@ -1212,101 +919,12 @@ async function handleUpdatePreferences(request, env) {
                 budget_range = excluded.budget_range,
                 sensitivities = excluded.sensitivities,
                 updated_at = CURRENT_TIMESTAMP
-        `).bind(user.id, scentCategoriesJson, prefs.intensity, prefs.season, prefs.occasion, prefs.budget_range, sensitivitiesJson).run();
+        `).bind(user.id, prefs.scent_categories, prefs.intensity, prefs.season, prefs.occasion, prefs.budget_range, prefs.sensitivities).run();
 
         return jsonResponse({ success: true, message: 'Preferences updated' }, 200, headers);
     } catch (error) {
         console.error('Error updating preferences:', error);
         return jsonResponse({ error: 'Failed to update preferences' }, 500, headers);
-    }
-}
-
-async function handleUpdateProfile(request, env) {
-    const { user, headers, errorResponse } = await getUserFromRequest(request, env);
-    if (errorResponse) return errorResponse;
-
-    try {
-        const profileData = await request.json();
-        
-        console.log('Updating profile for user:', user.id);
-        console.log('Profile data:', profileData);
-        
-        // Validate required fields
-        if (!profileData.name || !profileData.email) {
-            return jsonResponse({ error: 'Name and email are required' }, 400, headers);
-        }
-        
-        // Update user profile in database
-        await env.DB.prepare(`
-            UPDATE users 
-            SET name = ?, email = ?, updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?
-        `).bind(profileData.name, profileData.email, user.id).run();
-
-        console.log('Profile updated successfully for user:', user.id);
-        return jsonResponse({ success: true, message: 'Profile updated' }, 200, headers);
-    } catch (error) {
-        console.error('Error updating profile:', error);
-        return jsonResponse({ error: 'Failed to update profile' }, 500, headers);
-    }
-}
-
-async function handleChangePassword(request, env) {
-    const { user, headers, errorResponse } = await getUserFromRequest(request, env);
-    if (errorResponse) return errorResponse;
-
-    try {
-        const passwordData = await request.json();
-        
-        console.log('Changing password for user:', user.id);
-        
-        // Validate required fields
-        if (!passwordData.currentPassword || !passwordData.newPassword) {
-            return jsonResponse({ error: 'Current password and new password are required' }, 400, headers);
-        }
-        
-        // Validate new password length
-        if (passwordData.newPassword.length < 8) {
-            return jsonResponse({ error: 'New password must be at least 8 characters long' }, 400, headers);
-        }
-        
-        // Get user's current password hash from database
-        const userRecord = await env.DB.prepare(`SELECT password_hash FROM users WHERE id = ?`).bind(user.id).first();
-        
-        if (!userRecord) {
-            return jsonResponse({ error: 'User not found' }, 404, headers);
-        }
-        
-        // Verify current password
-        let isCurrentPasswordValid = false;
-        if (userRecord.password_hash.includes(':')) {
-            // PBKDF2 hash format
-            isCurrentPasswordValid = await verifyPasswordPBKDF2(passwordData.currentPassword, userRecord.password_hash);
-        } else {
-            // Legacy hash format (fallback)
-            const passwordHash = await hashPasswordPBKDF2(passwordData.currentPassword);
-            isCurrentPasswordValid = compareHashes(passwordHash, userRecord.password_hash);
-        }
-        
-        if (!isCurrentPasswordValid) {
-            return jsonResponse({ error: 'Current password is incorrect' }, 400, headers);
-        }
-        
-        // Hash new password using PBKDF2
-        const newPasswordHash = await hashPasswordPBKDF2(passwordData.newPassword);
-        
-        // Update password in database
-        await env.DB.prepare(`
-            UPDATE users 
-            SET password_hash = ?, updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?
-        `).bind(newPasswordHash, user.id).run();
-
-        console.log('Password changed successfully for user:', user.id);
-        return jsonResponse({ success: true, message: 'Password changed successfully' }, 200, headers);
-    } catch (error) {
-        console.error('Error changing password:', error);
-        return jsonResponse({ error: 'Failed to change password' }, 500, headers);
     }
 }
 

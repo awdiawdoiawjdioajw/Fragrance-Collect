@@ -24,63 +24,149 @@
     </script>
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="nav-left">
-                <!-- Logo on the left -->
-                <div class="nav-logo">
+    <!-- Fragrance Collect Header -->
+    <nav class="fragrance-header">
+        <div class="header-container">
+            <!-- Logo Section -->
+            <div class="logo-section">
+                <a href="main.html" class="brand-logo">
                     <img src="emblem.png" alt="Fragrance Collect Logo" class="logo-emblem">
-                    <h2>Fragrance Collect</h2>
-                </div>
+                    <span class="brand-text">Fragrance Collect</span>
+                </a>
+            </div>
 
-                <!-- Navigation menu in center -->
-                <ul class="nav-menu">
-                    <li><a href="main.html#home" class="nav-link home-link">Home</a></li>
-                    <li><a href="main.html#favorites" class="nav-link">Favorites</a></li>
+            <!-- Desktop Navigation -->
+            <div class="nav-section">
+                <ul class="main-nav">
+                    <li><a href="main.html#home" class="nav-link">Home</a></li>
+                    <li><a href="main.html#viral-tiktok-finds" class="nav-link">Explore</a></li>
                     <li><a href="main.html#collections" class="nav-link">Collections</a></li>
-                    <li><a href="main.html#top-rated" class="nav-link">Top Rated</a></li>
-                    <li><a href="main.html#shop" class="nav-link shop-link">Shop</a></li>
+                    <li><a href="main.html#top-rated" class="nav-link">Top Picks</a></li>
+                    <li>
+                        <!-- PC Menu Dropdown -->
+                        <div class="menu-dropdown pc-menu-only">
+                            <a href="#" class="nav-link menu-link">
+                                Menu <span class="dropdown-arrow">▾</span>
+                            </a>
+                            <!-- Mega Menu Panel for PC -->
+                            <div class="mega-menu">
+                                <div class="mega-menu-content">
+                                    <div class="mega-menu-column">
+                                        <h3>Shop by Scent</h3>
+                                        <ul>
+                                            <li><a href="main.html#filter?scent=floral">Floral</a></li>
+                                            <li><a href="main.html#filter?scent=woody">Woody</a></li>
+                                            <li><a href="main.html#filter?scent=oriental">Oriental</a></li>
+                                            <li><a href="main.html#filter?scent=fresh">Fresh</a></li>
+                                            <li><a href="main.html#filter?scent=citrus">Citrus</a></li>
+                                        </ul>
+                                    </div>
+                                    <div class="mega-menu-column">
+                                        <h3>Collections</h3>
+                                        <ul>
+                                            <li><a href="main.html#collections?type=designer">Designer</a></li>
+                                            <li><a href="main.html#collections?type=niche">Niche</a></li>
+                                            <li><a href="main.html#collections?type=vintage">Vintage</a></li>
+                                            <li><a href="main.html#collections?type=seasonal">Seasonal</a></li>
+                                        </ul>
+                                    </div>
+                                    <div class="mega-menu-column">
+                                        <h3>Customer Service</h3>
+                                        <ul>
+                                            <li><a href="customer-service.html">Customer Service</a></li>
+                                            <li><a href="contact.html">Contact Us</a></li>
+                                            <li><a href="size-guide.html">Size Guide</a></li>
+                                            <li><a href="faq.html">FAQ</a></li>
+                                            <li><a href="terms-of-service.html">Terms of Service</a></li>
+                                            <li><a href="privacy-policy.html">Privacy Policy</a></li>
+                                        </ul>
+                                    </div>
+                                    <div class="mega-menu-column">
+                                        <h3>Featured Brands</h3>
+                                        <ul>
+                                            <li><a href="main.html#filter?brand=chanel">Chanel</a></li>
+                                            <li><a href="main.html#filter?brand=dior">Dior</a></li>
+                                            <li><a href="main.html#filter?brand=creed">Creed</a></li>
+                                            <li><a href="main.html#filter?brand=tom-ford">Tom Ford</a></li>
+                                        </ul>
+                                    </div>
+                                    <div class="mega-menu-image">
+                                        <div class="image-carousel">
+                                            <img src="Creed_ING.jpg" alt="Creed Fragrance" class="promo-image active">
+                                            <img src="Tom Ford_IMG.jpg" alt="Tom Ford Fragrance" class="promo-image">
+                                            <img src="Dior_IMG.jpg" alt="Dior Fragrance" class="promo-image">
+                                            <img src="Chanel_IMG.jpg" alt="Chanel Fragrance" class="promo-image">
+                                        </div>
+                                        <div class="image-indicators">
+                                            <span class="indicator active" data-slide="0"></span>
+                                            <span class="indicator" data-slide="1"></span>
+                                            <span class="indicator" data-slide="2"></span>
+                                            <span class="indicator" data-slide="3"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
                 </ul>
+            </div>
 
-                <!-- Menu dropdown moved to nav-left -->
-                <div class="dropdown">
-                    <a href="#" class="dropdown-toggle">
-                        <i class="fas fa-bars"></i>
-                        <span>Menu</span>
-                        <i class="fas fa-chevron-down"></i>
-                    </a>
-                    <ul class="dropdown-menu">
-                        <li><a href="main.html#home">Home</a></li>
-                        <li><a href="main.html#favorites">Favorites</a></li>
-                        <li><a href="main.html#collections">Collections</a></li>
-                        <li><a href="main.html#top-rated">Top Rated</a></li>
-                        <li><a href="main.html#shop">Shop</a></li>
-                        <li><a href="customer-service.html">Customer Service</a></li>
-                        <li><a href="contact.html">Contact Us</a></li>
-                        <li><a href="size-guide.html">Size Guide</a></li>
-                        <li><a href="faq.html">FAQ</a></li>
-                        <li><a href="auth.html">Sign In/Up</a></li>
-                    </ul>
-                </div>
+            <!-- Utility Icons -->
+            <div class="utility-section">
+                <button class="utility-btn search-btn" aria-label="Search">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                </button>
 
-                <a href="auth.html" class="login-btn" id="login-btn" aria-label="Login or Sign up"><i class="fas fa-user"></i></a>
-                <!-- Menu actions for logged in users -->
-                <div class="menu-actions" style="display: none;">
-                    <a href="account.html" class="menu-profile-btn" id="menu-profile-btn" aria-label="Profile Settings" title="Profile Settings">
-                        <i class="fas fa-user-cog"></i>
-                    </a>
-                    <a href="#" class="menu-logout-btn" id="menu-logout-btn" aria-label="Sign Out" title="Sign Out">
-                        <i class="fas fa-sign-out-alt"></i>
-                    </a>
+                <a href="main.html#favorites" class="utility-btn favorites-btn" aria-label="Favorites">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                    </svg>
+                </a>
+
+                <div class="profile-dropdown">
+                    <button class="utility-btn profile-btn" aria-label="Profile">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </button>
+
+                    <!-- Profile Dropdown Menu -->
+                    <div class="profile-menu">
+                        <a href="auth.html?tab=signin" class="profile-menu-item logged-out-only">Sign In</a>
+                        <a href="auth.html?tab=signup" class="profile-menu-item logged-out-only">Sign Up</a>
+                        <div class="profile-menu-divider logged-out-only"></div>
+                        <a href="account.html" class="profile-menu-item logged-in-only" style="display: none;">Profile & Settings</a>
+                        <a href="account.html#preferences" class="profile-menu-item logged-in-only" style="display: none;">Fragrance Preferences</a>
+                        <a href="account.html#orders" class="profile-menu-item logged-in-only" style="display: none;">Order History</a>
+                    </div>
                 </div>
             </div>
 
-            <!-- Hamburger menu for mobile -->
-            <div class="hamburger">
-                <span class="bar"></span>
-                <span class="bar"></span>
-                <span class="bar"></span>
+            <!-- Mobile Menu Button -->
+            <button class="mobile-menu-toggle" aria-label="Toggle Menu">
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+            </button>
+        </div>
+
+        <!-- Mobile Navigation Menu -->
+        <div class="mobile-nav-menu">
+            <div class="mobile-nav-content">
+                <a href="main.html#home" class="mobile-nav-link">Home</a>
+                <a href="main.html#viral-tiktok-finds" class="mobile-nav-link">Explore</a>
+                <a href="main.html#collections" class="mobile-nav-link">Collections</a>
+                <a href="main.html#top-rated" class="mobile-nav-link">Top Picks</a>
+                <div class="mobile-nav-divider"></div>
+                <a href="auth.html?tab=signin" class="mobile-nav-link logged-out-only">Sign In</a>
+                <a href="auth.html?tab=signup" class="mobile-nav-link logged-out-only">Sign Up</a>
+                <a href="account.html" class="mobile-nav-link logged-in-only" style="display: none;">Profile & Settings</a>
+                <a href="account.html#preferences" class="mobile-nav-link logged-in-only" style="display: none;">Fragrance Preferences</a>
+                <a href="account.html#orders" class="mobile-nav-link logged-in-only" style="display: none;">Order History</a>
             </div>
         </div>
     </nav>
@@ -168,6 +254,9 @@
            </div>
        </div>
     </footer>
+
+    <!-- Universal Header Script -->
+    <script src="universal-header-script.js"></script>
 
     <script src="shared-auth.js"></script>
 </body>

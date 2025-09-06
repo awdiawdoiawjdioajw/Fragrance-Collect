@@ -325,25 +325,48 @@ document.addEventListener('DOMContentLoaded', () => {
     // Handle post-login redirect messages
     handlePostLogin();
 
+    // Handle URL parameters for tab switching
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('tab');
+    
+    // Set initial tab based on URL parameter
+    if (tabParam === 'signup') {
+        switchToTab('signup');
+    } else {
+        switchToTab('signin'); // Default to signin
+    }
+
     // Tab switching logic
     ui.authTabs.forEach(tab => {
         tab.addEventListener('click', () => {
             const activeTab = tab.dataset.tab;
-            
-            // Update active button state
-            ui.authTabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            
-            // Show the correct form
-            ui.authForms.forEach(form => {
-                if (form.id === `${activeTab}-form`) {
-                    form.classList.add('active');
-                } else {
-                    form.classList.remove('active');
-                }
-            });
+            switchToTab(activeTab);
         });
     });
+    
+    // Function to switch tabs
+    function switchToTab(tabName) {
+        // Update active button state
+        ui.authTabs.forEach(t => t.classList.remove('active'));
+        const activeTabButton = document.querySelector(`[data-tab="${tabName}"]`);
+        if (activeTabButton) {
+            activeTabButton.classList.add('active');
+        }
+        
+        // Show the correct form
+        ui.authForms.forEach(form => {
+            if (form.id === `${tabName}-form`) {
+                form.classList.add('active');
+            } else {
+                form.classList.remove('active');
+            }
+        });
+        
+        // Update URL without page reload
+        const newUrl = new URL(window.location);
+        newUrl.searchParams.set('tab', tabName);
+        window.history.replaceState({}, '', newUrl);
+    }
 
     // Logout button in the main content (not the nav bar)
     if (ui.logoutButton) {

@@ -844,7 +844,7 @@ function mapProductsDataToItems(data) {
             rating: SecurityUtils.validateNumber(p.rating, 0, 5, 0),
             image: SecurityUtils.validateUrl(p.image || ''),
             description: SecurityUtils.escapeHtml(p.description || ''),
-            buyUrl: SecurityUtils.validateUrl(p.cjLink || p.buyUrl || ''),
+            buyUrl: SecurityUtils.validateUrl(p.link || p.cjLink || p.buyUrl || ''),
             shippingCost: p.shippingCost, // The worker now provides this as null
             advertiser: SecurityUtils.escapeHtml(p.advertiser || 'Unknown'),
             category: SecurityUtils.escapeHtml(p.category || 'Fragrance'),
@@ -1086,14 +1086,19 @@ async function loadCJProducts(query = '', page = 1, limit = null, filters = {}) 
 
         const searchResultsInfo = document.getElementById('search-results-info');
         if (searchResultsInfo) {
-            const total = data.total || cjProducts.length;
-            let message = `Showing ${cjProducts.length} of approximately ${total} results.`;
+            let message;
             
-            // Add exact match information if applicable
+            // Handle exact match cases
             if (data.optimization?.exactMatchApplied && cjProducts.length === 0) {
                 message = `No exact matches found for "${data.searchQuery}". Try disabling exact match or using different search terms.`;
             } else if (data.optimization?.exactMatchApplied) {
-                message += ' <span class="exact-match-badge">🔍 Exact Match</span>';
+                // For exact matches, show results count without the badge
+                const total = data.total || cjProducts.length;
+                message = `Showing ${cjProducts.length} of approximately ${total} results.`;
+            } else {
+                // For regular searches, show the results count
+                const total = data.total || cjProducts.length;
+                message = `Showing ${cjProducts.length} of approximately ${total} results.`;
             }
             
             SecurityUtils.setInnerHTML(searchResultsInfo, message);
@@ -1422,7 +1427,7 @@ function addEventListeners() {
     const shippingFilter = document.getElementById('shipping-filter');
     const clearFiltersBtn = document.getElementById('clear-filters');
     const mainSearch = document.getElementById('main-search');
-    const searchBtn = document.querySelector('.search-btn');
+    const searchBtn = document.querySelector('.filter-search-btn');
     const browseFragrancesBtn = document.getElementById('browse-fragrances');
     const sortByFilter = document.getElementById('sort-by-filter');
     const brandFilter = document.getElementById('brand-filter');

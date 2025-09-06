@@ -202,7 +202,7 @@ async function handleProductsRequest(req, url, env) {
     const optimizedProducts = optimizeForRevenue(filteredProducts, query, sortBy, brandFilter);
     
     // Step 6: Format results and filter out any invalid products
-    const products = optimizedProducts.map(p => formatProductForRevenue(p, query)).filter(Boolean);
+    const products = (await Promise.all(optimizedProducts.map(p => formatProductForRevenue(p, query, env)))).filter(Boolean);
 
     // Step 7: Get total count and apply pagination
     const total = products.length;
@@ -496,12 +496,52 @@ function calculateTrendingScore(product) {
 /**
  * Format product with revenue information
  */
-function formatProductForRevenue(p, query) {
-  const cjLink = p.linkCode?.clickUrl || p.link;
-  
-  if (!cjLink || !p.imageLink) {
-    return null;
+async function formatProductForRevenue(p, query, env) {
+  console.log('🚨🚨🚨 FORMAT FUNCTION CALLED - THIS SHOULD SHOW 🚨🚨🚨');
+  let destinationUrl = p.linkCode?.destinationUrl;
+  const clickUrl = p.linkCode?.clickUrl;
+
+  // If no destinationUrl, try to get it from CJ Product Feed API using product ID
+  if (!destinationUrl && p.id) {
+    console.log('🔍 No destinationUrl, trying CJ Product Feed API lookup for product:', p.id);
+    try {
+      const productQuery = `
+        query GetProduct($productId: String!, $companyId: String!) {
+          products(companyId: $companyId, filters: { productId: $productId }) {
+            id
+            title
+            linkCode(pid: "101510315") {
+              clickUrl
+              destinationUrl
+            }
+          }
+        }
+      `;
+      
+      const productData = await fetchCJProducts(productQuery, { 
+        productId: p.id, 
+        companyId: env.CJ_COMPANY_ID 
+      }, env);
+      
+      if (productData?.data?.products?.length > 0) {
+        const product = productData.data.products[0];
+        destinationUrl = product.linkCode?.destinationUrl;
+        console.log('✅ Found destinationUrl via Product Feed API:', destinationUrl?.substring(0, 50));
+      }
+    } catch (error) {
+      console.error('❌ Failed to lookup product via CJ API:', error);
+    }
   }
+
+  // REQUIRE destinationUrl - filter out products without actual destination links
+  if (!destinationUrl) {
+    console.log('❌ FILTERED:', p.id, '- no destinationUrl available');
+    return null;
+  } else {
+    console.log('✅ KEPT:', p.id, '- destinationUrl available:', destinationUrl?.substring(0, 50));
+  }
+
+  if (!p.imageLink) return null;
   
   const price = parseFloat(p.price?.amount || 0);
   const commissionRate = getCommissionRate(p);
@@ -514,7 +554,7 @@ function formatProductForRevenue(p, query) {
     price: price,
     image: p.imageLink,
     shippingCost: parseFloat(p.shipping?.price?.amount || 0),
-    cjLink: cjLink,
+    link: destinationUrl, // Only return actual destination URL, not CJ affiliate link
     advertiser: p.advertiserName,
     currency: p.price?.currency || 'USD',
     source: p.advertiserName?.includes('TikTok') ? 'TikTok Shop' : 'CJ Store',
@@ -793,7 +833,7 @@ function buildShoppingProductsQuery(includePartnerIds) {
           imageLink
           advertiserName
           shipping { price { amount currency } }
-          linkCode(pid: $websiteId) { clickUrl }
+          linkCode(pid: $websiteId) { clickUrl destinationUrl }
           link
         }
       }

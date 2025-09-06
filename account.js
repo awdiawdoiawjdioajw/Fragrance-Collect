@@ -11,6 +11,108 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let user = null;
 
+    // Professional notification system
+    function showNotification(message, type = 'success', duration = 4000) {
+        // Remove any existing notifications
+        const existingNotification = document.querySelector('.notification');
+        if (existingNotification) {
+            existingNotification.remove();
+        }
+
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        
+        // Set icon based on type
+        const icon = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
+        
+        notification.innerHTML = `
+            <div class="notification-content">
+                <div class="notification-icon">${icon}</div>
+                <div class="notification-message">${message}</div>
+                <button class="notification-close" onclick="this.parentElement.parentElement.remove()">×</button>
+            </div>
+        `;
+
+        // Add styles
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+            color: white;
+            padding: 0;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            transform: translateX(100%);
+            transition: transform 0.3s ease-in-out;
+            max-width: 400px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        `;
+
+        // Add content styles
+        const content = notification.querySelector('.notification-content');
+        content.style.cssText = `
+            display: flex;
+            align-items: center;
+            padding: 16px 20px;
+            gap: 12px;
+        `;
+
+        // Add icon styles
+        const iconEl = notification.querySelector('.notification-icon');
+        iconEl.style.cssText = `
+            font-size: 20px;
+            font-weight: bold;
+            flex-shrink: 0;
+        `;
+
+        // Add message styles
+        const messageEl = notification.querySelector('.notification-message');
+        messageEl.style.cssText = `
+            flex: 1;
+            font-size: 14px;
+            line-height: 1.4;
+        `;
+
+        // Add close button styles
+        const closeBtn = notification.querySelector('.notification-close');
+        closeBtn.style.cssText = `
+            background: none;
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 0;
+            margin-left: 8px;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        `;
+        closeBtn.addEventListener('mouseenter', () => closeBtn.style.opacity = '1');
+        closeBtn.addEventListener('mouseleave', () => closeBtn.style.opacity = '0.8');
+
+        // Add to page
+        document.body.appendChild(notification);
+
+        // Animate in
+        setTimeout(() => {
+            notification.style.transform = 'translateX(0)';
+        }, 10);
+
+        // Auto remove
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 300);
+            }
+        }, duration);
+    }
+
     async function init() {
         console.log('Account.js: Starting init...');
         // Wait for shared auth to initialize first
@@ -120,6 +222,29 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 console.log('Profile picture input not found');
             }
+            
+            // Add password change event listeners
+            const changePasswordBtn = document.getElementById('change-password-btn');
+            const cancelPasswordBtn = document.getElementById('cancel-password-btn');
+            const passwordToggleHeader = document.getElementById('password-change-header');
+            
+            if (changePasswordBtn) {
+                changePasswordBtn.addEventListener('click', handlePasswordChange);
+                console.log('Password change listener added');
+            }
+            
+            if (cancelPasswordBtn) {
+                cancelPasswordBtn.addEventListener('click', handlePasswordCancel);
+                console.log('Password cancel listener added');
+            }
+            
+            if (passwordToggleHeader) {
+                passwordToggleHeader.addEventListener('click', togglePasswordSection);
+                console.log('Password toggle listener added');
+            }
+            
+            // Add password validation listeners
+            setupPasswordValidation();
         } else {
             console.log('Profile form not found');
         }
@@ -188,6 +313,69 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
             <button type="submit" class="btn">Update Profile</button>
+            
+            <div class="password-change-section">
+                <div class="password-change-header" id="password-change-header">
+                    <div class="password-change-title">
+                        <i class="fas fa-lock"></i>
+                        <span>Change Password</span>
+                    </div>
+                    <div class="password-change-toggle">
+                        <i class="fas fa-chevron-down" id="password-toggle-icon"></i>
+                    </div>
+                </div>
+                
+                <div class="password-change-content" id="password-change-content" style="display: none;">
+                    <div class="password-change-info">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Update your password to keep your account secure</span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="current-password">
+                            <i class="fas fa-key"></i>
+                            Current Password
+                        </label>
+                        <input type="password" id="current-password" name="currentPassword" placeholder="Enter your current password">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="new-password">
+                            <i class="fas fa-shield-alt"></i>
+                            New Password
+                        </label>
+                        <input type="password" id="new-password" name="newPassword" placeholder="Enter your new password" minlength="8">
+                        <div class="password-strength-indicator">
+                            <div class="strength-bar"></div>
+                            <span class="strength-text">Password strength</span>
+                        </div>
+                        <small>Password must be at least 8 characters long</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="confirm-password">
+                            <i class="fas fa-check-circle"></i>
+                            Confirm New Password
+                        </label>
+                        <input type="password" id="confirm-password" name="confirmPassword" placeholder="Confirm your new password">
+                        <div class="password-match-indicator">
+                            <i class="fas fa-times" id="password-match-icon"></i>
+                            <span id="password-match-text">Passwords don't match</span>
+                        </div>
+                    </div>
+                    
+                    <div class="password-change-actions">
+                        <button type="button" id="change-password-btn" class="btn btn-password-change">
+                            <i class="fas fa-lock"></i>
+                            <span>Change Password</span>
+                        </button>
+                        <button type="button" id="cancel-password-btn" class="btn btn-cancel">
+                            <i class="fas fa-times"></i>
+                            <span>Cancel</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
         `;
 
         // Update header display
@@ -217,13 +405,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Validate file type
         if (!file.type.startsWith('image/')) {
-            alert('Please select a valid image file.');
+            showNotification('Please select a valid image file.', 'error');
             return;
         }
 
         // Validate file size (max 5MB)
         if (file.size > 5 * 1024 * 1024) {
-            alert('Image file size must be less than 5MB.');
+            showNotification('Image file size must be less than 5MB.', 'error');
             return;
         }
 
@@ -257,46 +445,363 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await response.json();
                 if (data.success && data.picture_url) {
                     user.picture = data.picture_url;
-                    alert('Profile picture updated successfully!');
+                    showNotification('Profile picture updated successfully!', 'success');
                 }
             } else {
-                alert('Failed to upload profile picture. Please try again.');
+                showNotification('Failed to upload profile picture. Please try again.', 'error');
             }
         } catch (error) {
             console.error('Error uploading profile picture:', error);
-            alert('Error uploading profile picture. Please try again.');
+            showNotification('Error uploading profile picture. Please try again.', 'error');
+        }
+    }
+
+    async function handlePasswordChange() {
+        const currentPassword = document.getElementById('current-password').value;
+        const newPassword = document.getElementById('new-password').value;
+        const confirmPassword = document.getElementById('confirm-password').value;
+        
+        // Validate inputs
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            showNotification('Please fill in all password fields.', 'error');
+            return;
+        }
+        
+        if (newPassword.length < 8) {
+            showNotification('New password must be at least 8 characters long.', 'error');
+            return;
+        }
+        
+        if (newPassword !== confirmPassword) {
+            showNotification('New passwords do not match.', 'error');
+            return;
+        }
+        
+        const changePasswordBtn = document.getElementById('change-password-btn');
+        const originalText = changePasswordBtn.textContent;
+        
+        // Show loading state
+        changePasswordBtn.textContent = 'Changing Password...';
+        changePasswordBtn.disabled = true;
+        
+        const passwordData = {
+            currentPassword: currentPassword,
+            newPassword: newPassword
+        };
+        
+        console.log('Password change data:', passwordData);
+        
+        // Get session token from localStorage
+        const sessionToken = localStorage.getItem('session_token');
+        const headers = { 'Content-Type': 'application/json' };
+        
+        // Include session token in headers if available
+        if (sessionToken) {
+            headers['Authorization'] = `Bearer ${sessionToken}`;
+            console.log('Including session token in password change request');
+        }
+        
+        console.log('Request headers:', headers);
+        
+        try {
+            const response = await fetch('https://weathered-mud-6ed5.joshuablaszczyk.workers.dev/api/user/password', {
+                method: 'POST',
+                headers: headers,
+                credentials: 'include',
+                body: JSON.stringify(passwordData),
+            });
+            
+            console.log('Password change response status:', response.status);
+            
+            if (response.ok) {
+                const responseData = await response.json();
+                console.log('Password change response data:', responseData);
+                
+                if (responseData.success) {
+                    showNotification('Password changed successfully!', 'success');
+                    // Clear the password fields and close section
+                    clearPasswordFields();
+                    togglePasswordSection();
+                } else {
+                    showNotification(`Failed to change password: ${responseData.error || 'Unknown error'}`, 'error');
+                }
+            } else {
+                const errorText = await response.text();
+                console.log('Password change error response:', errorText);
+                
+                let errorMessage = `Failed to change password: ${response.status} ${response.statusText}`;
+                try {
+                    const errorData = JSON.parse(errorText);
+                    if (errorData.error) {
+                        errorMessage = errorData.error;
+                    }
+                } catch (e) {
+                    errorMessage += `\n\nRaw error: ${errorText}`;
+                }
+                showNotification(errorMessage, 'error', 6000);
+            }
+        } catch (error) {
+            console.error('Error changing password:', error);
+            showNotification('Error changing password. Please check your connection and try again.', 'error');
+        } finally {
+            // Restore button state
+            changePasswordBtn.textContent = originalText;
+            changePasswordBtn.disabled = false;
+        }
+    }
+
+    function togglePasswordSection() {
+        const content = document.getElementById('password-change-content');
+        const icon = document.getElementById('password-toggle-icon');
+        
+        if (content.style.display === 'none') {
+            content.style.display = 'block';
+            icon.classList.remove('fa-chevron-down');
+            icon.classList.add('fa-chevron-up');
+        } else {
+            content.style.display = 'none';
+            icon.classList.remove('fa-chevron-up');
+            icon.classList.add('fa-chevron-down');
+            // Clear password fields when closing
+            clearPasswordFields();
+        }
+    }
+
+    function handlePasswordCancel() {
+        clearPasswordFields();
+        togglePasswordSection();
+    }
+
+    function clearPasswordFields() {
+        document.getElementById('current-password').value = '';
+        document.getElementById('new-password').value = '';
+        document.getElementById('confirm-password').value = '';
+        updatePasswordStrength('');
+        updatePasswordMatch('', '');
+    }
+
+    function setupPasswordValidation() {
+        const newPasswordInput = document.getElementById('new-password');
+        const confirmPasswordInput = document.getElementById('confirm-password');
+        
+        if (newPasswordInput) {
+            newPasswordInput.addEventListener('input', function() {
+                updatePasswordStrength(this.value);
+                const confirmValue = document.getElementById('confirm-password').value;
+                if (confirmValue) {
+                    updatePasswordMatch(this.value, confirmValue);
+                }
+            });
+        }
+        
+        if (confirmPasswordInput) {
+            confirmPasswordInput.addEventListener('input', function() {
+                const newPasswordValue = document.getElementById('new-password').value;
+                updatePasswordMatch(newPasswordValue, this.value);
+            });
+        }
+    }
+
+    function updatePasswordStrength(password) {
+        const strengthBar = document.querySelector('.strength-bar');
+        const strengthText = document.querySelector('.strength-text');
+        
+        if (!strengthBar || !strengthText) return;
+        
+        let strength = 0;
+        let strengthLabel = '';
+        let strengthColor = '';
+        
+        if (password.length >= 8) strength += 1;
+        if (password.match(/[a-z]/)) strength += 1;
+        if (password.match(/[A-Z]/)) strength += 1;
+        if (password.match(/[0-9]/)) strength += 1;
+        if (password.match(/[^a-zA-Z0-9]/)) strength += 1;
+        
+        switch (strength) {
+            case 0:
+            case 1:
+                strengthLabel = 'Very Weak';
+                strengthColor = '#ff4444';
+                break;
+            case 2:
+                strengthLabel = 'Weak';
+                strengthColor = '#ff8800';
+                break;
+            case 3:
+                strengthLabel = 'Fair';
+                strengthColor = '#ffbb00';
+                break;
+            case 4:
+                strengthLabel = 'Good';
+                strengthColor = '#88cc00';
+                break;
+            case 5:
+                strengthLabel = 'Strong';
+                strengthColor = '#44aa44';
+                break;
+        }
+        
+        strengthBar.style.width = `${(strength / 5) * 100}%`;
+        strengthBar.style.backgroundColor = strengthColor;
+        strengthText.textContent = password ? `Password strength: ${strengthLabel}` : 'Password strength';
+    }
+
+    function updatePasswordMatch(newPassword, confirmPassword) {
+        const matchIcon = document.getElementById('password-match-icon');
+        const matchText = document.getElementById('password-match-text');
+        
+        if (!matchIcon || !matchText) return;
+        
+        if (!confirmPassword) {
+            matchIcon.className = 'fas fa-times';
+            matchText.textContent = 'Passwords don\'t match';
+            matchText.style.color = '#ff4444';
+            return;
+        }
+        
+        if (newPassword === confirmPassword) {
+            matchIcon.className = 'fas fa-check';
+            matchText.textContent = 'Passwords match';
+            matchText.style.color = '#44aa44';
+        } else {
+            matchIcon.className = 'fas fa-times';
+            matchText.textContent = 'Passwords don\'t match';
+            matchText.style.color = '#ff4444';
         }
     }
 
     async function handleAccountLogout() {
-        if (confirm('Are you sure you want to sign out?')) {
+        showSignOutConfirmation();
+    }
+
+    function showSignOutConfirmation() {
+        // Create modal overlay
+        const modalOverlay = document.createElement('div');
+        modalOverlay.className = 'signout-modal-overlay';
+        modalOverlay.innerHTML = `
+            <div class="signout-modal">
+                <div class="signout-modal-header">
+                    <div class="signout-modal-icon">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </div>
+                    <h3>Sign Out</h3>
+                </div>
+                
+                <div class="signout-modal-content">
+                    <p>Are you sure you want to sign out?</p>
+                    <div class="signout-modal-details">
+                        <div class="signout-detail-item">
+                            <i class="fas fa-user"></i>
+                            <span>You'll need to sign in again to access your account</span>
+                        </div>
+                        <div class="signout-detail-item">
+                            <i class="fas fa-heart"></i>
+                            <span>Your favorites will be saved for next time</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="signout-modal-actions">
+                    <button class="btn btn-cancel-signout" id="cancel-signout-btn">
+                        <i class="fas fa-times"></i>
+                        <span>Stay Signed In</span>
+                    </button>
+                    <button class="btn btn-confirm-signout" id="confirm-signout-btn">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Yes, Sign Out</span>
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modalOverlay);
+        
+        // Add event listeners
+        const cancelBtn = document.getElementById('cancel-signout-btn');
+        const confirmBtn = document.getElementById('confirm-signout-btn');
+        const overlay = modalOverlay;
+        
+        cancelBtn.addEventListener('click', () => {
+            document.body.removeChild(modalOverlay);
+        });
+        
+        confirmBtn.addEventListener('click', async () => {
+            // Show loading state
+            confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Signing Out...</span>';
+            confirmBtn.disabled = true;
+            
             try {
-                await fetch('https://weathered-mud-6ed5.joshuablaszczyk.workers.dev/logout', {
-                    method: 'POST',
-                    credentials: 'include'
-                });
-            } finally {
-                // Always redirect, even if server call fails
-                window.location.href = 'auth.html';
+                await performSignOut();
+                document.body.removeChild(modalOverlay);
+            } catch (error) {
+                console.error('Error signing out:', error);
+                showNotification('Error signing out. Please try again.', 'error');
+                // Restore button state
+                confirmBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i><span>Yes, Sign Out</span>';
+                confirmBtn.disabled = false;
             }
+        });
+        
+        // Close modal when clicking overlay
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                document.body.removeChild(modalOverlay);
+            }
+        });
+        
+        // Close modal with Escape key
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') {
+                document.body.removeChild(modalOverlay);
+                document.removeEventListener('keydown', handleEscape);
+            }
+        };
+        document.addEventListener('keydown', handleEscape);
+    }
+
+    async function performSignOut() {
+        try {
+            await fetch('https://weathered-mud-6ed5.joshuablaszczyk.workers.dev/logout', {
+                method: 'POST',
+                credentials: 'include'
+            });
+        } finally {
+            // Always redirect, even if server call fails
+            window.location.href = 'auth.html';
         }
     }
 
     async function loadPreferences() {
+        // Always show the complete form first
+        showDefaultPreferencesForm();
+        
         try {
+            // Get session token from localStorage
+            const sessionToken = localStorage.getItem('session_token');
+            const headers = { 'Content-Type': 'application/json' };
+            
+            // Include session token in headers if available
+            if (sessionToken) {
+                headers['Authorization'] = `Bearer ${sessionToken}`;
+                console.log('Including session token in preferences load request');
+            }
+
             const response = await fetch('https://weathered-mud-6ed5.joshuablaszczyk.workers.dev/api/user/preferences', {
                 method: 'GET',
-                headers: { 'Content-Type': 'application/json' },
+                headers: headers,
                 credentials: 'include'
             });
             const data = await response.json();
+            console.log('Preferences load response:', data);
+            
             if (data.success && data.preferences) {
+                // Populate the form with existing data
                 populatePreferencesForm(data.preferences);
             }
         } catch (error) {
             console.error('Error loading preferences:', error);
-            // Show default form if API fails
-            showDefaultPreferencesForm();
+            // Form is already shown by showDefaultPreferencesForm() above
         }
     }
 
@@ -323,6 +828,45 @@ document.addEventListener('DOMContentLoaded', () => {
                     <option value="strong">Strong</option>
                 </select>
             </div>
+            <div class="form-group">
+                <label for="season">Preferred Season</label>
+                <select id="season" name="season">
+                    <option value="">Select...</option>
+                    <option value="spring">Spring</option>
+                    <option value="summer">Summer</option>
+                    <option value="fall">Fall</option>
+                    <option value="winter">Winter</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="occasion">Preferred Occasion</label>
+                <select id="occasion" name="occasion">
+                    <option value="">Select...</option>
+                    <option value="daily">Daily Wear</option>
+                    <option value="work">Work</option>
+                    <option value="evening">Evening</option>
+                    <option value="special">Special Events</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="budget_range">Budget Range</label>
+                <select id="budget_range" name="budget_range">
+                    <option value="">Select...</option>
+                    <option value="under-50">Under $50</option>
+                    <option value="50-100">$50 - $100</option>
+                    <option value="100-200">$100 - $200</option>
+                    <option value="over-200">Over $200</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Fragrance Sensitivities</label>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" name="sensitivities" value="alcohol"> Alcohol</label>
+                    <label><input type="checkbox" name="sensitivities" value="synthetic"> Synthetic Notes</label>
+                    <label><input type="checkbox" name="sensitivities" value="strong-scents"> Strong Scents</label>
+                    <label><input type="checkbox" name="sensitivities" value="none"> None</label>
+                </div>
+            </div>
             <button type="submit" class="btn">Save Preferences</button>
         `;
         
@@ -334,6 +878,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const form = ui.preferencesForm;
         if (!form) return;
         
+        console.log('Populating preferences form with data:', prefs);
+        
         // Scent categories
         const categories = Array.isArray(prefs.scent_categories) ? prefs.scent_categories : [];
         form.querySelectorAll('input[name="scent_categories"]').forEach(checkbox => {
@@ -341,10 +887,36 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // Intensity
-        if (prefs.intensity) form.querySelector('#intensity').value = prefs.intensity;
+        if (prefs.intensity) {
+            const intensitySelect = form.querySelector('#intensity');
+            if (intensitySelect) intensitySelect.value = prefs.intensity;
+        }
         
-        // Set up form event listeners after form is populated
-        setupFormEventListeners();
+        // Season
+        if (prefs.season) {
+            const seasonSelect = form.querySelector('#season');
+            if (seasonSelect) seasonSelect.value = prefs.season;
+        }
+        
+        // Occasion
+        if (prefs.occasion) {
+            const occasionSelect = form.querySelector('#occasion');
+            if (occasionSelect) occasionSelect.value = prefs.occasion;
+        }
+        
+        // Budget range
+        if (prefs.budget_range) {
+            const budgetSelect = form.querySelector('#budget_range');
+            if (budgetSelect) budgetSelect.value = prefs.budget_range;
+        }
+        
+        // Sensitivities
+        const sensitivities = Array.isArray(prefs.sensitivities) ? prefs.sensitivities : [];
+        form.querySelectorAll('input[name="sensitivities"]').forEach(checkbox => {
+            checkbox.checked = sensitivities.includes(checkbox.value);
+        });
+        
+        console.log('Preferences form populated successfully');
     }
 
     async function handleProfileSubmit(e) {
@@ -365,11 +937,24 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         console.log('Profile data to submit:', profileData);
+        console.log('Profile data JSON:', JSON.stringify(profileData));
+
+        // Get session token from localStorage
+        const sessionToken = localStorage.getItem('session_token');
+        const headers = { 'Content-Type': 'application/json' };
+        
+        // Include session token in headers if available
+        if (sessionToken) {
+            headers['Authorization'] = `Bearer ${sessionToken}`;
+            console.log('Including session token in profile request');
+        }
+        
+        console.log('Request headers:', headers);
 
         try {
             const response = await fetch('https://weathered-mud-6ed5.joshuablaszczyk.workers.dev/api/user/profile', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: headers,
                 credentials: 'include',
                 body: JSON.stringify(profileData),
             });
@@ -381,23 +966,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log('Profile update response data:', responseData);
                 
                 if (responseData.success) {
-                    alert('Profile updated successfully!');
+                    showNotification('Profile updated successfully!', 'success');
                     // Update the user object
                     user.name = profileData.name;
                     user.email = profileData.email;
                     // Update header display
                     updateHeaderDisplay();
                 } else {
-                    alert(`Failed to update profile: ${responseData.error || 'Unknown error'}`);
+                    showNotification(`Failed to update profile: ${responseData.error || 'Unknown error'}`, 'error');
                 }
             } else {
                 const errorText = await response.text();
                 console.log('Profile update error response:', errorText);
-                alert(`Failed to update profile: ${response.status} ${response.statusText}`);
+                showNotification(`Failed to update profile: ${response.status} ${response.statusText}`, 'error');
             }
         } catch (error) {
             console.error('Error updating profile:', error);
-            alert('Error updating profile. Please check your connection and try again.');
+            showNotification('Error updating profile. Please check your connection and try again.', 'error');
         } finally {
             // Restore button state
             submitButton.textContent = originalText;
@@ -420,14 +1005,46 @@ document.addEventListener('DOMContentLoaded', () => {
         const preferences = {
             scent_categories: formData.getAll('scent_categories'),
             intensity: formData.get('intensity'),
+            season: formData.get('season') || '',
+            occasion: formData.get('occasion') || '',
+            budget_range: formData.get('budget_range') || '',
+            sensitivities: formData.getAll('sensitivities') || []
         };
 
+        // Validate and clean the data
+        if (!preferences.scent_categories || preferences.scent_categories.length === 0) {
+            preferences.scent_categories = [];
+        }
+        if (!preferences.intensity) {
+            preferences.intensity = '';
+        }
+        if (!preferences.sensitivities || preferences.sensitivities.length === 0) {
+            preferences.sensitivities = [];
+        }
+
         console.log('Preferences data to submit:', preferences);
+        console.log('Preferences data JSON:', JSON.stringify(preferences));
+        console.log('FormData entries:');
+        for (let [key, value] of formData.entries()) {
+            console.log(`${key}: ${value}`);
+        }
+
+        // Get session token from localStorage
+        const sessionToken = localStorage.getItem('session_token');
+        const headers = { 'Content-Type': 'application/json' };
+        
+        // Include session token in headers if available
+        if (sessionToken) {
+            headers['Authorization'] = `Bearer ${sessionToken}`;
+            console.log('Including session token in preferences request');
+        }
+        
+        console.log('Request headers:', headers);
 
         try {
             const response = await fetch('https://weathered-mud-6ed5.joshuablaszczyk.workers.dev/api/user/preferences', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: headers,
                 credentials: 'include',
                 body: JSON.stringify(preferences),
             });
@@ -439,18 +1056,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log('Preferences save response data:', responseData);
                 
                 if (responseData.success) {
-                    alert('Preferences saved successfully!');
+                    showNotification('Fragrance preferences saved successfully!', 'success');
                 } else {
-                    alert(`Failed to save preferences: ${responseData.error || 'Unknown error'}`);
+                    showNotification(`Failed to save preferences: ${responseData.error || 'Unknown error'}`, 'error');
                 }
             } else {
                 const errorText = await response.text();
                 console.log('Preferences save error response:', errorText);
-                alert(`Failed to save preferences: ${response.status} ${response.statusText}`);
+                console.log('Response status:', response.status);
+                console.log('Response statusText:', response.statusText);
+                
+                let errorMessage = `Failed to save preferences: ${response.status} ${response.statusText}`;
+                try {
+                    const errorData = JSON.parse(errorText);
+                    if (errorData.error) {
+                        errorMessage += `\n\nDetails: ${errorData.error}`;
+                    }
+                } catch (e) {
+                    errorMessage += `\n\nRaw error: ${errorText}`;
+                }
+                showNotification(errorMessage, 'error', 6000);
             }
         } catch (error) {
             console.error('Error saving preferences:', error);
-            alert('Error saving preferences. Please check your connection and try again.');
+            showNotification('Error saving preferences. Please check your connection and try again.', 'error');
         } finally {
             // Restore button state
             submitButton.textContent = originalText;
@@ -463,9 +1092,19 @@ document.addEventListener('DOMContentLoaded', () => {
         ui.favoritesGrid.innerHTML = ''; // Clear existing
         
         try {
+            // Get session token from localStorage
+            const sessionToken = localStorage.getItem('session_token');
+            const headers = { 'Content-Type': 'application/json' };
+            
+            // Include session token in headers if available
+            if (sessionToken) {
+                headers['Authorization'] = `Bearer ${sessionToken}`;
+                console.log('Including session token in favorites load request');
+            }
+
             const response = await fetch('https://weathered-mud-6ed5.joshuablaszczyk.workers.dev/api/user/favorites', {
                 method: 'GET',
-                headers: { 'Content-Type': 'application/json' },
+                headers: headers,
                 credentials: 'include'
             });
             const data = await response.json();
