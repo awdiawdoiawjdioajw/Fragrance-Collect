@@ -641,9 +641,21 @@ async function searchCJStore(query, limit, offset, lowPrice, highPrice, partnerI
     highPrice,
     partnerIds: partnerId ? [partnerId] : null
   };
-  
+
   const gqlData = await fetchCJProducts(gqlQuery, gqlVariables, env);
-  return gqlData.data?.shoppingProducts?.resultList || [];
+  const allProducts = gqlData.data?.shoppingProducts?.resultList || [];
+
+  // Filter to only include fragranceShop.com products (unless specific partnerId is requested)
+  if (!partnerId) {
+    const filteredProducts = allProducts.filter(product => {
+      const advertiserName = product.advertiserName?.toLowerCase() || '';
+      return advertiserName.includes('fragranceshop') || advertiserName.includes('fragrance shop');
+    });
+    console.log(`🔍 Filtered CJ products: ${allProducts.length} -> ${filteredProducts.length} (fragranceShop.com only)`);
+    return filteredProducts;
+  }
+
+  return allProducts;
 }
 
 async function searchTikTokStore(query, limit, offset, lowPrice, highPrice, env, exactMatch = false) {

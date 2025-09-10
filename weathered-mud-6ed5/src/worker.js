@@ -271,9 +271,21 @@ async function searchCJStore(query, limit, offset, lowPrice, highPrice, partnerI
     
     console.log('🔍 CJ Store search keywords:', gqlVariables.keywords);
     console.log('🔍 CJ Store exact match:', exactMatch);
-    
+
     const gqlData = await fetchCJProducts(gqlQuery, gqlVariables, env);
-    return gqlData.data?.shoppingProducts?.resultList || [];
+    const allProducts = gqlData.data?.shoppingProducts?.resultList || [];
+
+    // Filter to only include fragranceShop.com products (unless specific partnerId is requested)
+    if (!partnerId) {
+      const filteredProducts = allProducts.filter(product => {
+        const advertiserName = product.advertiserName?.toLowerCase() || '';
+        return advertiserName.includes('fragranceshop') || advertiserName.includes('fragrance shop');
+      });
+      console.log(`🔍 Filtered CJ products: ${allProducts.length} -> ${filteredProducts.length} (fragranceShop.com only)`);
+      return filteredProducts;
+    }
+
+    return allProducts;
   } else {
     // Multi-query with revenue-optimized keywords
     const revenueKeywords = [
@@ -302,11 +314,23 @@ async function searchCJStore(query, limit, offset, lowPrice, highPrice, partnerI
     results.forEach((result, index) => {
       if (result.status === 'fulfilled') {
         const products = result.value.data?.shoppingProducts?.resultList || [];
-        products.forEach(p => productMap.set(p.id, p));
+
+        // Filter to only include fragranceShop.com products (unless specific partnerId is requested)
+        let filteredProducts = products;
+        if (!partnerId) {
+          filteredProducts = products.filter(product => {
+            const advertiserName = product.advertiserName?.toLowerCase() || '';
+            return advertiserName.includes('fragranceshop') || advertiserName.includes('fragrance shop');
+          });
+        }
+
+        filteredProducts.forEach(p => productMap.set(p.id, p));
       }
     });
-    
-    return Array.from(productMap.values());
+
+    const finalProducts = Array.from(productMap.values());
+    console.log(`🔍 Filtered multi-query CJ products: final count ${finalProducts.length} (fragranceShop.com only)`);
+    return finalProducts;
   }
 }
 
