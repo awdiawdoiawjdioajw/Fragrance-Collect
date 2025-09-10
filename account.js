@@ -196,21 +196,26 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // Note: Profile and preferences form event listeners will be set up after forms are populated
-        // in loadUserProfile() and loadPreferences() functions
+        // Setup listeners for static forms and buttons once.
+        if (ui.preferencesForm) {
+            ui.preferencesForm.addEventListener('submit', handlePreferencesSubmit);
+            console.log('Preferences form submit listener added');
+        }
+        const logoutBtn = document.getElementById('account-logout-btn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', handleAccountLogout);
+            console.log('Logout button listener added');
+        }
     }
 
-    function setupFormEventListeners() {
-        console.log('Setting up form event listeners...');
+    // This function now ONLY handles listeners for the dynamic profile form content
+    function setupProfileFormEventListeners() {
+        console.log('Setting up profile form event listeners...');
         
-        // Set up profile form event listener
+        // The profile form content is dynamic, so we re-attach listeners after it's built.
         if (ui.profileForm) {
-            console.log('Setting up profile form event listener');
-            // Remove existing listeners to prevent duplicates
-            const newProfileForm = ui.profileForm.cloneNode(true);
-            ui.profileForm.parentNode.replaceChild(newProfileForm, ui.profileForm);
-            ui.profileForm = newProfileForm;
-            
+            // The form element itself is not replaced, only its content.
+            // We can attach the listener directly.
             ui.profileForm.addEventListener('submit', handleProfileSubmit);
             console.log('Profile form submit listener added');
             
@@ -219,8 +224,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (profilePictureInput) {
                 profilePictureInput.addEventListener('change', handleProfilePictureUpload);
                 console.log('Profile picture upload listener added');
-            } else {
-                console.log('Profile picture input not found');
             }
             
             // Add password change event listeners
@@ -230,46 +233,18 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (changePasswordBtn) {
                 changePasswordBtn.addEventListener('click', handlePasswordChange);
-                console.log('Password change listener added');
             }
-            
             if (cancelPasswordBtn) {
                 cancelPasswordBtn.addEventListener('click', handlePasswordCancel);
-                console.log('Password cancel listener added');
             }
-            
             if (passwordToggleHeader) {
                 passwordToggleHeader.addEventListener('click', togglePasswordSection);
-                console.log('Password toggle listener added');
             }
             
             // Add password validation listeners
             setupPasswordValidation();
         } else {
             console.log('Profile form not found');
-        }
-
-        // Set up preferences form event listener
-        if (ui.preferencesForm) {
-            console.log('Setting up preferences form event listener');
-            // Remove existing listeners to prevent duplicates
-            const newPreferencesForm = ui.preferencesForm.cloneNode(true);
-            ui.preferencesForm.parentNode.replaceChild(newPreferencesForm, ui.preferencesForm);
-            ui.preferencesForm = newPreferencesForm;
-            
-            ui.preferencesForm.addEventListener('submit', handlePreferencesSubmit);
-            console.log('Preferences form submit listener added');
-        } else {
-            console.log('Preferences form not found');
-        }
-
-        // Add logout button event listener
-        const logoutBtn = document.getElementById('account-logout-btn');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', handleAccountLogout);
-            console.log('Logout button listener added');
-        } else {
-            console.log('Logout button not found');
         }
     }
 
@@ -381,8 +356,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update header display
         updateHeaderDisplay();
         
-        // Set up form event listeners after form is populated
-        setupFormEventListeners();
+        // Set up form event listeners after the dynamic profile form is populated
+        setupProfileFormEventListeners();
     }
 
     function updateHeaderDisplay() {
@@ -773,10 +748,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function loadPreferences() {
-        // Always show the complete form first
-        showDefaultPreferencesForm();
-        
         try {
+            console.log('[Prefs] Attempting to load user preferences...');
             // Get session token from localStorage
             const sessionToken = localStorage.getItem('session_token');
             const headers = { 'Content-Type': 'application/json' };
@@ -784,7 +757,6 @@ document.addEventListener('DOMContentLoaded', () => {
             // Include session token in headers if available
             if (sessionToken) {
                 headers['Authorization'] = `Bearer ${sessionToken}`;
-                console.log('Including session token in preferences load request');
             }
 
             const response = await fetch('https://weathered-mud-6ed5.joshuablaszczyk.workers.dev/api/user/preferences', {
@@ -792,93 +764,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: headers,
                 credentials: 'include'
             });
+
             const data = await response.json();
-            console.log('Preferences load response:', data);
+            console.log('[Prefs] API response received:', data);
             
             if (data.success && data.preferences) {
+                console.log('[Prefs] Preferences found, calling populate function.');
                 // Populate the form with existing data
                 populatePreferencesForm(data.preferences);
+            } else {
+                console.log('[Prefs] No preferences found in API response or request was not successful.');
             }
         } catch (error) {
             console.error('Error loading preferences:', error);
-            // Form is already shown by showDefaultPreferencesForm() above
         }
-    }
-
-    function showDefaultPreferencesForm() {
-        if (!ui.preferencesForm) return;
-        
-        ui.preferencesForm.innerHTML = `
-            <div class="form-group">
-                <label>Favorite Scent Families</label>
-                <div class="checkbox-group">
-                    <label><input type="checkbox" name="scent_categories" value="woody"> Woody</label>
-                    <label><input type="checkbox" name="scent_categories" value="floral"> Floral</label>
-                    <label><input type="checkbox" name="scent_categories" value="citrus"> Citrus</label>
-                    <label><input type="checkbox" name="scent_categories" value="oriental"> Oriental</label>
-                    <label><input type="checkbox" name="scent_categories" value="fresh"> Fresh</label>
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="intensity">Preferred Intensity</label>
-                <select id="intensity" name="intensity">
-                    <option value="">Select...</option>
-                    <option value="light">Light</option>
-                    <option value="moderate">Moderate</option>
-                    <option value="strong">Strong</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="season">Preferred Season</label>
-                <select id="season" name="season">
-                    <option value="">Select...</option>
-                    <option value="spring">Spring</option>
-                    <option value="summer">Summer</option>
-                    <option value="fall">Fall</option>
-                    <option value="winter">Winter</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="occasion">Preferred Occasion</label>
-                <select id="occasion" name="occasion">
-                    <option value="">Select...</option>
-                    <option value="daily">Daily Wear</option>
-                    <option value="work">Work</option>
-                    <option value="evening">Evening</option>
-                    <option value="special">Special Events</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="budget_range">Budget Range</label>
-                <select id="budget_range" name="budget_range">
-                    <option value="">Select...</option>
-                    <option value="under-50">Under $50</option>
-                    <option value="50-100">$50 - $100</option>
-                    <option value="100-200">$100 - $200</option>
-                    <option value="over-200">Over $200</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Fragrance Sensitivities</label>
-                <div class="checkbox-group">
-                    <label><input type="checkbox" name="sensitivities" value="alcohol"> Alcohol</label>
-                    <label><input type="checkbox" name="sensitivities" value="synthetic"> Synthetic Notes</label>
-                    <label><input type="checkbox" name="sensitivities" value="strong-scents"> Strong Scents</label>
-                    <label><input type="checkbox" name="sensitivities" value="none"> None</label>
-                </div>
-            </div>
-            <button type="submit" class="btn">Save Preferences</button>
-        `;
-        
-        // Set up form event listeners after form is populated
-        setupFormEventListeners();
     }
 
     function populatePreferencesForm(prefs) {
         const form = ui.preferencesForm;
-        if (!form) return;
+        if (!form) {
+            console.error('[Prefs] Preferences form not found in the DOM.');
+            return;
+        }
         
-        console.log('Populating preferences form with data:', prefs);
+        console.log('[Prefs] Populating preferences form with data:', prefs);
         
         // Scent categories
         const categories = Array.isArray(prefs.scent_categories) ? prefs.scent_categories : [];

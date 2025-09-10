@@ -21,5 +21,8 @@ ALLOWED_ORIGIN = "https://fragrancecollect.com"
 # The .dev.vars file is used for local development secrets and is NOT committed to Git.
 # 'wrangler dev' will automatically load this file.
 
+# Secrets - these are set via wrangler secret put command
+# RESEND_API_KEY is automatically bound when set with: wrangler secret put RESEND_API_KEY
+
 [observability.logs]
 enabled = true

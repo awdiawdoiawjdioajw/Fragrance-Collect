@@ -613,10 +613,38 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log('Favorites link not found');
     }
 
-    const restoreMainViewLinks = [...authUI.homeLinks, ...authUI.shopLinks];
-    restoreMainViewLinks.forEach(link => {
-        link.addEventListener('click', () => {
-            showMainContentView();
+    // Add event listeners to navigation links to restore main view
+    const navLinks = document.querySelectorAll('.nav-link:not([href*="favorites"])');
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            // Only restore main view for navigation links (not favorites)
+            if (!link.getAttribute('href').includes('#favorites')) {
+                e.preventDefault();
+                showMainContentView();
+                // Navigate to the target section
+                const targetHref = link.getAttribute('href');
+                if (targetHref.includes('#')) {
+                    const targetId = targetHref.split('#')[1];
+                    if (targetId === 'home') {
+                        // Special case for Home - scroll to top
+                        setTimeout(() => {
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }, 100);
+                    } else {
+                        const targetElement = document.getElementById(targetId);
+                        if (targetElement) {
+                            setTimeout(() => {
+                                targetElement.scrollIntoView({ behavior: 'smooth' });
+                            }, 100);
+                        }
+                    }
+                } else {
+                    // If no hash, also scroll to top (fallback for home)
+                    setTimeout(() => {
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }, 100);
+                }
+            }
         });
     });
 
@@ -772,6 +800,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Initialize event listeners after all functions are defined
     initializeDropdowns();
     addEventListeners();
+
+    setupStripe();
+    
+    initializeFilters();
+
+    // Load products on initial page load
+    try {
+        showLoading();
+        loadCJProducts(initialSearchTerm, 1, null, { sortBy: 'revenue' });
+    } catch (error) {
+        console.error('Error loading products:', error);
+        showStatusMessage('Failed to load products. Please try again.', true);
+    } finally {
+        hideLoading();
+    }
 });
 
 // Lightweight performance metrics for optional UI cards
@@ -854,17 +897,24 @@ function mapProductsDataToItems(data) {
         }));
 }
 
-// Apply filters and sorting from UI controls
-function clearAllFilters() {
-    // Reset all filter dropdowns to their default values
+// ... existing code ...
+function initializeFilters() {
     const sortByFilter = document.getElementById('sort-by-filter');
+    const currencyConverter = document.getElementById('currency-converter');
     const priceRangeFilter = document.getElementById('price-range');
     const shippingFilter = document.getElementById('shipping-filter');
-    const searchInput = document.getElementById('main-search');
 
     if (sortByFilter) sortByFilter.value = 'revenue';
+    if (currencyConverter) currencyConverter.value = 'USD';
     if (priceRangeFilter) priceRangeFilter.value = 'all';
     if (shippingFilter) shippingFilter.value = 'all';
+}
+
+// Apply filters and sorting from UI controls
+function clearAllFilters() {
+    initializeFilters(); // Set filters to default values
+
+    const searchInput = document.getElementById('main-search');
     if (searchInput) searchInput.value = config.DEFAULT_SEARCH_TERM;
 
     // Check if we're in favorites view
@@ -946,23 +996,24 @@ function sortProducts(products) {
     }
     
     const sortBy = sortByFilter.value;
-    console.log('🔍 Client-side sorting by:', sortBy);
+    const targetCurrency = document.getElementById('currency-converter')?.value || 'USD';
+    console.log('🔍 Client-side sorting by:', sortBy, `Target Currency: ${targetCurrency}`);
 
     products.sort((a, b) => {
         if (sortBy === 'price_low') {
-            // Convert prices to USD for fair comparison using cached rates
-            const priceA = currencyConverter.convertSync(a.price || 0, a.currency || 'USD', 'USD');
-            const priceB = currencyConverter.convertSync(b.price || 0, b.currency || 'USD', 'USD');
-            console.log(`🔍 Comparing: ${a.name?.substring(0, 20)} (${priceA} USD) vs ${b.name?.substring(0, 20)} (${priceB} USD)`);
+            const priceA = currencyConverter.convertSync(a.price || 0, a.currency || 'USD', targetCurrency);
+            const priceB = currencyConverter.convertSync(b.price || 0, b.currency || 'USD', targetCurrency);
             return priceA - priceB;
         } else if (sortBy === 'price_high') {
-            // Convert prices to USD for fair comparison using cached rates
-            const priceA = currencyConverter.convertSync(a.price || 0, a.currency || 'USD', 'USD');
-            const priceB = currencyConverter.convertSync(b.price || 0, b.currency || 'USD', 'USD');
-            console.log(`🔍 Comparing: ${a.name?.substring(0, 20)} (${priceB} USD) vs ${b.name?.substring(0, 20)} (${priceA} USD)`);
+            const priceA = currencyConverter.convertSync(a.price || 0, a.currency || 'USD', targetCurrency);
+            const priceB = currencyConverter.convertSync(b.price || 0, b.currency || 'USD', targetCurrency);
             return priceB - priceA;
+        } else if (sortBy === 'revenue') {
+            // "Best Match" - placeholder for future logic (e.g., sort by rating, sales)
+            // For now, it will keep the default order from the API.
+            return 0;
         }
-        return 0; // Default case - no sorting
+        return 0; // Default case
     });
 
     displayProducts(products);
@@ -1103,6 +1154,12 @@ async function loadCJProducts(query = '', page = 1, limit = null, filters = {}) 
             
             SecurityUtils.setInnerHTML(searchResultsInfo, message);
             searchResultsInfo.style.display = 'block';
+        }
+
+        // Update displayed prices to the selected currency
+        const selectedCurrency = document.getElementById('currency-converter')?.value;
+        if (selectedCurrency) {
+            await updateDisplayedPrices(selectedCurrency);
         }
 
         return data;
@@ -1276,9 +1333,12 @@ function formatShipping(perfume) {
 }
 
 function createProductCard(perfume) {
-    const stars = generateStars(perfume.rating); // This will now be decorative
+    const rating = typeof perfume.rating === 'number' ? perfume.rating : 0.0;
+    const price = typeof perfume.price === 'number' ? perfume.price : 0.0;
+
+    const stars = generateStars(rating);
     const shipping = formatShipping(perfume);
-    const displayPrice = perfume.price.toFixed(2);
+    const displayPrice = price.toFixed(2);
     const currencySymbol = currencySymbols[perfume.currency] || '$';
     const isFavorited = userFavorites.has(perfume.id);
     
@@ -1290,13 +1350,13 @@ function createProductCard(perfume) {
         description: perfume.description || '',
         imageUrl: perfume.image,
         productUrl: perfume.buyUrl,
-        price: perfume.price,
+        price: price,
         currency: perfume.currency,
         shipping_availability: perfume.shippingCost === 0 ? 'available' : 'paid'
     };
 
     return `
-        <div class="product-card" data-id="${perfume.id}" data-brand="${perfume.brand.toLowerCase().replace(/\s+/g, '-')}" data-price="${perfume.price}" data-rating="${perfume.rating}">
+        <div class="product-card" data-id="${perfume.id}" data-brand="${perfume.brand.toLowerCase().replace(/\s+/g, '-')}" data-price="${price}" data-rating="${rating}">
             <div class="product-image-container">
                 <button class="favorite-btn ${isFavorited ? 'favorited' : ''}" 
                         data-id="${perfume.id}" 
@@ -1309,11 +1369,11 @@ function createProductCard(perfume) {
             <div class="product-info">
                 <h3 class="product-name">${perfume.name}</h3>
                 <p class="product-brand">${perfume.brand}</p>
-                <div class="product-rating" role="img" aria-label="Rating: ${perfume.rating} out of 5 stars">
+                <div class="product-rating" role="img" aria-label="Rating: ${rating} out of 5 stars">
                     ${stars}
-                    <span class="rating-number">${perfume.rating.toFixed(1)}</span>
+                    <span class="rating-number">${rating.toFixed(1)}</span>
                 </div>
-                <p class="product-price" data-original-price="${perfume.price}" data-original-currency="${perfume.currency}">${currencySymbol}${displayPrice} ${perfume.currency}</p>
+                <p class="product-price" data-original-price="${price}" data-original-currency="${perfume.currency}">${currencySymbol}${displayPrice} ${perfume.currency}</p>
             </div>
             <div class="product-meta">
                 <div class="product-shipping ${shipping.cls}">${shipping.text}</div>
@@ -1431,7 +1491,8 @@ function addEventListeners() {
     const browseFragrancesBtn = document.getElementById('browse-fragrances');
     const sortByFilter = document.getElementById('sort-by-filter');
     const brandFilter = document.getElementById('brand-filter');
-    
+    const recommendationsBtn = document.getElementById('get-recommendations');
+
     if (priceFilter) {
         priceFilter.addEventListener('change', () => applyFilters(true));
     }
@@ -1571,6 +1632,10 @@ function addEventListeners() {
             // If no data-perfume-id, this is a Buy Now link; allow default navigation
         }
     });
+
+    if(recommendationsBtn) {
+        recommendationsBtn.addEventListener('click', getPersonalizedRecommendations);
+    }
 }
 
 // Loading bar control functions
@@ -2591,10 +2656,13 @@ function showFavoritesView() {
     // Set favorites view flag
     isInFavoritesView = true;
     
-    // Hide only the product sections, keep the main filter section visible
-    const productSections = document.querySelectorAll('.products-section, .top-rated-section, .tiktok-section, .collections-section');
+    // Hide only the product sections, keep navigation and main content accessible
+    const productSections = document.querySelectorAll('.products-section:not(#personalized), .top-rated-section, .tiktok-section, .collections-section');
     productSections.forEach(section => {
-        section.style.display = 'none';
+        // Don't hide sections that contain navigation or are essential for navigation
+        if (section.id !== 'filter' && section.id !== 'home') {
+            section.style.display = 'none';
+        }
     });
     
     authUI.favoritesSection.style.display = 'block';
@@ -2604,14 +2672,24 @@ function showFavoritesView() {
 function showMainContentView() {
     // Clear favorites view flag
     isInFavoritesView = false;
-    
-    // Show all product sections
+
+    // Show all product sections and main content
     const productSections = document.querySelectorAll('.products-section, .top-rated-section, .tiktok-section, .collections-section');
     productSections.forEach(section => {
         section.style.display = 'block';
     });
-    
+
+    // Also show main content sections if they exist
+    if (authUI.mainContentSections) {
+        authUI.mainContentSections.forEach(section => {
+            section.style.display = 'block';
+        });
+    }
+
+    // Hide favorites section
     authUI.favoritesSection.style.display = 'none';
+
+    console.log('Restored main content view');
 }
 
 async function loadUserFavorites() {
@@ -2654,6 +2732,17 @@ async function loadUserFavorites() {
             currentFavorites = data.favorites;
             displayFavorites(data.favorites);
             updateAllFavoriteIcons();
+
+            // Second currency conversion pass to ensure all prices are properly converted
+            console.log('🔄 Performing second currency conversion pass for favorites...');
+            setTimeout(async () => {
+                const currencySelect = document.getElementById('currency-converter');
+                if (currencySelect && currencySelect.value !== 'USD') {
+                    console.log('🔄 Second pass: Converting favorites to', currencySelect.value);
+                    await updateDisplayedPrices(currencySelect.value);
+                }
+            }, 500); // Small delay to ensure DOM is fully updated
+
             console.log(`✅ Loaded ${data.favorites.length} favorites from server`);
         } else {
             throw new Error('Invalid response format');
@@ -2798,4 +2887,198 @@ function updateAllFavoriteIcons() {
             btn.classList.remove('favorited');
         }
     });
+}
+
+// --- Personalized Recommendations ---
+
+async function fetchUserPreferences() {
+    try {
+        console.log('[Prefs] Fetching user preferences for recommendations...');
+        const authToken = getAuthToken();
+        if (!authToken) {
+            console.log('[Prefs] No auth token found. User is likely not logged in.');
+            return null;
+        }
+
+        // Add cache-busting parameter to the URL
+        const cacheBust = new Date().getTime();
+        const url = `${config.API_ENDPOINT}/api/user/preferences?_cacheBust=${cacheBust}`;
+
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.status === 401) {
+            // Not logged in, handle gracefully
+            return null;
+        }
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch preferences: ${response.statusText}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching user preferences:', error);
+        return null; // Return null on error
+    }
+}
+
+function buildPersonalizedQuery(preferences) {
+    if (!preferences) return { query: '', filters: {} };
+
+    let positiveKeywords = [];
+    let filters = {};
+
+    // 1. Randomly select 1-2 scent families (instead of all)
+    if (preferences.scent_categories && preferences.scent_categories.length > 0) {
+        const shuffledScentCategories = [...preferences.scent_categories].sort(() => 0.5 - Math.random());
+        const numToSelect = Math.min(Math.floor(Math.random() * 2) + 1, shuffledScentCategories.length); // 1-2 random categories
+        const selectedCategories = shuffledScentCategories.slice(0, numToSelect);
+        console.log('[Query Build] Randomly selected scent categories:', selectedCategories);
+        positiveKeywords.push(...selectedCategories);
+    }
+
+    // 2. Randomly select 1 preference from intensity, season, occasion
+    const otherPrefs = [preferences.intensity, preferences.season, preferences.occasion].filter(Boolean);
+    if (otherPrefs.length > 0) {
+        const randomIndex = Math.floor(Math.random() * otherPrefs.length);
+        let selectedPref = otherPrefs[randomIndex];
+
+        // Handle backward compatibility: convert "work" to "professional"
+        if (selectedPref === 'work') {
+            selectedPref = 'professional';
+        }
+
+        console.log('[Query Build] Randomly selected preference:', selectedPref, 'from options:', otherPrefs);
+        positiveKeywords.push(selectedPref);
+    }
+
+    console.log('[Query Build] Before adding core terms:', positiveKeywords);
+
+    // 4. Budget filter (doesn't add keywords)
+    if (preferences.budget_range) {
+        const range = preferences.budget_range;
+        if (range.includes('-')) {
+            const [low, high] = range.split('-').map(p => parseInt(p));
+            filters.lowPrice = low;
+            filters.highPrice = high;
+        } else if (range.startsWith('under-')) {
+            filters.highPrice = parseInt(range.replace('under-', ''));
+        } else if (range.startsWith('over-')) {
+            filters.lowPrice = parseInt(range.replace('over-', ''));
+        }
+    }
+
+    // 5. Sensitivities filter (client-side, doesn't add keywords)
+    if (preferences.sensitivities && preferences.sensitivities.length > 0) {
+        filters.sensitivities = preferences.sensitivities;
+    }
+
+    // 6. Deduplicate and strictly limit positive keywords to a safe number (3)
+    const uniqueKeywords = [...new Set(positiveKeywords)];
+    const limitedKeywords = uniqueKeywords.slice(0, 3); // MAX 3 positive keywords for safety
+
+    console.log('[Query Build] Final limited keywords:', limitedKeywords);
+
+    // 7. Build final query with fragrance perfume at the end
+    const coreTerms = 'fragrance perfume';
+    const finalQueryString = `${limitedKeywords.join(' ')} ${coreTerms}`;
+
+    console.log('[Query Build] Core terms added at end:', coreTerms);
+    console.log('[Query Build] Final query string:', finalQueryString);
+    console.log('[Query Build] Total keywords count:', limitedKeywords.length + 2); // +2 for fragrance perfume
+
+    const finalQuery = {
+        query: finalQueryString,
+        filters: filters
+    };
+
+    return finalQuery;
+}
+
+async function getPersonalizedRecommendations() {
+    console.log('[Personalized] Function called');
+
+    const personalizedSection = document.getElementById('personalized');
+    const resultsGrid = document.getElementById('personalized-results-grid');
+    const emptyState = document.getElementById('personalized-empty-state');
+    const queryDisplay = document.getElementById('personalized-query-display');
+
+    if (!personalizedSection || !resultsGrid || !emptyState || !queryDisplay) {
+        console.log('[Personalized] Missing DOM elements');
+        return;
+    }
+
+    // Show the section and a loading state
+    personalizedSection.style.display = 'block';
+    resultsGrid.innerHTML = '<p>Loading your personalized recommendations...</p>';
+    emptyState.style.display = 'none';
+    queryDisplay.style.display = 'none';
+    
+    // Scroll to the section
+    personalizedSection.scrollIntoView({ behavior: 'smooth' });
+
+    console.log('[Personalized] Fetching user preferences...');
+    const responseData = await fetchUserPreferences();
+
+    // Check for the nested 'preferences' object within the response
+    if (!responseData || !responseData.success || !responseData.preferences || Object.keys(responseData.preferences).length === 0) {
+        console.log('[Personalized] No preferences found');
+        // User has no preferences set or is not logged in
+        resultsGrid.innerHTML = '';
+        emptyState.style.display = 'block';
+        return;
+    }
+
+    // Pass the actual preferences object to the build function
+    console.log('[Personalized] Building query from preferences:', responseData.preferences);
+    const { query, filters } = buildPersonalizedQuery(responseData.preferences);
+    console.log('[Personalized] Generated query:', query);
+
+    // Query display removed - keeping interface clean
+
+    // Add revenue optimization
+    filters.sortBy = 'revenue'; 
+
+    try {
+        const results = await fetchProductsFromApi(query, 1, config.RESULTS_PER_PAGE, filters);
+        
+        if (results && results.products.length > 0) {
+            // Filter out products without a valid price before displaying
+            const validProducts = results.products.filter(p => typeof p.price === 'number' && p.price > 0);
+
+            if (validProducts.length > 0) {
+                // Display products in the personalized grid
+                const productCards = validProducts.map(p => createProductCard(p)).join('');
+                resultsGrid.innerHTML = productCards;
+
+                // Convert prices to the user's selected currency
+                const selectedCurrency = document.getElementById('currency-converter')?.value;
+                if (selectedCurrency) {
+                    await updateDisplayedPrices(selectedCurrency);
+                }
+                
+            } else {
+                resultsGrid.innerHTML = '<p>We found recommendations, but none with valid pricing. Please try adjusting your preferences.</p>';
+            }
+
+        } else {
+            resultsGrid.innerHTML = '<p>We couldn\'t find any recommendations based on your preferences. Try adjusting them!</p>';
+        }
+    } catch (error) {
+        console.error('Error getting personalized recommendations:', error);
+        resultsGrid.innerHTML = '<p>Sorry, something went wrong while fetching your recommendations.</p>';
+    }
+}
+
+// --- End Personalized Recommendations ---
+
+function setupStripe() {
+    // Check if Stripe is enabled in config
+    // ... existing code ...
 }

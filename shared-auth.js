@@ -269,3 +269,8 @@ function isAuthenticated() {
 function getCurrentUser() {
     return currentUser;
 }
+
+// Get session token for API calls
+function getAuthToken() {
+    return sessionToken;
+}

@@ -136,7 +136,17 @@ document.addEventListener('DOMContentLoaded', function() {
         link.addEventListener('click', function(e) {
             const href = this.getAttribute('href');
             
-            if (href && href.startsWith('main.html#')) {
+            // Check if this is the personalized link and handle it separately
+            if (href === 'main.html#personalized') {
+                if (typeof getPersonalizedRecommendations === 'function') {
+                    e.preventDefault();
+                    getPersonalizedRecommendations();
+                }
+                return; // Stop further processing for this link
+            }
+
+            // For all other links, perform the standard filter link handling
+            if (href.includes('main.html#filter')) {
                 e.preventDefault();
                 
                 if (isMainPage) {
@@ -350,6 +360,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Add event listeners to collection cards
+    const collectionCards = document.querySelectorAll('.collection-card');
+    collectionCards.forEach(card => {
+        card.addEventListener('click', function(event) {
+            const brand = this.dataset.brand;
+            if (brand) {
+                event.preventDefault();
+                performBrandSearch(brand);
+            }
+        });
+    });
+
     // Handle window resize to switch between mobile/PC behavior
     window.addEventListener('resize', function() {
         const wasMobile = isMobile;
@@ -437,7 +459,7 @@ function redirectToMainPage(linkText, href) {
     // Handle collection links
     const collectionLinks = ['Designer', 'Niche', 'Vintage', 'Seasonal'];
     if (collectionLinks.includes(linkText)) {
-        window.location.href = `main.html#filter?collection=${linkText.toLowerCase()}`;
+        window.location.href = `main.html?collection=${linkText.toLowerCase()}#filter`;
         return;
     }
     
@@ -660,6 +682,8 @@ function handleFilterLinks() {
     const urlParams = new URLSearchParams(window.location.search);
     const hash = window.location.hash;
 
+    console.log('handleFilterLinks triggered', { urlParams: urlParams.toString(), hash });
+
     // Handle scent filtering
     const scent = urlParams.get('scent');
     if (scent && hash.includes('#filter')) {
@@ -697,6 +721,7 @@ function handleFilterLinks() {
                 filterSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 const searchInput = document.getElementById('main-search');
                 if (searchInput) {
+                    console.log('Applying collection filter:', collection);
                     const collectionSearchTerms = {
                         'designer': 'designer perfume',
                         'niche': 'niche fragrance',

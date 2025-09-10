@@ -48,6 +48,7 @@
                     <li><a href="main.html#viral-tiktok-finds" class="nav-link">Explore</a></li>
                     <li><a href="main.html#collections" class="nav-link">Collections</a></li>
                     <li><a href="main.html#top-rated" class="nav-link">Top Picks</a></li>
+                    <li><a href="main.html#personalized" class="nav-link">Personalized</a></li>
                     <li>
                         <!-- PC Menu Dropdown -->
                         <div class="menu-dropdown pc-menu-only">
@@ -167,6 +168,7 @@
                 <a href="main.html#viral-tiktok-finds" class="mobile-nav-link">Explore</a>
                 <a href="main.html#collections" class="mobile-nav-link">Collections</a>
                 <a href="main.html#top-rated" class="mobile-nav-link">Top Picks</a>
+                <a href="main.html#personalized" class="mobile-nav-link">Personalized</a>
                 <div class="mobile-nav-divider"></div>
                 <a href="auth.html?tab=signin" class="mobile-nav-link logged-out-only">Sign In</a>
                 <a href="auth.html?tab=signup" class="mobile-nav-link logged-out-only">Sign Up</a>
@@ -381,6 +383,21 @@
                             <a href="#" class="collection-btn">View Collection</a>
                         </div>
                     </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Personalized Recommendations Section -->
+        <section id="personalized" class="products-section" style="display: none;">
+            <div class="container">
+                <h2 class="section-title">Your Personalized Recommendations</h2>
+                <div id="personalized-query-display" class="query-display" style="display: none;"></div>
+                <div id="personalized-results-grid" class="products-grid">
+                    <!-- Personalized results will be loaded here -->
+                </div>
+                <div id="personalized-empty-state" class="empty-state-container" style="display: none;">
+                    <h3>Discover Your Perfect Scent</h3>
+                    <p>To get started, please set your <a href="account.html#preferences">fragrance preferences</a>. It only takes a moment!</p>
                 </div>
             </div>
         </section>

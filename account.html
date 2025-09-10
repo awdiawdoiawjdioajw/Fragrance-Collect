@@ -43,6 +43,7 @@
                     <li><a href="main.html#viral-tiktok-finds" class="nav-link">Explore</a></li>
                     <li><a href="main.html#collections" class="nav-link">Collections</a></li>
                     <li><a href="main.html#top-rated" class="nav-link">Top Picks</a></li>
+                    <li><a href="main.html#personalized" class="nav-link">Personalized</a></li>
                     <li>
                         <!-- PC Menu Dropdown -->
                         <div class="menu-dropdown pc-menu-only">
@@ -162,6 +163,7 @@
                 <a href="main.html#viral-tiktok-finds" class="mobile-nav-link">Explore</a>
                 <a href="main.html#collections" class="mobile-nav-link">Collections</a>
                 <a href="main.html#top-rated" class="mobile-nav-link">Top Picks</a>
+                <a href="main.html#personalized" class="mobile-nav-link">Personalized</a>
                 <div class="mobile-nav-divider"></div>
                 <a href="auth.html?tab=signin" class="mobile-nav-link logged-out-only">Sign In</a>
                 <a href="auth.html?tab=signup" class="mobile-nav-link logged-out-only">Sign Up</a>
@@ -217,7 +219,6 @@
                     <h2>Fragrance Preferences</h2>
                     <p>Tailor your recommendations by telling us what you love.</p>
                     <form id="preferences-form">
-                        <!-- Scent Categories -->
                         <div class="form-group">
                             <label>Favorite Scent Families</label>
                             <div class="checkbox-group">
@@ -228,7 +229,6 @@
                                 <label><input type="checkbox" name="scent_categories" value="fresh"> Fresh</label>
                             </div>
                         </div>
-                        <!-- Intensity -->
                         <div class="form-group">
                             <label for="intensity">Preferred Intensity</label>
                             <select id="intensity" name="intensity">
@@ -237,6 +237,45 @@
                                 <option value="moderate">Moderate</option>
                                 <option value="strong">Strong</option>
                             </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="season">Preferred Season</label>
+                            <select id="season" name="season">
+                                <option value="">Select...</option>
+                                <option value="spring">Spring</option>
+                                <option value="summer">Summer</option>
+                                <option value="fall">Fall</option>
+                                <option value="winter">Winter</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="occasion">Preferred Occasion</label>
+                            <select id="occasion" name="occasion">
+                                <option value="">Select...</option>
+                                <option value="daily">Daily Wear</option>
+                                <option value="professional">Professional</option>
+                                <option value="evening">Evening</option>
+                                <option value="special">Special Events</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="budget_range">Budget Range</label>
+                            <select id="budget_range" name="budget_range">
+                                <option value="">Select...</option>
+                                <option value="under-50">Under $50</option>
+                                <option value="50-100">$50 - $100</option>
+                                <option value="100-200">$100 - $200</option>
+                                <option value="over-200">Over $200</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Fragrance Sensitivities</label>
+                            <div class="checkbox-group">
+                                <label><input type="checkbox" name="sensitivities" value="alcohol"> Alcohol</label>
+                                <label><input type="checkbox" name="sensitivities" value="synthetic"> Synthetic Notes</label>
+                                <label><input type="checkbox" name="sensitivities" value="strong-scents"> Strong Scents</label>
+                                <label><input type="checkbox" name="sensitivities" value="none"> None</label>
+                            </div>
                         </div>
                         <button type="submit" class="btn">Save Preferences</button>
                     </form>

@@ -52,7 +52,7 @@
 /* Contact Content */
 .contact-content {
     padding: 5rem 0;
-    background: var(--soft-black);
+    background: #000000;
 }
 
 .contact-wrapper {
@@ -65,7 +65,7 @@
 
 /* Contact Form Section */
 .contact-form-section {
-    background: var(--dark-gray);
+    background: var(--light-gray);
     padding: 3rem;
     border-radius: 20px;
     border: 1px solid rgba(201, 166, 70, 0.1);
@@ -86,9 +86,12 @@
 
 .form-title {
     font-size: 2rem;
-    color: var(--warm-white);
+    color: var(--antique-gold); /* Gold title to match theme */
+    color: #C9A646; /* Fallback gold */
     margin-bottom: 2rem;
     text-align: center;
+    text-shadow: 0 0 10px rgba(201, 166, 70, 0.4); /* Gold glow effect */
+    font-weight: 700;
 }
 
 .contact-form {
@@ -104,23 +107,59 @@
 }
 
 .form-label {
-    color: var(--warm-white);
-    font-weight: 500;
+    color: var(--antique-gold); /* Gold labels to match theme */
+    color: #C9A646; /* Fallback gold */
+    font-weight: 600; /* Slightly bolder */
     font-size: 0.95rem;
     margin-bottom: 0.3rem;
+    text-shadow: 0 0 5px rgba(201, 166, 70, 0.3); /* Subtle gold glow */
 }
 
 .form-input,
 .form-select,
 .form-textarea {
-    background: var(--deep-plum);
-    border: 2px solid rgba(201, 166, 70, 0.2);
+    background: var(--dark-gray) !important; /* Dark gray background for ALL */
+    border: 2px solid var(--antique-gold) !important; /* Gold border for ALL */
     border-radius: 10px;
     padding: 1rem;
-    color: var(--warm-white);
+    color: var(--warm-white) !important; /* White text for ALL */
     font-size: 1rem;
     transition: all 0.3s ease-in-out;
     font-family: 'Lato', sans-serif;
+    box-shadow: inset 0 0 0 1px rgba(201, 166, 70, 0.1) !important; /* Subtle inner gold glow for ALL */
+    -webkit-appearance: none; /* Reset browser styles */
+    -moz-appearance: none;
+    appearance: none;
+}
+
+/* Style for the select placeholder state */
+.select-placeholder {
+    color: rgba(201, 166, 70, 0.7) !important; /* Gold placeholder text */
+    font-style: italic !important;
+    opacity: 0.8 !important;
+}
+
+/* HIGH-SPECIFICITY FIX for Subject dropdown text color */
+#subject.form-select,
+select[name="subject"] {
+    color: var(--warm-white) !important;
+}
+
+/* HIGH-SPECIFICITY FIX for Full Name input */
+#name.form-input,
+input[name="name"] {
+    background: var(--dark-gray) !important;
+    border: 2px solid var(--antique-gold) !important;
+    color: var(--warm-white) !important;
+}
+
+/* Email input specific styling override - just for appearance reset */
+#email,
+.form-input[type="email"],
+input[type="email"].form-input {
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
 }
 
 .form-input:focus,
@@ -128,13 +167,17 @@
 .form-textarea:focus {
     outline: none;
     border-color: var(--antique-gold);
-    box-shadow: 0 0 15px rgba(201, 166, 70, 0.3);
-    background: rgba(75, 46, 57, 0.8);
+    border-color: #C9A646; /* Fallback gold */
+    box-shadow: 0 0 15px rgba(201, 166, 70, 0.3); /* Gold glow */
+    background: rgba(0, 0, 0, 0.9); /* Slightly lighter black on focus */
 }
 
 .form-input::placeholder,
 .form-textarea::placeholder {
-    color: rgba(245, 240, 230, 0.6);
+    color: rgba(201, 166, 70, 0.7); /* Gold placeholder text */
+    color: rgba(245, 240, 230, 0.8); /* Fallback light color */
+    font-style: italic;
+    opacity: 0.8;
 }
 
 .form-select {
@@ -142,8 +185,10 @@
 }
 
 .form-select option {
-    background: var(--deep-plum);
-    color: var(--warm-white);
+    background: #000000; /* Black background for dropdown */
+    background: var(--deep-plum); /* Fallback */
+    color: var(--warm-white); /* White text */
+    color: #FFFFFF; /* Fallback white */
     padding: 0.5rem;
 }
 
@@ -153,11 +198,13 @@
 }
 
 .submit-btn {
-    background: linear-gradient(135deg, var(--antique-gold), #e6c866);
-    border: none;
+    background: var(--dark-gray); /* Dark gray background */
+    border: 2px solid var(--antique-gold); /* Gold border */
+    border: 2px solid #C9A646; /* Fallback gold */
     padding: 1.2rem 2rem;
     border-radius: 50px;
-    color: var(--soft-black);
+    color: var(--antique-gold); /* Gold text */
+    color: #C9A646; /* Fallback gold */
     font-size: 1.1rem;
     font-weight: 600;
     cursor: pointer;
@@ -169,31 +216,35 @@
     justify-content: center;
     gap: 0.5rem;
     margin-top: 1rem;
-    box-shadow: 0 5px 20px rgba(201, 166, 70, 0.3);
+    box-shadow: 0 0 20px rgba(201, 166, 70, 0.3); /* Gold glow */
 }
 
 .submit-btn:hover {
     transform: translateY(-3px);
-    box-shadow: 0 10px 30px rgba(201, 166, 70, 0.5);
-    background: linear-gradient(135deg, #e6c866, var(--antique-gold));
+    box-shadow: 0 0 30px rgba(201, 166, 70, 0.6); /* Enhanced gold glow */
+    background: var(--medium-gray); /* Lighter gray on hover */
+    border-color: #e6c866; /* Brighter gold border */
 }
 
 .submit-btn i {
     font-size: 0.9rem;
     transition: transform 0.3s ease-in-out;
+    color: var(--antique-gold); /* Gold icon */
+    color: #C9A646; /* Fallback gold */
 }
 
 .submit-btn:hover i {
     transform: translateX(3px);
+    color: #e6c866; /* Brighter gold on hover */
 }
 
 /* Contact Information Section */
 .contact-info-section {
-    background: var(--dark-gray);
+    background: var(--medium-gray); /* Reverted to gray background */
     padding: 3rem;
     border-radius: 20px;
-    border: 1px solid rgba(201, 166, 70, 0.1);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(201, 166, 70, 0.1); /* Original border */
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3); /* Original shadow */
     position: relative;
     overflow: hidden;
 }
@@ -210,9 +261,10 @@
 
 .info-title {
     font-size: 2rem;
-    color: var(--warm-white);
+    color: var(--antique-gold); /* Gold title */
     margin-bottom: 1rem;
     text-align: center;
+    text-shadow: 0 0 10px rgba(201, 166, 70, 0.4);
 }
 
 .info-subtitle {
@@ -234,29 +286,38 @@
     align-items: flex-start;
     gap: 1rem;
     padding: 1.5rem;
-    background: rgba(75, 46, 57, 0.3);
+    background: var(--dark-gray); /* Match FAQ card background */
     border-radius: 15px;
-    border: 1px solid rgba(201, 166, 70, 0.1);
+    border: 1px solid rgba(201, 166, 70, 0.2); /* Gold border */
     transition: all 0.3s ease-in-out;
 }
 
 .contact-item:hover {
-    border-color: rgba(201, 166, 70, 0.3);
-    transform: translateY(-2px);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    border-color: var(--antique-gold); /* Brighter gold on hover */
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+    background: rgba(201, 166, 70, 0.05); /* Subtle gold background on hover */
 }
 
 .contact-icon {
-    background: linear-gradient(135deg, var(--antique-gold), #e6c866);
+    background: transparent;
+    border: 2px solid var(--antique-gold);
     width: 50px;
     height: 50px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--soft-black);
+    color: var(--antique-gold); /* Gold icon */
     font-size: 1.2rem;
     flex-shrink: 0;
+    transition: all 0.3s ease-in-out;
+}
+
+.contact-item:hover .contact-icon {
+    background: var(--antique-gold);
+    color: #000000;
+    transform: rotate(360deg);
 }
 
 .contact-text h3 {
@@ -271,10 +332,15 @@
     font-size: 1rem;
     margin-bottom: 0.3rem;
     line-height: 1.4;
+    transition: color 0.3s;
+}
+
+.contact-item:hover .contact-text p {
+    color: #e6c866; /* Brighter gold on hover */
 }
 
 .response-time {
-    color: rgba(245, 240, 230, 0.6);
+    color: rgba(201, 166, 70, 0.7); /* Gold-tinted response time */
     font-size: 0.85rem;
     font-style: italic;
 }
@@ -305,8 +371,9 @@
 }
 
 .social-links .social-link {
-    background: var(--antique-gold);
-    color: var(--soft-black);
+    background: transparent;
+    border: 2px solid var(--antique-gold);
+    color: var(--antique-gold);
     width: 45px;
     height: 45px;
     border-radius: 50%;
@@ -319,9 +386,9 @@
 }
 
 .social-links .social-link:hover {
-    background: var(--warm-white);
-    color: var(--soft-black);
-    transform: translateY(-3px);
+    background: var(--antique-gold);
+    color: #000000;
+    transform: translateY(-3px) scale(1.1);
     box-shadow: 0 8px 20px rgba(201, 166, 70, 0.4);
 }
 
@@ -387,14 +454,16 @@
 
 /* Success Message */
 .success-message {
-    background: linear-gradient(135deg, #4CAF50, #45a049);
-    color: white;
+    background: linear-gradient(135deg, var(--antique-gold), #e6c866);
+    color: var(--soft-black);
     padding: 1rem 2rem;
     border-radius: 10px;
     text-align: center;
     margin-bottom: 2rem;
     display: none;
     animation: slideIn 0.5s ease-in-out;
+    border: 1px solid rgba(201, 166, 70, 0.3);
+    box-shadow: 0 5px 15px rgba(201, 166, 70, 0.2);
 }
 
 @keyframes slideIn {
@@ -406,6 +475,84 @@
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+/* Success Modal Styles */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1000; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(0,0,0,0.6); /* Black w/ opacity */
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.modal-content {
+    background: linear-gradient(145deg, #2c2c2c, #1a1a1a);
+    color: #fff;
+    margin: 15% auto; /* 15% from the top and centered */
+    padding: 30px;
+    border: 1px solid var(--antique-gold);
+    width: 80%; /* Could be more or less, depending on screen size */
+    max-width: 500px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    text-align: center;
+    position: relative;
+    animation: slideUp 0.4s ease-in-out;
+}
+
+.modal-icon {
+    font-size: 50px;
+    color: #4CAF50;
+    margin-bottom: 20px;
+}
+
+.modal-content h2 {
+    color: #fff;
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    margin-bottom: 15px;
+}
+
+.modal-content p {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: #ccc;
+}
+
+.close-button {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    transition: color 0.3s;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: #fff;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
 }
 
 /* Responsive Design */

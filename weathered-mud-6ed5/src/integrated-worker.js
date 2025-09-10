@@ -1,3 +1,6 @@
+// Import Resend for email functionality
+import { Resend } from 'resend';
+
 // A map to cache Google's public keys.
 // Keys are key IDs, values are the imported CryptoKey objects.
 const keyCache = new Map();
@@ -221,6 +224,11 @@ export default {
     }
     if (path === '/api/health') {
           return handleHealthRequest(env);
+    }
+
+    // --- CONTACT FORM ENDPOINT ---
+    if (path === '/api/contact' && request.method === 'POST') {
+        return handleContactForm(request, env);
     }
 
     // --- NEW ACCOUNT FEATURE ENDPOINTS ---
@@ -1154,6 +1162,302 @@ async function handleAnalyticsRequest(request, env) {
   return jsonResponse({ message: 'Analytics endpoint - coming soon' });
 }
 
+
+// --- CONTACT FORM HANDLER ---
+async function handleContactForm(request, env) {
+    const origin = request.headers.get('Origin');
+    const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown-ip';
+
+    // Rate limiting: 3 contact form submissions per hour per IP
+    if (isRateLimited(clientIP, 'contact', 3, 60 * 60 * 1000)) {
+        return jsonResponse({
+            error: 'Too many contact form submissions. Please try again later.',
+            type: 'rate_limit',
+            retryAfter: '1 hour'
+        }, 429, getSecurityHeaders(origin));
+    }
+
+    if (!validateSiteOrigin(request)) {
+        return jsonResponse({ error: 'Unauthorized origin' }, 403, getSecurityHeaders(origin));
+    }
+
+    const headers = getSecurityHeaders(origin);
+
+    try {
+        const { name, email, subject, message } = await request.json();
+
+        // Subject mapping for better display names
+        const subjectMap = {
+            'general': 'General Inquiry',
+            'product': 'Product Information Request',
+            'order': 'Order Status Inquiry',
+            'feedback': 'Feedback & Suggestions',
+            'partnership': 'Partnership Opportunity'
+        };
+
+        // Validation with detailed feedback
+        if (!name || !email || !subject || !message) {
+            const missingFields = [];
+            if (!name) missingFields.push('name');
+            if (!email) missingFields.push('email');
+            if (!subject) missingFields.push('subject');
+            if (!message) missingFields.push('message');
+
+            return jsonResponse({
+                error: 'Required fields are missing',
+                type: 'validation',
+                missingFields: missingFields,
+                message: `Please fill in the following fields: ${missingFields.join(', ')}`
+            }, 400, headers);
+        }
+
+        if (!isValidEmail(email)) {
+            return jsonResponse({
+                error: 'Invalid email format',
+                type: 'validation',
+                field: 'email',
+                message: 'Please enter a valid email address (e.g., name@example.com)'
+            }, 400, headers);
+        }
+
+        if (name.length < 2) {
+            return jsonResponse({
+                error: 'Name too short',
+                type: 'validation',
+                field: 'name',
+                message: 'Name must be at least 2 characters long'
+            }, 400, headers);
+        }
+
+        if (message.length < 10) {
+            return jsonResponse({
+                error: 'Message too short',
+                type: 'validation',
+                field: 'message',
+                message: 'Message must be at least 10 characters long',
+                currentLength: message.length,
+                requiredLength: 10
+            }, 400, headers);
+        }
+
+        // Validate subject
+        const validSubjects = ['general', 'product', 'order', 'feedback', 'partnership'];
+        if (!validSubjects.includes(subject)) {
+            return jsonResponse({
+                error: 'Invalid subject selection',
+                type: 'validation',
+                field: 'subject',
+                message: 'Please select a valid subject from the dropdown',
+                validOptions: validSubjects
+            }, 400, headers);
+        }
+
+        // Send email via Resend (if configured)
+        if (!env.RESEND_API_KEY) {
+            console.warn('RESEND_API_KEY not configured - skipping email send');
+            return jsonResponse({
+                success: true,
+                message: 'Your message has been sent.',
+                emailId: 'demo-mode',
+                verification: {
+                    status: 'demo',
+                    timestamp: new Date().toISOString(),
+                    recipient: 'support@fragrancecollect.com',
+                    subject: `Fragrance Collect Contact: ${subjectMap[subject] || subject}`,
+                    estimatedDelivery: 'Demo mode - no email sent'
+                }
+            }, 200, headers);
+        }
+
+        const emailResult = await sendContactEmail({
+            name,
+            email,
+            subject,
+            message
+        }, env);
+
+        if (!emailResult.success) {
+            console.error('Failed to send contact email:', emailResult.error);
+            return jsonResponse({
+                error: 'Failed to send email. Please try again later.',
+                type: 'email_failure',
+                reason: emailResult.error,
+                message: 'There was an issue sending your message. Please try again in a few minutes or contact us directly at support@fragrancecollect.com'
+            }, 500, headers);
+        }
+
+        console.log('Contact form email sent successfully:', { name, email, subject, emailId: emailResult.emailId });
+
+        return jsonResponse({
+            success: true,
+            message: 'Thank you for your message! We\'ll get back to you within 24 hours.',
+            emailId: emailResult.emailId,
+            verification: {
+                status: 'sent',
+                timestamp: new Date().toISOString(),
+                recipient: 'support@fragrancecollect.com',
+                subject: `Fragrance Collect Contact: ${subjectMap[subject] || subject}`,
+                estimatedDelivery: 'within 5 minutes'
+            }
+        }, 200, headers);
+
+    } catch (error) {
+        console.error('Error processing contact form:', error);
+
+        // Provide more specific error information based on error type
+        let errorMessage = 'Failed to process contact form';
+        let errorType = 'server_error';
+
+        if (error.message.includes('JSON')) {
+            errorMessage = 'Invalid form data received';
+            errorType = 'invalid_json';
+        } else if (error.message.includes('fetch')) {
+            errorMessage = 'Network error occurred while processing your request';
+            errorType = 'network_error';
+        }
+
+        return jsonResponse({
+            error: errorMessage,
+            type: errorType,
+            message: 'Please try again later or contact us directly at support@fragrancecollect.com',
+            timestamp: new Date().toISOString()
+        }, 500, headers);
+    }
+}
+
+// Send contact form email via Resend
+async function sendContactEmail({ name, email, subject, message }, env) {
+    try {
+        if (!env.RESEND_API_KEY) {
+            console.error('RESEND_API_KEY not configured');
+            return { success: false, error: 'Email service not configured' };
+        }
+
+        // Subject mapping for better display names
+        const subjectMap = {
+            'general': 'General Inquiry',
+            'product': 'Product Information Request',
+            'order': 'Order Status Inquiry',
+            'feedback': 'Feedback & Suggestions',
+            'partnership': 'Partnership Opportunity'
+        };
+
+        const emailSubject = `Fragrance Collect Contact: ${subjectMap[subject] || subject}`;
+        const emailHtml = generateContactEmailHtml(name, email, subjectMap[subject], message);
+
+        // Initialize Resend with API key
+        console.log('🔑 RESEND_API_KEY available:', !!env.RESEND_API_KEY);
+        console.log('🔑 RESEND_API_KEY length:', env.RESEND_API_KEY ? env.RESEND_API_KEY.length : 'undefined');
+        console.log('🔑 RESEND_API_KEY starts with:', env.RESEND_API_KEY ? env.RESEND_API_KEY.substring(0, 10) + '...' : 'undefined');
+
+        if (!env.RESEND_API_KEY) {
+            throw new Error('RESEND_API_KEY is not configured in environment');
+        }
+
+        if (!env.RESEND_API_KEY.startsWith('re_')) {
+            console.error('❌ RESEND_API_KEY does not start with re_ - invalid format');
+            throw new Error('Invalid RESEND_API_KEY format');
+        }
+
+        console.log('🔧 Initializing Resend client...');
+        const resend = new Resend(env.RESEND_API_KEY);
+        console.log('✅ Resend client initialized');
+
+        // Send email directly to personal address while domain verifies
+        console.log('📧 From:', 'Fragrance Collect <onboarding@resend.dev>');
+        console.log('📧 To:', 'joshuablaszczyk@gmail.com');
+        console.log('📧 Subject:', emailSubject);
+
+        const { data, error } = await resend.emails.send({
+            from: 'Fragrance Collect <onboarding@resend.dev>', // Resend's verified domain
+            to: ['joshuablaszczyk@gmail.com'], // Send directly to personal email
+            subject: emailSubject,
+            html: emailHtml,
+            reply_to: email
+        });
+
+        if (error) {
+            console.error('❌ Resend API error:', JSON.stringify(error, null, 2));
+            console.error('❌ Error type:', typeof error);
+            console.error('❌ Error message:', error ? error.message : 'undefined error');
+            console.error('❌ Full error object:', error);
+            const errorMsg = error && error.message ? error.message : 'Unknown Resend error';
+            return { success: false, error: `Resend error: ${errorMsg}` };
+        }
+
+        console.log('Email sent successfully via Resend:', data.id);
+        return { success: true, emailId: data.id };
+
+    } catch (error) {
+        console.error('Error sending email via Resend:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+// Generate professional HTML email template for contact form
+function generateContactEmailHtml(name, email, subject, message) {
+    return `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>New Contact Form Submission</title>
+        </head>
+        <body style="font-family: 'Lato', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="background: linear-gradient(135deg, #C9A646, #D4B85E); padding: 30px; text-align: center; border-radius: 15px 15px 0 0;">
+                <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 600;">New Contact Form Submission</h1>
+                <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px;">Fragrance Collect Customer Inquiry</p>
+            </div>
+
+            <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 15px 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                <div style="background: white; padding: 25px; border-radius: 10px; margin-bottom: 20px;">
+                    <h2 style="color: #C9A646; margin: 0 0 20px 0; font-size: 18px;">Customer Information</h2>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 8px 0; font-weight: 600; color: #333; width: 120px;">Name:</td>
+                            <td style="padding: 8px 0; color: #666;">${name}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; font-weight: 600; color: #333;">Email:</td>
+                            <td style="padding: 8px 0; color: #666;">
+                                <a href="mailto:${email}" style="color: #C9A646; text-decoration: none;">${email}</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; font-weight: 600; color: #333;">Subject:</td>
+                            <td style="padding: 8px 0; color: #666;">${subject}</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div style="background: white; padding: 25px; border-radius: 10px;">
+                    <h3 style="color: #C9A646; margin: 0 0 15px 0; font-size: 18px;">Message</h3>
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #C9A646;">
+                        <p style="margin: 0; color: #333; line-height: 1.6; white-space: pre-wrap;">${message}</p>
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e9ecef;">
+                    <p style="color: #666; font-size: 14px; margin: 0;">
+                        This message was sent via the Fragrance Collect contact form.<br>
+                        We aim to respond to all inquiries within 24 hours.
+                    </p>
+                    <p style="color: #999; font-size: 12px; margin: 15px 0 10px 0;">
+                        <a href="mailto:unsubscribe@fragrancecollect.com?subject=Unsubscribe" style="color: #999; text-decoration: underline;">Unsubscribe</a> |
+                        <a href="https://fragrancecollect.com/privacy-policy" style="color: #999; text-decoration: underline;">Privacy Policy</a>
+                    </p>
+                    <p style="color: #bbb; font-size: 11px; margin: 0;">
+                        Fragrance Collect<br>
+                        Customer Service Department<br>
+                        Email: support@fragrancecollect.com
+                    </p>
+                </div>
+            </div>
+        </body>
+        </html>
+    `;
+}
 
 // --- ACCOUNT FEATURE FUNCTIONS (Preferences & Favorites) ---
 
