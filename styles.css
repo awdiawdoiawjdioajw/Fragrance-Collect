@@ -161,14 +161,15 @@ body {
         white-space: nowrap;
     }
 
-    /* Make Menu dropdown screen-centered and scrollable */
+    /* Make Menu dropdown vertically scrollable */
     .mega-menu {
-        min-width: 500px; /* Wider than screen for scrolling */
+        width: 90vw; /* Fit within screen width */
+        max-width: 400px; /* Reasonable max width */
         top: calc(100% + 10px); /* Position below header with spacing */
-        right: 50%; /* Center on screen */
-        transform: translateX(50%) translateY(-10px); /* Initial position for animation */
-        overflow-x: auto; /* Enable horizontal scrolling */
-        max-width: calc(100vw - 20px); /* Prevent going off screen edges */
+        left: 50%; /* Start from center of button */
+        transform: translateX(-50%) translateY(-10px); /* Center and initial position */
+        overflow-y: auto; /* Enable vertical scrolling */
+        max-height: 60vh; /* Limit height to keep it manageable */
         opacity: 0; /* Initially hidden */
         visibility: hidden; /* Initially hidden */
         transition: all 0.3s ease; /* Smooth animation */
@@ -179,16 +180,15 @@ body {
     .menu-dropdown:hover .mega-menu {
         opacity: 1;
         visibility: visible;
-        transform: translateX(50%) translateY(0); /* Slide down animation */
+        transform: translateX(-50%) translateY(0); /* Slide down animation */
     }
 
-    /* Make mega menu content scrollable */
+    /* Make mega menu content vertically scrollable */
     .mega-menu-content {
-        min-width: 480px; /* Ensure content is wide enough to scroll */
-        display: flex; /* Use flexbox for horizontal layout */
-        flex-direction: row; /* Keep horizontal layout */
-        flex-shrink: 0; /* Prevent content from shrinking */
-        gap: 0; /* Remove any gap between columns */
+        display: flex; /* Use flexbox for layout */
+        flex-direction: column; /* Stack vertically */
+        gap: 0; /* Remove gaps between sections */
+        padding: 10px; /* Add some padding for content */
     }
 
     .mega-menu-column {
@@ -237,14 +237,15 @@ body {
         width: 18px; /* Shorter hamburger lines */
     }
 
-    /* Make Menu dropdown screen-centered and scrollable */
+    /* Make Menu dropdown vertically scrollable */
     .mega-menu {
-        min-width: 450px; /* Wider than screen for scrolling */
+        width: 90vw; /* Fit within screen width */
+        max-width: 380px; /* Reasonable max width */
         top: calc(100% + 8px); /* Position below header with spacing */
-        right: 50%; /* Center on screen */
-        transform: translateX(50%) translateY(-10px); /* Initial position for animation */
-        overflow-x: auto; /* Enable horizontal scrolling */
-        max-width: calc(100vw - 30px); /* Prevent going off screen edges */
+        left: 50%; /* Start from center of button */
+        transform: translateX(-50%) translateY(-10px); /* Center and initial position */
+        overflow-y: auto; /* Enable vertical scrolling */
+        max-height: 60vh; /* Limit height to keep it manageable */
         opacity: 0; /* Initially hidden */
         visibility: hidden; /* Initially hidden */
         transition: all 0.3s ease; /* Smooth animation */
@@ -255,16 +256,15 @@ body {
     .menu-dropdown:hover .mega-menu {
         opacity: 1;
         visibility: visible;
-        transform: translateX(50%) translateY(0); /* Slide down animation */
+        transform: translateX(-50%) translateY(0); /* Slide down animation */
     }
 
-    /* Make mega menu content scrollable */
+    /* Make mega menu content vertically scrollable */
     .mega-menu-content {
-        min-width: 420px; /* Ensure content is wide enough to scroll */
-        display: flex; /* Use flexbox for horizontal layout */
-        flex-direction: row; /* Keep horizontal layout */
-        flex-shrink: 0; /* Prevent content from shrinking */
-        gap: 0; /* Remove any gap between columns */
+        display: flex; /* Use flexbox for layout */
+        flex-direction: column; /* Stack vertically */
+        gap: 0; /* Remove gaps between sections */
+        padding: 10px; /* Add some padding for content */
     }
 }
 
@@ -335,14 +335,15 @@ body {
         white-space: nowrap;
     }
 
-    /* Make Menu dropdown screen-centered and scrollable */
+    /* Make Menu dropdown vertically scrollable */
     .mega-menu {
-        min-width: 400px; /* Wider than screen for scrolling */
+        width: 85vw; /* Fit within screen width */
+        max-width: 350px; /* Reasonable max width */
         top: calc(100% + 6px); /* Position below header with spacing */
-        right: 50%; /* Center on screen */
-        transform: translateX(50%) translateY(-10px); /* Initial position for animation */
-        overflow-x: auto; /* Enable horizontal scrolling */
-        max-width: calc(100vw - 10px); /* Prevent going off screen edges */
+        left: 50%; /* Start from center of button */
+        transform: translateX(-50%) translateY(-10px); /* Center and initial position */
+        overflow-y: auto; /* Enable vertical scrolling */
+        max-height: 60vh; /* Limit height to keep it manageable */
         opacity: 0; /* Initially hidden */
         visibility: hidden; /* Initially hidden */
         transition: all 0.3s ease; /* Smooth animation */
@@ -353,16 +354,15 @@ body {
     .menu-dropdown:hover .mega-menu {
         opacity: 1;
         visibility: visible;
-        transform: translateX(50%) translateY(0); /* Slide down animation */
+        transform: translateX(-50%) translateY(0); /* Slide down animation */
     }
 
-    /* Make mega menu content scrollable */
+    /* Make mega menu content vertically scrollable */
     .mega-menu-content {
-        min-width: 380px; /* Ensure content is wide enough to scroll */
-        display: flex; /* Use flexbox for horizontal layout */
-        flex-direction: row; /* Keep horizontal layout */
-        flex-shrink: 0; /* Prevent content from shrinking */
-        gap: 0; /* Remove any gap between columns */
+        display: flex; /* Use flexbox for layout */
+        flex-direction: column; /* Stack vertically */
+        gap: 0; /* Remove gaps between sections */
+        padding: 10px; /* Add some padding for content */
     }
 
     .mega-menu-column {
@@ -404,12 +404,13 @@ body {
         }
 
         .mega-menu {
-            min-width: 300px; /* Wider than screen for scrolling */
+            width: 80vw; /* Fit within screen width */
+            max-width: 300px; /* Reasonable max width */
             top: calc(100% + 4px); /* Position below header with minimal spacing */
-            right: 50%; /* Center on screen */
-            transform: translateX(50%) translateY(-10px); /* Initial position for animation */
-            overflow-x: auto; /* Enable horizontal scrolling */
-            max-width: calc(100vw - 5px); /* Prevent going off screen edges */
+            left: 50%; /* Start from center of button */
+            transform: translateX(-50%) translateY(-10px); /* Center and initial position */
+            overflow-y: auto; /* Enable vertical scrolling */
+            max-height: 60vh; /* Limit height to keep it manageable */
             opacity: 0; /* Initially hidden */
             visibility: hidden; /* Initially hidden */
             transition: all 0.3s ease; /* Smooth animation */
@@ -420,16 +421,15 @@ body {
         .menu-dropdown:hover .mega-menu {
             opacity: 1;
             visibility: visible;
-            transform: translateX(50%) translateY(0); /* Slide down animation */
+            transform: translateX(-50%) translateY(0); /* Slide down animation */
         }
 
         /* Make content scrollable on very narrow screens */
         .mega-menu-content {
-            min-width: 280px; /* Ensure content is wide enough to scroll */
-            display: flex; /* Use flexbox for horizontal layout */
-            flex-direction: row; /* Keep horizontal layout */
-            flex-shrink: 0; /* Prevent content from shrinking */
-            gap: 0; /* Remove any gap between columns */
+            display: flex; /* Use flexbox for layout */
+            flex-direction: column; /* Stack vertically */
+            gap: 0; /* Remove gaps between sections */
+            padding: 10px; /* Add some padding for content */
         }
     }
 
@@ -451,10 +451,13 @@ body {
     }
 
     .mega-menu {
+        width: 75vw; /* Fit within screen width */
+        max-width: 250px; /* Reasonable max width */
         top: calc(100% + 4px); /* Position below header with minimal spacing */
-        right: 50%; /* Center on screen */
-        transform: translateX(50%) translateY(-10px); /* Initial position for animation */
-        min-width: 200px; /* Even smaller for very narrow screens */
+        left: 50%; /* Start from center of button */
+        transform: translateX(-50%) translateY(-10px); /* Center and initial position */
+        overflow-y: auto; /* Enable vertical scrolling */
+        max-height: 60vh; /* Limit height to keep it manageable */
         opacity: 0; /* Initially hidden */
         visibility: hidden; /* Initially hidden */
         transition: all 0.3s ease; /* Smooth animation */
@@ -465,7 +468,7 @@ body {
     .menu-dropdown:hover .mega-menu {
         opacity: 1;
         visibility: visible;
-        transform: translateX(50%) translateY(0); /* Slide down animation */
+        transform: translateX(-50%) translateY(0); /* Slide down animation */
     }
 }
 
