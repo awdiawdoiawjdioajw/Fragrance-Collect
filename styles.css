@@ -161,11 +161,11 @@ body {
         white-space: nowrap;
     }
 
-    /* Make Menu dropdown more compact and centered */
+    /* Make Menu dropdown center under menu button */
     .mega-menu {
         min-width: 320px; /* Smaller than desktop */
-        right: 50%; /* Center the menu */
-        transform: translateX(50%); /* Offset to truly center */
+        left: 50%; /* Start from center of button */
+        transform: translateX(-50%); /* Center the dropdown under button */
     }
 
     .mega-menu-column {
@@ -214,10 +214,10 @@ body {
         width: 18px; /* Shorter hamburger lines */
     }
 
-    /* Center mega menu for this size range too */
+    /* Center mega menu under menu button for this size range */
     .mega-menu {
-        right: 50%;
-        transform: translateX(50%);
+        left: 50%; /* Start from center of button */
+        transform: translateX(-50%); /* Center the dropdown under button */
         min-width: 350px;
         max-width: calc(100vw - 40px);
     }
@@ -290,11 +290,11 @@ body {
         white-space: nowrap;
     }
 
-    /* Make Menu dropdown very compact and centered */
+    /* Make Menu dropdown center under menu button */
     .mega-menu {
         min-width: 280px; /* Optimal size for narrow screens */
-        right: 50%; /* Center the menu */
-        transform: translateX(50%); /* Offset to truly center */
+        left: 50%; /* Start from center of button */
+        transform: translateX(-50%); /* Center the dropdown under button */
         max-width: calc(100vw - 20px); /* Prevent overflow */
     }
 
@@ -337,11 +337,11 @@ body {
         }
 
         .mega-menu {
+            left: 50%; /* Start from center of button */
+            transform: translateX(-50%); /* Center the dropdown under button */
             min-width: 180px; /* Very compact width */
         }
     }
-
-
 
 
     .image-carousel {
