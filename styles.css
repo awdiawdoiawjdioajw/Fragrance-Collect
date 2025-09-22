@@ -139,7 +139,38 @@ body {
         margin-right: 8px; /* Add small margin to separate from utility buttons */
     }
 
-    /* Make utility buttons even smaller */
+    /* Show minimal navigation: Home + Menu */
+    .nav-section {
+        display: flex; /* Show nav section */
+        margin: 0 4px; /* Minimal margin */
+    }
+
+    .main-nav {
+        gap: 8px; /* Very tight spacing between nav items */
+    }
+
+    /* Hide all nav items except Home and Menu */
+    .main-nav li:not(:first-child):not(:last-child) {
+        display: none; /* Hide middle navigation items */
+    }
+
+    /* Style the visible Home and Menu links */
+    .nav-link {
+        font-size: 12px; /* Smaller font for narrow devices */
+        padding: 4px 8px; /* Compact padding */
+        white-space: nowrap;
+    }
+
+    /* Make Menu dropdown more compact */
+    .mega-menu {
+        min-width: 300px; /* Smaller than desktop */
+    }
+
+    .mega-menu-column {
+        padding: 16px 12px; /* Tighter padding */
+    }
+
+    /* Make utility buttons smaller */
     .utility-section {
         gap: 4px; /* Minimal spacing */
     }
@@ -153,6 +184,7 @@ body {
     .mobile-menu-toggle {
         right: 8px;
         padding: 6px; /* Smaller touch target */
+        display: none; /* Hide since we have Menu dropdown */
     }
 
     .hamburger-line {
@@ -160,7 +192,7 @@ body {
     }
 }
 
-/* Very narrow devices - most aggressive optimization */
+/* Very narrow devices - show minimal navigation */
 @media (max-width: 480px) {
     .header-container {
         padding: 0 6px; /* Very tight padding */
@@ -178,15 +210,6 @@ body {
     .utility-btn {
         width: 28px; /* Very small buttons */
         height: 28px;
-    }
-
-    .mobile-menu-toggle {
-        right: 6px;
-        padding: 4px;
-    }
-
-    .hamburger-line {
-        width: 16px; /* Very short hamburger lines */
     }
 
     .mobile-nav-content {
@@ -212,6 +235,53 @@ body {
     .search-btn {
         position: absolute;
         right: 45px; /* Position next to hamburger menu */
+    }
+
+    /* Show minimal navigation even on very narrow devices */
+    .nav-section {
+        display: flex; /* Show nav section */
+        margin: 0 2px; /* Minimal margin */
+    }
+
+    .main-nav {
+        gap: 4px; /* Very tight spacing */
+    }
+
+    /* Hide all nav items except Home and Menu */
+    .main-nav li:not(:first-child):not(:last-child) {
+        display: none; /* Hide middle navigation items */
+    }
+
+    /* Very compact nav links for narrowest devices */
+    .nav-link {
+        font-size: 11px; /* Even smaller font */
+        padding: 2px 6px; /* Minimal padding */
+        white-space: nowrap;
+    }
+
+    /* Make Menu dropdown very compact */
+    .mega-menu {
+        min-width: 250px; /* Even smaller than before */
+        right: -50px; /* Position to fit on screen */
+    }
+
+    .mega-menu-column {
+        padding: 12px 8px; /* Very tight padding */
+    }
+
+    .mega-menu-column h3 {
+        font-size: 11px; /* Smaller headings */
+        margin-bottom: 8px;
+    }
+
+    .mega-menu-column a {
+        font-size: 10px; /* Smaller links */
+        padding: 4px 0;
+    }
+
+    /* Hide mobile menu toggle since we have Menu dropdown */
+    .mobile-menu-toggle {
+        display: none;
     }
 }
 
