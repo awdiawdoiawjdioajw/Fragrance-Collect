@@ -164,6 +164,7 @@ body {
     /* Make Menu dropdown screen-centered and scrollable */
     .mega-menu {
         min-width: 500px; /* Wider than screen for scrolling */
+        top: calc(100% + 10px); /* Position below header with spacing */
         right: 50%; /* Center on screen */
         transform: translateX(50%); /* Offset to truly center */
         overflow-x: auto; /* Enable horizontal scrolling */
@@ -228,6 +229,7 @@ body {
     /* Make Menu dropdown screen-centered and scrollable */
     .mega-menu {
         min-width: 450px; /* Wider than screen for scrolling */
+        top: calc(100% + 8px); /* Position below header with spacing */
         right: 50%; /* Center on screen */
         transform: translateX(50%); /* Offset to truly center */
         overflow-x: auto; /* Enable horizontal scrolling */
@@ -314,6 +316,7 @@ body {
     /* Make Menu dropdown screen-centered and scrollable */
     .mega-menu {
         min-width: 400px; /* Wider than screen for scrolling */
+        top: calc(100% + 6px); /* Position below header with spacing */
         right: 50%; /* Center on screen */
         transform: translateX(50%); /* Offset to truly center */
         overflow-x: auto; /* Enable horizontal scrolling */
@@ -369,6 +372,7 @@ body {
 
         .mega-menu {
             min-width: 300px; /* Wider than screen for scrolling */
+            top: calc(100% + 4px); /* Position below header with minimal spacing */
             right: 50%; /* Center on screen */
             transform: translateX(50%); /* Offset to truly center */
             overflow-x: auto; /* Enable horizontal scrolling */
@@ -403,6 +407,7 @@ body {
     }
 
     .mega-menu {
+        top: calc(100% + 4px); /* Position below header with minimal spacing */
         min-width: 200px; /* Even smaller for very narrow screens */
     }
 }
