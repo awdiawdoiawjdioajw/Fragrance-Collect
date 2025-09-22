@@ -161,9 +161,11 @@ body {
         white-space: nowrap;
     }
 
-    /* Make Menu dropdown more compact */
+    /* Make Menu dropdown more compact and centered */
     .mega-menu {
         min-width: 300px; /* Smaller than desktop */
+        right: 50%; /* Center the menu */
+        transform: translateX(50%); /* Offset to truly center */
     }
 
     .mega-menu-column {
@@ -189,6 +191,14 @@ body {
 
     .hamburger-line {
         width: 18px; /* Shorter hamburger lines */
+    }
+
+    /* Center mega menu for this size range too */
+    .mega-menu {
+        right: 50%;
+        transform: translateX(50%);
+        min-width: 350px;
+        max-width: calc(100vw - 40px);
     }
 }
 
@@ -259,10 +269,12 @@ body {
         white-space: nowrap;
     }
 
-    /* Make Menu dropdown very compact */
+    /* Make Menu dropdown very compact and centered */
     .mega-menu {
-        min-width: 250px; /* Even smaller than before */
-        right: -50px; /* Position to fit on screen */
+        min-width: 280px; /* Optimal size for narrow screens */
+        right: 50%; /* Center the menu */
+        transform: translateX(50%); /* Offset to truly center */
+        max-width: calc(100vw - 20px); /* Prevent overflow */
     }
 
     .mega-menu-column {
@@ -279,9 +291,25 @@ body {
         padding: 4px 0;
     }
 
+    /* Make mega menu grid responsive on very narrow screens */
+    .mega-menu-content {
+        grid-template-columns: 1fr 1fr 1fr 1fr; /* Keep 4 columns but responsive */
+    }
+
     /* Hide mobile menu toggle since we have Menu dropdown */
     .mobile-menu-toggle {
         display: none;
+    }
+}
+
+/* Responsive mega menu grid for very narrow screens */
+@media (max-width: 400px) {
+    .mega-menu-content {
+        grid-template-columns: 1fr 1fr; /* 2 columns for very narrow */
+    }
+
+    .mega-menu {
+        min-width: 200px; /* Even smaller for very narrow screens */
     }
 }
 
