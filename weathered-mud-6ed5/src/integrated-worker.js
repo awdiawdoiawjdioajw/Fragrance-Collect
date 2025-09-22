@@ -845,7 +845,24 @@ async function searchTikTokStore(query, limit, offset, lowPrice, highPrice, env,
     };
     
     const gqlData = await fetchCJProducts(gqlQuery, gqlVariables, env);
-    return gqlData.data?.shoppingProducts?.resultList || [];
+    const products = gqlData.data?.shoppingProducts?.resultList || [];
+    
+    // Debug TikTok products from API
+    if (products.length > 0) {
+      console.log('🎵 TikTok API Response Debug:', {
+        totalProducts: products.length,
+        sampleProduct: {
+          id: products[0].id,
+          title: products[0].title,
+          advertiserName: products[0].advertiserName,
+          price: products[0].price,
+          currency: products[0].price?.currency,
+          amount: products[0].price?.amount
+        }
+      });
+    }
+    
+    return products;
   } catch (error) {
     console.error('TikTok Store search failed:', error);
     return [];
@@ -1070,8 +1087,70 @@ async function formatProductForRevenue(p, query, REVENUE_CONFIG, COMMISSION_RATE
   
   if (!p.imageLink) return null;
 
-  const price = parseFloat(p.price?.amount || 0);
+  let price = parseFloat(p.price?.amount || 0);
   const commissionRate = getCommissionRate(p, COMMISSION_RATES);
+  
+  // Flag TikTok pricing issues - CJ may provide inaccurate prices for TikTok products
+  if (p.advertiserName?.includes('TikTok')) {
+    console.warn('⚠️ TikTok Product - CJ Price May Be Inaccurate:', {
+      id: p.id,
+      title: p.title,
+      advertiserName: p.advertiserName,
+      cjReportedPrice: price,
+      currency: p.price?.currency,
+      note: 'CJ pricing for TikTok products may not match actual TikTok Shop prices'
+    });
+  }
+  
+  // Debug TikTok pricing issues
+  if (p.advertiserName?.includes('TikTok')) {
+    console.log('🎵 TikTok Product Debug:', {
+      id: p.id,
+      title: p.title,
+      advertiserName: p.advertiserName,
+      rawPrice: p.price,
+      parsedPrice: price,
+      currency: p.price?.currency,
+      priceAmount: p.price?.amount,
+      priceAmountType: typeof p.price?.amount,
+      priceAmountString: String(p.price?.amount)
+    });
+    
+    // Check for potential currency conversion issues
+    if (price > 100) {
+      console.warn('🚨 HIGH TikTok Price Detected - Possible Currency Issue:', {
+        id: p.id,
+        title: p.title,
+        price: price,
+        currency: p.price?.currency,
+        rawPrice: p.price,
+        possibleConversion: price / 5.22 // Check if it's ~5x too high (CNY to USD)
+      });
+    }
+    
+    // Validate TikTok prices - flag suspicious prices
+    if (price > 10000 || price < 0.01) {
+      console.warn('🚨 SUSPICIOUS TikTok Price Detected:', {
+        id: p.id,
+        title: p.title,
+        price: price,
+        currency: p.price?.currency,
+        rawPrice: p.price
+      });
+    }
+  }
+  
+  // Filter out products with obviously wrong prices (likely data errors)
+  if (price > 50000 || price < 0) {
+    console.log('❌ FILTERED: Product with invalid price:', {
+      id: p.id,
+      title: p.title,
+      price: price,
+      currency: p.price?.currency,
+      advertiser: p.advertiserName
+    });
+    return null;
+  }
   
   // Determine the final link to use for clicks
   let finalClickUrl;
@@ -1113,6 +1192,7 @@ async function formatProductForRevenue(p, query, REVENUE_CONFIG, COMMISSION_RATE
     price: price,
     image: p.imageLink,
     shippingCost: parseFloat(p.shipping?.price?.amount || 0),
+    buyUrl: finalClickUrl, // The actual clickable link (CJ affiliate link if available, otherwise CJ product link, otherwise constructed URL)
     link: finalClickUrl, // The actual clickable link (CJ affiliate link if available, otherwise CJ product link, otherwise constructed URL)
     cjLink: clickUrl, // Original CJ affiliate link (null if not available)
     productLink: productLink, // CJ's product landing page URL (null if not available)
@@ -1480,7 +1560,7 @@ async function handleGetPreferences(request, env) {
     try {
         const prefs = await env.DB.prepare(`SELECT * FROM user_preferences WHERE user_id = ?`).bind(user.id).first();
         if (!prefs) {
-            return jsonResponse({ preferences: {} }, 200, headers);
+            return jsonResponse({ success: true, preferences: {} }, 200, headers);
         }
         
         // Parse JSON strings back to arrays
@@ -1494,7 +1574,7 @@ async function handleGetPreferences(request, env) {
         console.log('Raw preferences:', prefs);
         console.log('Parsed preferences:', parsedPrefs);
         
-        return jsonResponse({ preferences: parsedPrefs }, 200, headers);
+        return jsonResponse({ success: true, preferences: parsedPrefs }, 200, headers);
     } catch (error) {
         console.error('Error getting preferences:', error);
         return jsonResponse({ error: 'Failed to get preferences' }, 500, headers);

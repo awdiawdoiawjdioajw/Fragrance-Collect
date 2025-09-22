@@ -55,7 +55,7 @@ body {
     }
 
     .header-container {
-        padding: 0 16px;
+        padding: 0 12px; /* Reduced padding for mobile */
     }
 
     /* Hide desktop navigation and PC menu */
@@ -70,43 +70,65 @@ body {
     /* Show mobile menu and toggle */
     .mobile-menu-toggle {
         display: flex;
+        position: absolute;
+        right: 12px; /* Position hamburger menu to the right */
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 10;
     }
 
     .mobile-nav-menu {
         display: block; /* Show mobile menu on mobile */
     }
 
+    /* Optimize utility section for mobile */
     .utility-section {
-        gap: 16px;
+        gap: 8px; /* Reduced gap between buttons */
+        flex-shrink: 0;
     }
 
     .utility-btn {
-        width: 40px;
-        height: 40px;
+        width: 36px; /* Slightly smaller buttons for mobile */
+        height: 36px;
     }
 
     .brand-text {
         font-size: 18px;
+        letter-spacing: 0.3px;
     }
 
     .logo-emblem {
         width: 32px;
         height: 32px;
     }
+
+    /* Ensure logo section doesn't overflow */
+    .logo-section {
+        flex-shrink: 0;
+        min-width: 0;
+    }
+
+    .brand-logo {
+        min-width: 0;
+    }
+
+    /* Profile dropdown positioning for mobile */
+    .profile-dropdown {
+        position: relative;
+    }
+
+    .profile-menu {
+        right: -40px; /* Adjust dropdown position for mobile */
+    }
 }
 
 @media (max-width: 480px) {
     .header-container {
-        padding: 0 12px;
+        padding: 0 8px; /* Even smaller padding for very small devices */
     }
 
     .utility-section {
-        gap: 12px;
-    }
-
-    .brand-text {
-        font-size: 16px;
-        letter-spacing: 0.3px;
+        gap: 6px; /* Tighter spacing */
     }
 
     .logo-emblem {
@@ -115,12 +137,26 @@ body {
     }
 
     .utility-btn {
-        width: 36px;
-        height: 36px;
+        width: 32px; /* Smaller buttons for very small devices */
+        height: 32px;
+    }
+
+    .mobile-menu-toggle {
+        right: 8px; /* Adjust position for smaller padding */
     }
 
     .mobile-nav-content {
-        padding: 20px 16px;
+        padding: 20px 12px; /* Reduced padding for mobile menu content */
+    }
+
+    /* Further optimize logo section */
+    .brand-text {
+        font-size: 15px;
+        max-width: 120px; /* Prevent text overflow */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        letter-spacing: 0.3px;
     }
 }
 
@@ -3091,20 +3127,20 @@ textarea:focus {
     .revenue-metrics {
         background: linear-gradient(135deg, #2c3e50, #34495e);
     }
-    
+
     .product-info {
         background: linear-gradient(135deg, #2c3e50, #34495e);
         color: white;
     }
-    
+
     .product-info h3 {
         color: white;
     }
-    
+
     .filter-section {
-        background: #2c3e50;
-        border-color: #34495e;
-        color: white;
+        background: var(--soft-black);
+        border-color: var(--antique-gold);
+        color: var(--warm-white);
     }
     
     .revenue-stat {

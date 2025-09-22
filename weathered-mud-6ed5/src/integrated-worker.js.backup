@@ -840,6 +840,7 @@ function formatProductForRevenue(p, query, REVENUE_CONFIG, COMMISSION_RATES) {
     price: price,
     image: p.imageLink,
     shippingCost: parseFloat(p.shipping?.price?.amount || 0),
+    buyUrl: cjLink, // The actual clickable link (CJ affiliate link if available, otherwise CJ product link, otherwise constructed URL)
     cjLink: cjLink,
     advertiser: p.advertiserName,
     currency: p.price?.currency || 'USD',
@@ -905,9 +906,21 @@ async function handleGetPreferences(request, env) {
     try {
         const prefs = await env.DB.prepare(`SELECT * FROM user_preferences WHERE user_id = ?`).bind(user.id).first();
         if (!prefs) {
-            return jsonResponse({ preferences: {} }, 200, headers);
+            return jsonResponse({ success: true, preferences: {} }, 200, headers);
         }
-        return jsonResponse({ preferences: prefs }, 200, headers);
+        
+        // Parse JSON strings back to arrays
+        const parsedPrefs = {
+            ...prefs,
+            scent_categories: prefs.scent_categories ? JSON.parse(prefs.scent_categories) : [],
+            sensitivities: prefs.sensitivities ? JSON.parse(prefs.sensitivities) : []
+        };
+        
+        console.log('Retrieved preferences for user:', user.id);
+        console.log('Raw preferences:', prefs);
+        console.log('Parsed preferences:', parsedPrefs);
+        
+        return jsonResponse({ success: true, preferences: parsedPrefs }, 200, headers);
     } catch (error) {
         console.error('Error getting preferences:', error);
         return jsonResponse({ error: 'Failed to get preferences' }, 500, headers);
@@ -920,6 +933,16 @@ async function handleUpdatePreferences(request, env) {
 
     try {
         const prefs = await request.json();
+        
+        // Convert arrays to JSON strings for database storage
+        const scentCategoriesJson = JSON.stringify(prefs.scent_categories || []);
+        const sensitivitiesJson = JSON.stringify(prefs.sensitivities || []);
+        
+        console.log('Updating preferences for user:', user.id);
+        console.log('Preferences data:', prefs);
+        console.log('Scent categories JSON:', scentCategoriesJson);
+        console.log('Sensitivities JSON:', sensitivitiesJson);
+        
         await env.DB.prepare(`
             INSERT INTO user_preferences (user_id, scent_categories, intensity, season, occasion, budget_range, sensitivities, updated_at) 
             VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
@@ -931,7 +954,7 @@ async function handleUpdatePreferences(request, env) {
                 budget_range = excluded.budget_range,
                 sensitivities = excluded.sensitivities,
                 updated_at = CURRENT_TIMESTAMP
-        `).bind(user.id, prefs.scent_categories, prefs.intensity, prefs.season, prefs.occasion, prefs.budget_range, prefs.sensitivities).run();
+        `).bind(user.id, scentCategoriesJson, prefs.intensity, prefs.season, prefs.occasion, prefs.budget_range, sensitivitiesJson).run();
 
         return jsonResponse({ success: true, message: 'Preferences updated' }, 200, headers);
     } catch (error) {
