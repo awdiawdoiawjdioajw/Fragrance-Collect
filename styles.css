@@ -122,41 +122,96 @@ body {
     }
 }
 
-@media (max-width: 480px) {
+/* Optimize for narrow devices around 500px */
+@media (max-width: 600px) and (min-width: 481px) {
     .header-container {
-        padding: 0 8px; /* Even smaller padding for very small devices */
+        padding: 0 8px; /* Very tight padding */
     }
 
-    .utility-section {
-        gap: 6px; /* Tighter spacing */
+    /* Hide brand text to save space, keep only emblem */
+    .brand-text {
+        display: none; /* Hide text on narrow devices */
     }
 
     .logo-emblem {
         width: 28px;
         height: 28px;
+        margin-right: 8px; /* Add small margin to separate from utility buttons */
+    }
+
+    /* Make utility buttons even smaller */
+    .utility-section {
+        gap: 4px; /* Minimal spacing */
     }
 
     .utility-btn {
-        width: 32px; /* Smaller buttons for very small devices */
+        width: 32px;
         height: 32px;
     }
 
+    /* Position mobile menu toggle closer to edge */
     .mobile-menu-toggle {
-        right: 8px; /* Adjust position for smaller padding */
+        right: 8px;
+        padding: 6px; /* Smaller touch target */
+    }
+
+    .hamburger-line {
+        width: 18px; /* Shorter hamburger lines */
+    }
+}
+
+/* Very narrow devices - most aggressive optimization */
+@media (max-width: 480px) {
+    .header-container {
+        padding: 0 6px; /* Very tight padding */
+    }
+
+    .utility-section {
+        gap: 4px; /* Minimal spacing */
+    }
+
+    .logo-emblem {
+        width: 24px;
+        height: 24px;
+    }
+
+    .utility-btn {
+        width: 28px; /* Very small buttons */
+        height: 28px;
+    }
+
+    .mobile-menu-toggle {
+        right: 6px;
+        padding: 4px;
+    }
+
+    .hamburger-line {
+        width: 16px; /* Very short hamburger lines */
     }
 
     .mobile-nav-content {
-        padding: 20px 12px; /* Reduced padding for mobile menu content */
+        padding: 20px 8px; /* Minimal padding for mobile menu content */
     }
 
-    /* Further optimize logo section */
+    /* Hide brand text completely on very narrow devices */
     .brand-text {
-        font-size: 15px;
-        max-width: 120px; /* Prevent text overflow */
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        letter-spacing: 0.3px;
+        display: none;
+    }
+
+    /* Hide profile dropdown and non-essential buttons */
+    .profile-menu {
+        display: none !important;
+    }
+
+    /* Keep only essential buttons */
+    .favorites-btn,
+    .profile-btn {
+        display: none; /* Hide to save space */
+    }
+
+    .search-btn {
+        position: absolute;
+        right: 45px; /* Position next to hamburger menu */
     }
 }
 
