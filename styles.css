@@ -166,9 +166,20 @@ body {
         min-width: 500px; /* Wider than screen for scrolling */
         top: calc(100% + 10px); /* Position below header with spacing */
         right: 50%; /* Center on screen */
-        transform: translateX(50%); /* Offset to truly center */
+        transform: translateX(50%) translateY(-10px); /* Initial position for animation */
         overflow-x: auto; /* Enable horizontal scrolling */
         max-width: calc(100vw - 20px); /* Prevent going off screen edges */
+        opacity: 0; /* Initially hidden */
+        visibility: hidden; /* Initially hidden */
+        transition: all 0.3s ease; /* Smooth animation */
+        z-index: 1000; /* Ensure it's above other content */
+    }
+
+    /* Animation when menu is hovered */
+    .menu-dropdown:hover .mega-menu {
+        opacity: 1;
+        visibility: visible;
+        transform: translateX(50%) translateY(0); /* Slide down animation */
     }
 
     /* Make mega menu content scrollable */
@@ -231,9 +242,20 @@ body {
         min-width: 450px; /* Wider than screen for scrolling */
         top: calc(100% + 8px); /* Position below header with spacing */
         right: 50%; /* Center on screen */
-        transform: translateX(50%); /* Offset to truly center */
+        transform: translateX(50%) translateY(-10px); /* Initial position for animation */
         overflow-x: auto; /* Enable horizontal scrolling */
         max-width: calc(100vw - 30px); /* Prevent going off screen edges */
+        opacity: 0; /* Initially hidden */
+        visibility: hidden; /* Initially hidden */
+        transition: all 0.3s ease; /* Smooth animation */
+        z-index: 1000; /* Ensure it's above other content */
+    }
+
+    /* Animation when menu is hovered */
+    .menu-dropdown:hover .mega-menu {
+        opacity: 1;
+        visibility: visible;
+        transform: translateX(50%) translateY(0); /* Slide down animation */
     }
 
     /* Make mega menu content scrollable */
@@ -318,9 +340,20 @@ body {
         min-width: 400px; /* Wider than screen for scrolling */
         top: calc(100% + 6px); /* Position below header with spacing */
         right: 50%; /* Center on screen */
-        transform: translateX(50%); /* Offset to truly center */
+        transform: translateX(50%) translateY(-10px); /* Initial position for animation */
         overflow-x: auto; /* Enable horizontal scrolling */
         max-width: calc(100vw - 10px); /* Prevent going off screen edges */
+        opacity: 0; /* Initially hidden */
+        visibility: hidden; /* Initially hidden */
+        transition: all 0.3s ease; /* Smooth animation */
+        z-index: 1000; /* Ensure it's above other content */
+    }
+
+    /* Animation when menu is hovered */
+    .menu-dropdown:hover .mega-menu {
+        opacity: 1;
+        visibility: visible;
+        transform: translateX(50%) translateY(0); /* Slide down animation */
     }
 
     /* Make mega menu content scrollable */
@@ -374,9 +407,20 @@ body {
             min-width: 300px; /* Wider than screen for scrolling */
             top: calc(100% + 4px); /* Position below header with minimal spacing */
             right: 50%; /* Center on screen */
-            transform: translateX(50%); /* Offset to truly center */
+            transform: translateX(50%) translateY(-10px); /* Initial position for animation */
             overflow-x: auto; /* Enable horizontal scrolling */
             max-width: calc(100vw - 5px); /* Prevent going off screen edges */
+            opacity: 0; /* Initially hidden */
+            visibility: hidden; /* Initially hidden */
+            transition: all 0.3s ease; /* Smooth animation */
+            z-index: 1000; /* Ensure it's above other content */
+        }
+
+        /* Animation when menu is hovered */
+        .menu-dropdown:hover .mega-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(50%) translateY(0); /* Slide down animation */
         }
 
         /* Make content scrollable on very narrow screens */
@@ -408,7 +452,20 @@ body {
 
     .mega-menu {
         top: calc(100% + 4px); /* Position below header with minimal spacing */
+        right: 50%; /* Center on screen */
+        transform: translateX(50%) translateY(-10px); /* Initial position for animation */
         min-width: 200px; /* Even smaller for very narrow screens */
+        opacity: 0; /* Initially hidden */
+        visibility: hidden; /* Initially hidden */
+        transition: all 0.3s ease; /* Smooth animation */
+        z-index: 1000; /* Ensure it's above other content */
+    }
+
+    /* Animation when menu is hovered */
+    .menu-dropdown:hover .mega-menu {
+        opacity: 1;
+        visibility: visible;
+        transform: translateX(50%) translateY(0); /* Slide down animation */
     }
 }
 
