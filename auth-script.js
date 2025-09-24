@@ -141,12 +141,30 @@ async function checkUserStatus() {
 async function logout() {
     showStatus('Signing out...');
     try {
-        const res = await fetch(`${WORKER_URL}/api/logout`, { method: 'POST' });
+        const res = await fetch(`${WORKER_URL}/api/logout`, { 
+            method: 'POST',
+            credentials: 'include'
+        });
         const data = await res.json();
 
         if (res.ok && data.success) {
+            // Clear localStorage
+            localStorage.removeItem('session_token');
+            
+            // Update global auth state if available
+            if (typeof isUserLoggedIn !== 'undefined') {
+                isUserLoggedIn = false;
+                currentUser = null;
+                sessionToken = null;
+            }
+            
             showStatus('You have been signed out successfully.');
             updateSharedNavUI(null); // Use shared function
+            
+            // Redirect to clear any cached state
+            setTimeout(() => {
+                window.location.href = 'auth.html';
+            }, 1000);
         } else {
             throw new Error(data.error || 'Logout failed.');
         }

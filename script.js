@@ -586,8 +586,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (isAuthenticated()) {
             console.log('Main page: User is authenticated, loading favorites...');
             loadUserFavorites();
+            
+            // Check if user navigated directly to favorites via URL fragment
+            if (window.location.hash === '#favorites') {
+                console.log('Direct navigation to favorites detected');
+                showFavoritesView();
+            }
         } else {
             console.log('Main page: User is not authenticated');
+            
+            // If user tried to access favorites but isn't authenticated, redirect to sign in
+            if (window.location.hash === '#favorites') {
+                console.log('Unauthenticated user tried to access favorites, redirecting to sign in');
+                window.location.href = 'auth.html?tab=signin';
+            }
         }
     }, 500);
 
@@ -814,6 +826,22 @@ document.addEventListener('DOMContentLoaded', async () => {
         showStatusMessage('Failed to load products. Please try again.', true);
     } finally {
         hideLoading();
+    }
+});
+
+// Handle hash changes for favorites navigation (back/forward buttons)
+window.addEventListener('hashchange', () => {
+    if (window.location.hash === '#favorites') {
+        if (isAuthenticated()) {
+            console.log('Hash change to favorites detected - showing favorites view');
+            showFavoritesView();
+        } else {
+            console.log('Hash change to favorites but user not authenticated - redirecting to sign in');
+            window.location.href = 'auth.html?tab=signin';
+        }
+    } else if (window.location.hash !== '#favorites' && typeof isInFavoritesView !== 'undefined' && isInFavoritesView) {
+        console.log('Hash change away from favorites - showing main content');
+        showMainContentView();
     }
 });
 
@@ -2440,7 +2468,7 @@ async function toggleFavorite(button, perfume) {
         // Check again after status update
         if (!isAuthenticated()) {
             console.log('User confirmed not logged in, redirecting to auth page');
-            window.location.href = 'auth.html';
+            window.location.href = 'auth.html?tab=signin';
             return;
         }
     }
@@ -2647,7 +2675,7 @@ function showFavoritesView() {
     if (!isAuthenticated()) {
         console.log('User not authenticated, redirecting to auth page');
         // User is not logged in, redirect to auth page
-        window.location.href = 'auth.html';
+        window.location.href = 'auth.html?tab=signin';
         return;
     }
     

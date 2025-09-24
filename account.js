@@ -737,11 +737,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function performSignOut() {
         try {
-            await fetch('https://weathered-mud-6ed5.joshuablaszczyk.workers.dev/logout', {
+            // Use the same logout endpoint as shared-auth.js
+            await fetch('https://weathered-mud-6ed5.joshuablaszczyk.workers.dev/api/logout', {
                 method: 'POST',
                 credentials: 'include'
             });
         } finally {
+            // Clear local storage and update auth state
+            localStorage.removeItem('session_token');
+            
+            // Update global auth state if available
+            if (typeof isUserLoggedIn !== 'undefined') {
+                isUserLoggedIn = false;
+                currentUser = null;
+                sessionToken = null;
+            }
+            
             // Always redirect, even if server call fails
             window.location.href = 'auth.html';
         }
@@ -1000,6 +1011,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!ui.favoritesGrid) return;
         ui.favoritesGrid.innerHTML = ''; // Clear existing
         
+        const emptyState = document.getElementById('favorites-empty-state');
+        
         try {
             // Get session token from localStorage
             const sessionToken = localStorage.getItem('session_token');
@@ -1017,24 +1030,172 @@ document.addEventListener('DOMContentLoaded', () => {
                 credentials: 'include'
             });
             const data = await response.json();
+            
             if (data.success && data.favorites && data.favorites.length > 0) {
+                if (emptyState) emptyState.style.display = 'none';
+                
                 data.favorites.forEach(fav => {
+                    // Use correct field names from database schema
                     const item = document.createElement('div');
                     item.className = 'favorite-item';
+                    
+                    // Create a proper product card similar to main page
+                    const price = fav.price ? `$${fav.price} ${fav.currency || 'USD'}` : 'Price unavailable';
+                    const imageUrl = fav.imageUrl || 'emblem.png';
+                    const productUrl = fav.productUrl || '#';
+                    const advertiserName = fav.advertiserName || 'Unknown Brand';
+                    
                     item.innerHTML = `
-                        <img src="${fav.fragrance_image_url || 'emblem.png'}" alt="${fav.fragrance_name}">
-                        <p>${fav.fragrance_name}</p>
+                        <div class="favorite-card">
+                            <div class="favorite-image">
+                                <img src="${imageUrl}" alt="${fav.name}" onerror="this.src='emblem.png'">
+                            </div>
+                            <div class="favorite-info">
+                                <h4 class="favorite-name">${fav.name}</h4>
+                                <p class="favorite-brand">${advertiserName}</p>
+                                <p class="favorite-price">${price}</p>
+                                <div class="favorite-actions">
+                                    <a href="${productUrl}" target="_blank" rel="nofollow sponsored noopener" class="btn btn-sm">Shop Now</a>
+                                    <button class="btn btn-sm btn-secondary" onclick="removeFavorite('${fav.fragrance_id}', this)">
+                                        <i class="fas fa-heart-broken"></i> Remove
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     `;
                     ui.favoritesGrid.appendChild(item);
                 });
             } else {
-                ui.favoritesGrid.innerHTML = '<p class="no-favorites">You haven\'t added any favorites yet. <a href="main.html">Browse fragrances</a> to get started!</p>';
+                // Show empty state
+                if (emptyState) {
+                    emptyState.style.display = 'block';
+                    ui.favoritesGrid.style.display = 'none';
+                } else {
+                    ui.favoritesGrid.innerHTML = '<p class="no-favorites">You haven\'t added any favorites yet. <a href="main.html">Browse fragrances</a> to get started!</p>';
+                }
             }
         } catch (error) {
             console.error('Error loading favorites:', error);
+            if (emptyState) emptyState.style.display = 'none';
             ui.favoritesGrid.innerHTML = '<p class="error">Error loading favorites. Please try again later.</p>';
         }
     }
+
+    // Function to remove a favorite
+    async function removeFavorite(fragranceId, buttonElement) {
+        if (!confirm('Remove this fragrance from your favorites?')) return;
+        
+        try {
+            const sessionToken = localStorage.getItem('session_token');
+            const headers = {};
+            if (sessionToken) {
+                headers['Authorization'] = `Bearer ${sessionToken}`;
+            }
+
+            const response = await fetch(`https://weathered-mud-6ed5.joshuablaszczyk.workers.dev/api/user/favorites/${fragranceId}`, {
+                method: 'DELETE',
+                headers,
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                // Remove the item from the UI
+                const favoriteCard = buttonElement.closest('.favorite-item');
+                if (favoriteCard) {
+                    favoriteCard.style.transition = 'opacity 0.3s ease';
+                    favoriteCard.style.opacity = '0';
+                    setTimeout(() => {
+                        favoriteCard.remove();
+                        // Check if grid is now empty
+                        if (ui.favoritesGrid.children.length === 0) {
+                            const emptyState = document.getElementById('favorites-empty-state');
+                            if (emptyState) {
+                                emptyState.style.display = 'block';
+                                ui.favoritesGrid.style.display = 'none';
+                            }
+                        }
+                    }, 300);
+                }
+                showNotification('Removed from favorites', 'success');
+            } else {
+                throw new Error('Failed to remove favorite');
+            }
+        } catch (error) {
+            console.error('Error removing favorite:', error);
+            showNotification('Error removing favorite. Please try again.', 'error');
+        }
+    }
+
+    // Make removeFavorite available globally for onclick handlers
+    window.removeFavorite = removeFavorite;
+
+    // Add navigation functionality between account sections
+    function initAccountNavigation() {
+        const navLinks = document.querySelectorAll('.account-sidebar nav a');
+        const panels = document.querySelectorAll('.account-panel');
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                
+                // Remove active class from all links and panels
+                navLinks.forEach(l => l.classList.remove('active'));
+                panels.forEach(p => p.classList.remove('active'));
+                
+                // Add active class to clicked link
+                link.classList.add('active');
+                
+                // Show corresponding panel
+                const targetId = link.getAttribute('href').substring(1); // Remove #
+                const targetPanel = document.getElementById(targetId);
+                if (targetPanel) {
+                    targetPanel.classList.add('active');
+                    
+                    // Load favorites if navigating to favorites section
+                    if (targetId === 'favorites') {
+                        console.log('Loading favorites section...');
+                        loadFavorites();
+                    }
+                }
+            });
+        });
+
+        // Handle URL hash navigation (for direct links and browser back/forward)
+        function handleHashChange() {
+            const hash = window.location.hash.substring(1); // Remove #
+            if (hash) {
+                // Find and activate the corresponding nav link
+                const targetLink = document.querySelector(`.account-sidebar nav a[href="#${hash}"]`);
+                if (targetLink) {
+                    // Remove active from all
+                    navLinks.forEach(l => l.classList.remove('active'));
+                    panels.forEach(p => p.classList.remove('active'));
+                    
+                    // Activate target
+                    targetLink.classList.add('active');
+                    const targetPanel = document.getElementById(hash);
+                    if (targetPanel) {
+                        targetPanel.classList.add('active');
+                        
+                        // Load favorites if navigating to favorites section
+                        if (hash === 'favorites') {
+                            console.log('Loading favorites section via hash change...');
+                            loadFavorites();
+                        }
+                    }
+                }
+            }
+        }
+
+        // Listen for hash changes
+        window.addEventListener('hashchange', handleHashChange);
+        
+        // Handle initial load if there's a hash
+        handleHashChange();
+    }
+
+    // Initialize account navigation
+    initAccountNavigation();
 
     init();
 });

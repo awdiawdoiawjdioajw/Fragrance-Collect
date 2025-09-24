@@ -213,7 +213,7 @@ function updateSharedNavUI(user) {
 // Handle logout functionality
 async function handleSharedLogout() {
     try {
-        await fetch('https://weathered-mud-6ed5.joshuablaszczyk.workers.dev/api/logout?v=2', {
+        await fetch('https://weathered-mud-6ed5.joshuablaszczyk.workers.dev/api/logout', {
             method: 'POST',
             credentials: 'include'
         });

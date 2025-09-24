@@ -420,18 +420,40 @@ document.addEventListener('DOMContentLoaded', () => {
         favoritesBtn.addEventListener('click', function(e) {
             e.preventDefault();
             
+            // Check authentication status first
+            if (!isAuthenticated()) {
+                // If user is not authenticated, redirect to sign in page
+                console.log('User not authenticated, redirecting to sign in page');
+                window.location.href = 'auth.html?tab=signin';
+                return;
+            }
+            
+            // User is authenticated, proceed with favorites functionality
             if (isMainPage) {
-                // On main page, scroll to favorites section
-                const favoritesSection = document.getElementById('favorites');
-                if (favoritesSection) {
-                    favoritesSection.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
+                // On main page, show favorites view which loads from database
+                console.log('Showing favorites view on main page');
+                if (typeof showFavoritesView === 'function') {
+                    showFavoritesView();
+                } else {
+                    // Fallback to scrolling if function not available
+                    const favoritesSection = document.getElementById('favorites');
+                    if (favoritesSection) {
+                        favoritesSection.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
                 }
             } else {
-                // On other pages, redirect to main page favorites section
-                window.location.href = 'main.html#favorites';
+                // Check if we're on the account page
+                const currentPage = window.location.pathname.split('/').pop() || 'main.html';
+                if (currentPage === 'account.html') {
+                    // On account page, go to account favorites section
+                    window.location.href = 'account.html#favorites';
+                } else {
+                    // On other pages, redirect to account favorites page
+                    window.location.href = 'account.html#favorites';
+                }
             }
         });
     }
