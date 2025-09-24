@@ -46,14 +46,26 @@
                     <li><a href="main.html#top-rated" class="nav-link">Top Picks</a></li>
                     <li><a href="main.html#personalized" class="nav-link">Personalized</a></li>
                     <li>
-                        <!-- PC Menu Dropdown -->
+                        <!-- Menu Button - Opens Mega Menu -->
                         <div class="menu-dropdown pc-menu-only">
                             <a href="#" class="nav-link menu-link">
                                 Menu <span class="dropdown-arrow">▾</span>
                             </a>
-                            <!-- Mega Menu Panel for PC -->
+                            <!-- Mega Menu -->
                             <div class="mega-menu">
                                 <div class="mega-menu-content">
+                                    <!-- Column 1: Main Navigation -->
+                                    <div class="mega-menu-column">
+                                        <h3>Main Navigation</h3>
+                                        <ul>
+                                            <li><a href="main.html#home">Home</a></li>
+                                            <li><a href="main.html#viral-tiktok-finds">Explore</a></li>
+                                            <li><a href="main.html#collections">Collections</a></li>
+                                            <li><a href="main.html#top-rated">Top Picks</a></li>
+                                            <li><a href="main.html#personalized">Personalized</a></li>
+                                        </ul>
+                                    </div>
+                                    <!-- Column 2: Shop by Scent -->
                                     <div class="mega-menu-column">
                                         <h3>Shop by Scent</h3>
                                         <ul>
@@ -64,6 +76,7 @@
                                             <li><a href="main.html#filter?scent=citrus">Citrus</a></li>
                                         </ul>
                                     </div>
+                                    <!-- Column 3: Collections -->
                                     <div class="mega-menu-column">
                                         <h3>Collections</h3>
                                         <ul>
@@ -73,6 +86,7 @@
                                             <li><a href="main.html#collections?type=seasonal">Seasonal</a></li>
                                         </ul>
                                     </div>
+                                    <!-- Column 4: Customer Service -->
                                     <div class="mega-menu-column">
                                         <h3>Customer Service</h3>
                                         <ul>
@@ -84,27 +98,17 @@
                                             <li><a href="privacy-policy.html">Privacy Policy</a></li>
                                         </ul>
                                     </div>
-                                    <div class="mega-menu-column">
-                                        <h3>Featured Brands</h3>
-                                        <ul>
-                                            <li><a href="main.html#filter?brand=chanel">Chanel</a></li>
-                                            <li><a href="main.html#filter?brand=dior">Dior</a></li>
-                                            <li><a href="main.html#filter?brand=creed">Creed</a></li>
-                                            <li><a href="main.html#filter?brand=tom-ford">Tom Ford</a></li>
-                                        </ul>
-                                    </div>
+                                    <!-- Column 5: Image Carousel -->
                                     <div class="mega-menu-image">
                                         <div class="image-carousel">
-                                            <img src="Creed_ING.jpg" alt="Creed Fragrance" class="promo-image active">
-                                            <img src="Tom Ford_IMG.jpg" alt="Tom Ford Fragrance" class="promo-image">
-                                            <img src="Dior_IMG.jpg" alt="Dior Fragrance" class="promo-image">
-                                            <img src="Chanel_IMG.jpg" alt="Chanel Fragrance" class="promo-image">
+                                            <img src="Chanel_IMG.jpg" alt="Chanel Promotion" class="promo-image active">
+                                            <img src="Dior_IMG.jpg" alt="Dior Promotion" class="promo-image">
+                                            <img src="Creed_ING.jpg" alt="Creed Promotion" class="promo-image">
                                         </div>
                                         <div class="image-indicators">
-                                            <span class="indicator active" data-slide="0"></span>
-                                            <span class="indicator" data-slide="1"></span>
-                                            <span class="indicator" data-slide="2"></span>
-                                            <span class="indicator" data-slide="3"></span>
+                                            <div class="indicator active" data-index="0"></div>
+                                            <div class="indicator" data-index="1"></div>
+                                            <div class="indicator" data-index="2"></div>
                                         </div>
                                     </div>
                                 </div>
@@ -123,11 +127,11 @@
                     </svg>
                 </button>
 
-                <a href="main.html#favorites" class="utility-btn favorites-btn" aria-label="Favorites">
+                <button class="utility-btn favorites-btn" aria-label="Favorites">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                     </svg>
-                </a>
+                </button>
 
                 <div class="profile-dropdown">
                     <button class="utility-btn profile-btn" aria-label="Profile">
@@ -149,23 +153,128 @@
                 </div>
             </div>
 
-            <!-- Mobile Menu Button -->
-            <button class="mobile-menu-toggle" aria-label="Toggle Menu">
-                <span class="hamburger-line"></span>
-                <span class="hamburger-line"></span>
-                <span class="hamburger-line"></span>
-            </button>
+                <!-- Mobile Menu Toggle -->
+                <button class="mobile-menu-toggle" aria-label="Toggle Menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
         </div>
+    </nav>
 
-        <!-- Mobile Navigation Menu -->
+    <!-- Mobile Navigation Backdrop -->
+    <div class="mobile-nav-backdrop"></div>
+
+    <!-- Mobile Navigation Menu -->
         <div class="mobile-nav-menu">
             <div class="mobile-nav-content">
+                <div class="mobile-nav-header">
+                    <h3>Navigation</h3>
+                    <button class="mobile-menu-close" aria-label="Close Menu">×</button>
+                </div>
+                <div class="mobile-nav-section">
+                    <h4>Main Navigation</h4>
+                    <a href="main.html#home" class="mobile-nav-link">Home</a>
+                    <a href="main.html#viral-tiktok-finds" class="mobile-nav-link">Explore</a>
+                    <a href="main.html#collections" class="mobile-nav-link">Collections</a>
+                    <a href="main.html#top-rated" class="mobile-nav-link">Top Picks</a>
+                    <a href="main.html#personalized" class="mobile-nav-link">Personalized</a>
+                </div>
+                <div class="mobile-nav-section">
+                    <h4>Shop by Scent</h4>
+                    <a href="main.html#filter?scent=floral" class="mobile-nav-link">Floral</a>
+                    <a href="main.html#filter?scent=woody" class="mobile-nav-link">Woody</a>
+                    <a href="main.html#filter?scent=oriental" class="mobile-nav-link">Oriental</a>
+                    <a href="main.html#filter?scent=fresh" class="mobile-nav-link">Fresh</a>
+                    <a href="main.html#filter?scent=citrus" class="mobile-nav-link">Citrus</a>
+                </div>
+                <div class="mobile-nav-section">
+                    <h4>Collections</h4>
+                    <a href="main.html#collections?type=designer" class="mobile-nav-link">Designer</a>
+                    <a href="main.html#collections?type=niche" class="mobile-nav-link">Niche</a>
+                    <a href="main.html#collections?type=vintage" class="mobile-nav-link">Vintage</a>
+                    <a href="main.html#collections?type=seasonal" class="mobile-nav-link">Seasonal</a>
+                </div>
+                <div class="mobile-nav-section">
+                    <h4>Customer Service</h4>
+                    <a href="customer-service.html" class="mobile-nav-link">Customer Service</a>
+                    <a href="contact.html" class="mobile-nav-link">Contact Us</a>
+                    <a href="size-guide.html" class="mobile-nav-link">Size Guide</a>
+                    <a href="faq.html" class="mobile-nav-link">FAQ</a>
+                    <a href="terms-of-service.html" class="mobile-nav-link">Terms of Service</a>
+                    <a href="privacy-policy.html" class="mobile-nav-link">Privacy Policy</a>
+                </div>
+                <div class="mobile-nav-section">
+                    <h4>Featured Brands</h4>
+                    <a href="main.html#filter?brand=chanel" class="mobile-nav-link">Chanel</a>
+                    <a href="main.html#filter?brand=dior" class="mobile-nav-link">Dior</a>
+                    <a href="main.html#filter?brand=creed" class="mobile-nav-link">Creed</a>
+                    <a href="main.html#filter?brand=tom-ford" class="mobile-nav-link">Tom Ford</a>
+                </div>
+                <div class="mobile-nav-section">
+                    <h4>Account</h4>
+                    <a href="auth.html?tab=signin" class="mobile-nav-link logged-out-only">Sign In</a>
+                    <a href="auth.html?tab=signup" class="mobile-nav-link logged-out-only">Sign Up</a>
+                    <a href="account.html" class="mobile-nav-link logged-in-only" style="display: none;">Profile & Settings</a>
+                    <a href="account.html#preferences" class="mobile-nav-link logged-in-only" style="display: none;">Fragrance Preferences</a>
+                    <a href="account.html#orders" class="mobile-nav-link logged-in-only" style="display: none;">Order History</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Navigation Backdrop -->
+    <div class="mobile-nav-backdrop"></div>
+
+    <!-- Mobile Navigation Menu -->
+    <div class="mobile-nav-menu">
+        <div class="mobile-nav-content">
+            <div class="mobile-nav-header">
+                <h3>Navigation</h3>
+                <button class="mobile-menu-close" aria-label="Close Menu">×</button>
+            </div>
+            <div class="mobile-nav-section">
+                <h4>Main Navigation</h4>
                 <a href="main.html#home" class="mobile-nav-link">Home</a>
                 <a href="main.html#viral-tiktok-finds" class="mobile-nav-link">Explore</a>
                 <a href="main.html#collections" class="mobile-nav-link">Collections</a>
                 <a href="main.html#top-rated" class="mobile-nav-link">Top Picks</a>
                 <a href="main.html#personalized" class="mobile-nav-link">Personalized</a>
-                <div class="mobile-nav-divider"></div>
+            </div>
+            <div class="mobile-nav-section">
+                <h4>Shop by Scent</h4>
+                <a href="main.html#filter?scent=floral" class="mobile-nav-link">Floral</a>
+                <a href="main.html#filter?scent=woody" class="mobile-nav-link">Woody</a>
+                <a href="main.html#filter?scent=oriental" class="mobile-nav-link">Oriental</a>
+                <a href="main.html#filter?scent=fresh" class="mobile-nav-link">Fresh</a>
+                <a href="main.html#filter?scent=citrus" class="mobile-nav-link">Citrus</a>
+            </div>
+            <div class="mobile-nav-section">
+                <h4>Collections</h4>
+                <a href="main.html#collections?type=designer" class="mobile-nav-link">Designer</a>
+                <a href="main.html#collections?type=niche" class="mobile-nav-link">Niche</a>
+                <a href="main.html#collections?type=vintage" class="mobile-nav-link">Vintage</a>
+                <a href="main.html#collections?type=seasonal" class="mobile-nav-link">Seasonal</a>
+            </div>
+            <div class="mobile-nav-section">
+                <h4>Customer Service</h4>
+                <a href="customer-service.html" class="mobile-nav-link">Customer Service</a>
+                <a href="contact.html" class="mobile-nav-link">Contact Us</a>
+                <a href="size-guide.html" class="mobile-nav-link">Size Guide</a>
+                <a href="faq.html" class="mobile-nav-link">FAQ</a>
+                <a href="terms-of-service.html" class="mobile-nav-link">Terms of Service</a>
+                <a href="privacy-policy.html" class="mobile-nav-link">Privacy Policy</a>
+            </div>
+            <div class="mobile-nav-section">
+                <h4>Featured Brands</h4>
+                <a href="main.html#filter?brand=chanel" class="mobile-nav-link">Chanel</a>
+                <a href="main.html#filter?brand=dior" class="mobile-nav-link">Dior</a>
+                <a href="main.html#filter?brand=creed" class="mobile-nav-link">Creed</a>
+                <a href="main.html#filter?brand=tom-ford" class="mobile-nav-link">Tom Ford</a>
+            </div>
+            <div class="mobile-nav-section">
+                <h4>Account</h4>
                 <a href="auth.html?tab=signin" class="mobile-nav-link logged-out-only">Sign In</a>
                 <a href="auth.html?tab=signup" class="mobile-nav-link logged-out-only">Sign Up</a>
                 <a href="account.html" class="mobile-nav-link logged-in-only" style="display: none;">Profile & Settings</a>
@@ -173,7 +282,7 @@
                 <a href="account.html#orders" class="mobile-nav-link logged-in-only" style="display: none;">Order History</a>
             </div>
         </div>
-    </nav>
+    </div>
 
     <!-- Size Guide Header -->
     <section class="size-guide-header">
